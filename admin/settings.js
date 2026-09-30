@@ -1,0 +1,208 @@
+(()=>{
+const CONFIG=window.SECUREOPS_CONFIG||{},U=CONFIG.SUPABASE_URL||'',K=CONFIG.SUPABASE_PUBLISHABLE_KEY||'',API=(CONFIG.SUPABASE_FUNCTIONS_URL||(U?U+'/functions/v1':''))+'/admin-console-api';
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+const css=`
+.s-wrap{display:grid;gap:16px}.s-color-row{display:flex;gap:8px;align-items:center}.s-color{width:42px!important;height:36px!important;padding:3px!important;flex:0 0 42px}.s-color-row input:not(.s-color){flex:1;min-width:0}.s-card{background:#fff;border:1px solid #e2e6eb;border-radius:13px;overflow:hidden}.s-head{padding:15px 17px;border-bottom:1px solid #edf0f2;display:flex;justify-content:space-between;align-items:center;gap:12px}.s-head h2{margin:0;color:#071a30;font-size:14px}.s-head small{display:block;color:#94a3b8;font-size:10px;margin-top:4px}.s-body{padding:17px}.s-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.s-field label{display:block;font-size:10px;font-weight:700;color:#64748b;margin-bottom:5px}.s-field input,.s-field select,.s-field textarea{width:100%;padding:9px;border:1px solid #dfe4e9;border-radius:8px;background:#fff;font-size:11px;outline:none;box-sizing:border-box}.s-actions{display:flex;gap:8px;margin-top:13px;flex-wrap:wrap}.s-btn{border:1px solid #d8dee5;background:#fff;color:#071a30;border-radius:8px;padding:8px 12px;font-size:10px;line-height:1.4;font-weight:700;cursor:pointer;transition:transform .14s ease,background .14s ease,border-color .14s ease,box-shadow .14s ease,color .14s ease;box-shadow:0 1px 2px rgba(7,26,48,.04)}.s-btn:hover{border-color:#c99a3d;background:#fffaf0;color:#071a30;transform:translateY(-1px);box-shadow:0 4px 12px rgba(7,26,48,.10)}.s-btn:active{transform:translateY(0);box-shadow:0 1px 3px rgba(7,26,48,.08)}.s-btn:focus-visible{outline:2px solid #c99a3d;outline-offset:2px}.s-btn:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}.s-btn.primary{background:#071a30;border-color:#071a30;color:#fff;box-shadow:0 2px 5px rgba(7,26,48,.12)}.s-btn.primary:hover{background:#102d4b;border-color:#c99a3d;color:#fff;box-shadow:0 5px 14px rgba(7,26,48,.16)}.s-head-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}.s-head .s-btn{margin:0}.s-btn.danger{color:#991b1b;border-color:#fecaca}.s-btn.danger:hover{background:#fff5f5;border-color:#ef4444}.s-table{overflow-x:auto}.s-table table{width:100%;border-collapse:collapse}.s-table th,.s-table td{padding:9px 8px;border-bottom:1px solid #edf0f2;text-align:left;font-size:10px;vertical-align:middle}.s-table th{font-size:8px;color:#64748b;text-transform:uppercase;background:#fafbfc}.s-badge{display:inline-block;padding:3px 7px;border-radius:99px;font-size:8px;font-weight:700}.s-on{background:#dcfce7;color:#166534}.s-off{background:#f1f5f9;color:#64748b}.s-msg{display:none}.s-toast-wrap{position:fixed;top:22px;right:22px;z-index:99999;display:grid;gap:10px;pointer-events:none}.s-toast{min-width:300px;max-width:420px;padding:14px 16px;border-radius:12px;background:#fff;border:1px solid #e2e6eb;box-shadow:0 14px 40px rgba(7,26,48,.18);display:flex;align-items:flex-start;gap:11px;pointer-events:auto;animation:sToastIn .18s ease-out}.s-toast.ok{border-left:4px solid #16a34a}.s-toast.err{border-left:4px solid #dc2626}.s-toast-icon{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;flex:0 0 24px}.s-toast.ok .s-toast-icon{background:#dcfce7;color:#166534}.s-toast.err .s-toast-icon{background:#fee2e2;color:#991b1b}.s-toast-title{font-size:11px;font-weight:800;color:#071a30;margin:0 0 3px}.s-toast-text{font-size:10px;color:#64748b;line-height:1.45}.s-toast-close{margin-left:auto;border:0;background:transparent;color:#94a3b8;cursor:pointer;font-size:16px;line-height:1}.s-toast-close:hover{color:#071a30}@keyframes sToastIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}@media(max-width:600px){.s-toast-wrap{left:12px;right:12px;top:12px}.s-toast{min-width:0;max-width:none}}.s-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid #edf0f2;border-radius:9px}.s-toggle label{font-size:10px;font-weight:700;color:#334155}.s-toggle input{width:17px;height:17px}.s-brand-preview{display:flex;align-items:center;gap:14px;padding:14px;border:1px solid #edf0f2;border-radius:10px;background:#fafbfc}.s-brand-logo{width:54px;height:54px;object-fit:contain;border-radius:9px;border:1px solid #e5e7eb;background:#fff}.s-logo-picker{display:grid;gap:8px}.s-logo-current{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid #edf0f2;border-radius:9px;background:#fafbfc}.s-logo-name{font-size:10px;font-weight:700;color:#334155;word-break:break-all}.s-logo-hint{font-size:9px;color:#94a3b8;margin-top:3px}.s-logo-picker input[type=file]{width:100%;padding:8px;border:1px dashed #cbd5e1;border-radius:8px;background:#fff;font-size:10px;box-sizing:border-box}.s-logo-picker input[type=file]:hover{border-color:#c99a3d;background:#fffaf0}.s-brand-swatch{width:26px;height:26px;border-radius:7px;border:1px solid #dbe2e8}.s-brand-title{font-size:12px;font-weight:700;color:#071a30}.s-brand-sub{font-size:9px;color:#64748b;margin-top:2px}.s-toolbar{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:10px}.s-toolbar .s-note{margin-top:0;padding-left:2px}.s-note{font-size:10px;color:#94a3b8;margin-top:8px}.key-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}.key-search{flex:1 1 320px;min-width:220px;padding:10px 12px;border:1px solid #dfe4e9;border-radius:8px;background:#fff;color:#111827;font-size:11px;outline:none;box-sizing:border-box}.key-search:focus{border-color:#c99a3d;box-shadow:0 0 0 2px rgba(201,154,61,.12)}.key-count{font-size:9px;color:#94a3b8;margin-left:2px}.key-export{white-space:nowrap}@media(max-width:760px){.s-grid{grid-template-columns:1fr}.s-head{align-items:center;flex-direction:row}.key-toolbar{align-items:stretch}.key-search{flex-basis:100%;min-width:0}.key-export{width:auto}}`;
+const style=()=>{if($('s-style'))return;const st=document.createElement('style');st.id='s-style';st.textContent=css;document.head.appendChild(st)};
+const $=id=>document.getElementById(id),current=token=>token==null||token===window.HIKJAdminPageToken;
+async function token(){const c=window.supabase.createClient(U,K);const {data}=await c.auth.getSession();if(!data.session)throw Error('Session expired. Please sign in again');return data.session.access_token}
+async function req(action,method='GET',body=null){const t=await token();const r=await fetch(API+'?action='+encodeURIComponent(action),{method,headers:{apikey:K,Authorization:'Bearer '+t,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Request failed');return j}
+async function reqMultipart(action,form){const t=await token();const r=await fetch(API+'?action='+encodeURIComponent(action),{method:'POST',headers:{apikey:K,Authorization:'Bearer '+t},body:form});const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Request failed');return j}
+function msg(id,text,err=false){const e=$(id);if(!e)return;e.textContent=text||'';e.classList.toggle('err',!!err)}
+function toast(title,text,err=false,duration=err?5000:2800){
+ let wrap=$('sToastWrap');if(!wrap){wrap=document.createElement('div');wrap.id='sToastWrap';wrap.className='s-toast-wrap';document.body.appendChild(wrap)}
+ const item=document.createElement('div');item.className='s-toast '+(err?'err':'ok');
+ item.innerHTML='<div class="s-toast-icon">'+(err?'!':'✓')+'</div><div><div class="s-toast-title"></div><div class="s-toast-text"></div></div><button class="s-toast-close" type="button" aria-label="Close">×</button>';
+ item.querySelector('.s-toast-title').textContent=title;
+ item.querySelector('.s-toast-text').textContent=text||'';
+ item.querySelector('.s-toast-close').onclick=()=>item.remove();
+ wrap.appendChild(item);
+ if(duration>0)setTimeout(()=>item.remove(),duration);
+}
+
+function card(title,sub,body,actions=''){return '<section class="s-card"><div class="s-head"><div><h2>'+esc(title)+'</h2><small>'+esc(sub)+'</small></div>'+(actions?'<div class="s-head-actions">'+actions+'</div>':'')+'</div><div class="s-body">'+body+'</div></section>'}
+async function properties(token){
+ const r=await req('property_settings');if(!current(token))return;
+ const rows=r.data||[];
+ const role=String(window.HIKJAdminRole||'').toUpperCase(),isSuper=role==='SUPERADMIN',canEdit=isSuper||role==='MANAGER';
+ if(!rows.length){
+   $('sContent').innerHTML=card('Property','No property is configured','<div class="s-note">Create a property record before configuring Property Settings.</div>',
+     isSuper?'<button class="s-btn primary" id="propCreate">Create Property</button>':'');
+   if(isSuper)$('propCreate').onclick=()=>createProperty(token);
+   return;
+ }
+ $('sContent').innerHTML=(isSuper?'<div class="s-toolbar"><button class="s-btn primary" id="propCreate">Create Property</button><span class="s-note">Manage all SECUREOPS properties from this single workspace.</span></div>':'')+
+ rows.map((p,i)=>card(
+   p.property_name||p.property_code||'Property',
+   'Property Profile • '+(p.property_code||'—'),
+   `<div class="s-grid">
+    <div class="s-field"><label>Property Code</label><input value="${esc(p.property_code||'')}" readonly disabled></div>
+    <div class="s-field"><label>Property Name</label><input id="prop_name_${i}" value="${esc(p.property_name||'')}" maxlength="160" ${canEdit?'':'readonly disabled'}></div>
+    <div class="s-field"><label>Address</label><input id="prop_address_${i}" value="${esc(p.address||'')}" maxlength="255" ${canEdit?'':'readonly disabled'}></div>
+    <div class="s-field"><label>Timezone</label><input id="prop_timezone_${i}" value="${esc(p.timezone||'Asia/Jakarta')}" placeholder="Asia/Jakarta" ${canEdit?'':'readonly disabled'}></div>
+    <div class="s-field"><label>Property Logo</label><div class="s-logo-picker"><div class="s-logo-current"><img id="prop_logo_preview_${i}" class="s-brand-logo" src="${esc(p.logo_url||'')}" onerror="this.style.display='none'"><div><div class="s-logo-name" id="prop_logo_name_${i}">${esc(p.logo_url||'').split('/').pop()||'No logo selected'}</div><div class="s-logo-hint">PNG, JPG, WEBP or SVG · Max 2 MB</div></div></div><input id="prop_logo_file_${i}" type="file" accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml" ${canEdit?'':'disabled'}><input id="prop_logo_${i}" type="hidden" value="${esc(p.logo_url||'')}"></div></div>
+    <div class="s-field"><label>Status</label><select id="prop_active_${i}" ${canEdit?'':'disabled'}><option value="true" ${p.is_active?'selected':''}>ACTIVE</option><option value="false" ${!p.is_active?'selected':''}>INACTIVE</option></select></div>
+    <div class="s-field"><label>Primary Color</label><div class="s-color-row"><input class="s-color" id="prop_primary_color_${i}" type="color" value="${/^#[0-9A-F]{6}$/i.test(p.primary_color||'')?p.primary_color:'#0B2239'}" ${canEdit?'':'disabled'}><input id="prop_primary_text_${i}" value="${esc(p.primary_color||'#0B2239')}" maxlength="7" ${canEdit?'':'readonly disabled'}></div></div>
+    <div class="s-field"><label>Secondary Color</label><div class="s-color-row"><input class="s-color" id="prop_secondary_color_${i}" type="color" value="${/^#[0-9A-F]{6}$/i.test(p.secondary_color||'')?p.secondary_color:'#1677A8'}" ${canEdit?'':'disabled'}><input id="prop_secondary_text_${i}" value="${esc(p.secondary_color||'#1677A8')}" maxlength="7" ${canEdit?'':'readonly disabled'}></div></div>
+   </div>
+   <div class="s-msg" id="propMsg_${i}"></div>
+   <div class="s-brand-preview"><img class="s-brand-logo" src="${esc(p.logo_url||'')}" onerror="this.style.display='none'"><div><div class="s-brand-title">${esc(p.property_name||'Property')}</div><div class="s-brand-sub">${esc(p.property_code||'')} · ${esc(p.timezone||'')}</div></div><span class="s-brand-swatch" style="background:${esc(p.primary_color||'#0B2239')}"></span><span class="s-brand-swatch" style="background:${esc(p.secondary_color||'#1677A8')}"></span></div><div class="s-note">Property Code is read-only. Changes are recorded in the Audit Log.</div>`,
+   canEdit?'<button class="s-btn primary" data-prop-save="'+i+'">Save Property</button>':'<span class="s-note">ADMIN access is read-only for Property Settings.</span>'
+ )).join('');
+
+ if(isSuper)$('propCreate').onclick=()=>createProperty(token);
+ rows.forEach((p,i)=>{
+   const logoFile=$('prop_logo_file_'+i),logoPreview=$('prop_logo_preview_'+i),logoName=$('prop_logo_name_'+i);
+   if(logoFile){logoFile.onchange=()=>{const f=logoFile.files?.[0];if(!f)return;logoName.textContent=f.name;const u=URL.createObjectURL(f);logoPreview.src=u;logoPreview.style.display='block';logoPreview.onload=()=>URL.revokeObjectURL(u)}}
+   const pc=$('prop_primary_color_'+i),pt=$('prop_primary_text_'+i),sc=$('prop_secondary_color_'+i),st=$('prop_secondary_text_'+i);
+   pc.oninput=()=>{pt.value=pc.value.toUpperCase()};pt.onchange=()=>{if(/^#[0-9A-F]{6}$/i.test(pt.value.trim()))pc.value=pt.value.trim().toUpperCase()};
+   sc.oninput=()=>{st.value=sc.value.toUpperCase()};st.onchange=()=>{if(/^#[0-9A-F]{6}$/i.test(st.value.trim()))sc.value=st.value.trim().toUpperCase()};
+   const btn=document.querySelector('[data-prop-save="'+i+'"]');
+   if(!btn)return;
+   btn.onclick=async()=>{
+     btn.disabled=true;
+     try{
+       let logoUrl=$('prop_logo_'+i).value.trim();
+       const logoFile=$('prop_logo_file_'+i)?.files?.[0]||null;
+       const payload={id:p.id,property_name:$('prop_name_'+i).value.trim(),address:$('prop_address_'+i).value.trim(),timezone:$('prop_timezone_'+i).value.trim(),logo_url:logoUrl,primary_color:pt.value.trim(),secondary_color:st.value.trim(),is_active:$('prop_active_'+i).value==='true'};
+       let saveResult;
+       if(logoFile){
+         toast('Saving Property','Saving property and uploading the logo…',false,0);
+         const form=new FormData();
+         Object.entries(payload).forEach(([k,v])=>form.append(k,String(v)));
+         form.append('logo_file',logoFile,logoFile.name);
+         saveResult=await reqMultipart('save_property',form);
+         logoUrl=saveResult.data?.logo_url||logoUrl;
+         payload.logo_url=logoUrl;
+       }else{
+         saveResult=await req('save_property','POST',payload);
+       }
+       $('prop_logo_'+i).value=payload.logo_url||'';
+       if(logoFile)logoFile.value='';
+       const preview=document.querySelectorAll('.s-brand-preview')[i];
+       if(preview){preview.querySelector('.s-brand-title').textContent=payload.property_name;preview.querySelector('.s-brand-sub').textContent=p.property_code+' · '+payload.timezone;preview.querySelectorAll('.s-brand-swatch')[0].style.background=payload.primary_color;preview.querySelectorAll('.s-brand-swatch')[1].style.background=payload.secondary_color;const logo=preview.querySelector('.s-brand-logo');if(logo&&payload.logo_url){logo.src=payload.logo_url;logo.style.display='block'}const n=$('prop_logo_name_'+i);if(n&&payload.logo_url)n.textContent=payload.logo_url.split('/').pop()}
+       document.querySelectorAll('#sToastWrap .s-toast').forEach(x=>x.remove());
+       toast('Property Saved','Property settings and logo were saved successfully.');
+     }catch(e){document.querySelectorAll('#sToastWrap .s-toast').forEach(x=>x.remove());toast('Save Failed',e.message||'Unable to save property.',true)}finally{btn.disabled=false}
+   };
+ });
+}
+async function uploadPropertyLogo(file,propertyId,propertyCode){
+ const max=2*1024*1024;
+ if(!file) return null;
+ if(file.size>max) throw Error('Logo file must be 2 MB or smaller.');
+ const allowed=['image/png','image/jpeg','image/webp','image/svg+xml'];
+ if(!allowed.includes(file.type)) throw Error('Logo must be PNG, JPG, WEBP or SVG.');
+ const form=new FormData();form.append('property_id',propertyId);form.append('property_code',propertyCode||'PROPERTY');form.append('file',file,file.name);
+ const t=await token();
+ const r=await fetch(API+'?action=upload_property_logo',{method:'POST',headers:{apikey:K,Authorization:'Bearer '+t},body:form});
+ const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Logo upload failed');return j.url||j.data?.url||null;
+}
+
+async function createProperty(token){
+ const code=prompt('Property Code (e.g. HIKB)');if(code===null)return;
+ const name=prompt('Property Name');if(name===null)return;
+ const timezone=prompt('Timezone','Asia/Jakarta');if(timezone===null)return;
+ try{await req('create_property','POST',{property_code:code.trim().toUpperCase(),property_name:name.trim(),timezone:timezone.trim()||'Asia/Jakarta'});toast('Property Created','The property was created successfully.');await properties(token)}catch(e){toast('Create Failed',e.message||'Unable to create property.',true)}
+}
+
+async function whatsapp(token){
+ const r=await req('settings');if(!current(token))return;const w=r.settings?.whatsapp||{},role=String(window.HIKJAdminRole||'').toUpperCase(),canEdit=role==='SUPERADMIN'||role==='MANAGER';
+ $('sContent').innerHTML=card('WhatsApp','Public form notification recipient',`
+ <div class="s-grid"><div class="s-field"><label>Recipient Name</label><input id="waName" value="${esc(w.recipient_name||'SECUREOPS Security')}" ${canEdit?'':'readonly disabled'}></div><div class="s-field"><label>WhatsApp Phone Number</label><input id="waPhone" value="${esc(w.phone_number||'')}" placeholder="628xxxxxxxxxx" ${canEdit?'':'readonly disabled'}></div></div>
+ <div class="s-msg" id="waMsg"></div>
+ <div class="s-note">Use international format without spaces. This number is used by public visitor, key and package forms</div>`,
+ canEdit?'<button class="s-btn primary" id="waSave">Save Changes</button>':'<span class="s-note">ADMIN access is read-only for Operational Settings.</span>');
+ $('waSave').onclick=async()=>{try{const p=String($('waPhone').value||'').replace(/[^0-9+]/g,'').replace(/^\+/,'');if(!/^62[0-9]{8,15}$/.test(p))throw Error('Use a valid Indonesian WhatsApp number, e.g. 6281234567890');await req('save_whatsapp','POST',{recipient_name:$('waName').value.trim(),phone_number:p});msg('waMsg','WhatsApp recipient updated')}catch(e){msg('waMsg',e.message,true)}}
+}
+async function admins(token){
+ const r=await req('admin_users');if(!current(token))return;const rows=r.data||[];
+ $('sContent').innerHTML=card('Admin Users','Manage access to the Security Admin Console',`
+
+ <div class="s-table"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last Login</th><th>Created</th><th>Actions</th></tr></thead><tbody>${rows.length?rows.map(x=>`<tr><td><b>${esc(x.full_name||'—')}</b></td><td>${esc(x.email||'—')}</td><td>${esc(x.role)}</td><td><span class="s-badge ${x.active?'s-on':'s-off'}">${x.active?'ACTIVE':'INACTIVE'}</span></td><td>${esc(x.last_sign_in_at?new Date(x.last_sign_in_at).toLocaleString('en-GB'):'—')}</td><td>${esc(new Date(x.created_at).toLocaleDateString('en-GB'))}</td><td><button class="s-btn" data-admin-edit="${x.user_id}">Edit</button></td></tr>`).join(''):'<tr><td colspan="7">No admin users found</td></tr>'}</tbody></table></div>`, '<button class="s-btn primary" id="addAdmin">Add Admin</button>');
+ $('addAdmin').onclick=()=>adminDialog(null,token);
+ document.querySelectorAll('[data-admin-edit]').forEach(b=>b.onclick=()=>adminDialog(rows.find(x=>x.user_id===b.dataset.adminEdit),token));
+}
+function adminDialog(row=null,token=null){
+ const d=document.createElement('dialog');
+ d.style.cssText='border:0;border-radius:14px;padding:0;width:min(520px,calc(100% - 24px));box-shadow:0 25px 80px #0005';
+ d.innerHTML=`<form method="dialog" class="s-body"><h2 style="margin:0 0 14px;color:#071a30;font-size:16px">${row?'Edit Admin':'Add Admin'}</h2><div class="s-grid"><div class="s-field"><label>Full Name</label><input class="adName" required value="${esc(row?.full_name||'')}"></div><div class="s-field"><label>Email</label><input class="adEmail" type="email" required value="${esc(row?.email||'')}" ${row?'readonly':''}></div><div class="s-field"><label>Role</label><select class="adRole"><option>VIEWER</option><option>ADMIN</option><option>MANAGER</option><option>SUPERADMIN</option></select></div><div class="s-field"><label>${row?'New Password (optional)':'Temporary Password'}</label><input class="adPass" type="password" ${row?'':'required'} minlength="8"></div></div><div class="s-actions"><button type="button" class="s-btn adCancel">Cancel</button><button type="button" class="s-btn primary adSave">Save</button></div><div class="s-msg adMsg"></div></form>`;
+ document.body.appendChild(d);
+ const name=d.querySelector('.adName'),email=d.querySelector('.adEmail'),role=d.querySelector('.adRole'),pass=d.querySelector('.adPass'),cancel=d.querySelector('.adCancel'),save=d.querySelector('.adSave'),message=d.querySelector('.adMsg');
+ role.value=row?.role||'VIEWER';
+ const cleanup=()=>d.remove();
+ d.addEventListener('close',cleanup,{once:true});
+ d.showModal();
+ cancel.onclick=()=>d.close();
+ save.onclick=async()=>{
+   save.disabled=true;cancel.disabled=true;save.textContent='Saving...';
+   try{
+     const body={user_id:row?.user_id,full_name:name.value.trim(),email:email.value.trim(),role:role.value,password:pass.value};
+     if(!body.full_name||!body.email)throw Error('Name and email are required');
+     if(!row&&!body.password)throw Error('Temporary password is required');
+     await req(row?'update_admin':'create_admin','POST',body);
+     if(!current(token)){d.close();return;}
+     d.close();
+     await admins(token);
+   }catch(e){
+     message.textContent=e.message||'Request failed';message.classList.add('err');
+     save.disabled=false;cancel.disabled=false;save.textContent='Save';
+   }
+ }
+}
+
+function exportKeyAssets(rows){
+ const headers=['Key Number','Description','Location / Department','Quantity','Status'];
+ const csvEsc=v=>{const s=String(v??'');return /[\",\n\r]/.test(s)?'\"'+s.replace(/\"/g,'\"\"')+'\"':s};
+ const csv=[headers,...rows.map(x=>[x.key_number,x.key_description,x.location_department,x.quantity,x.active?'ACTIVE':'INACTIVE'])].map(row=>row.map(csvEsc).join(',')).join('\r\n');
+ const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+ const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='SECUREOPS-Key-Assets-'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+}
+async function keys(token){
+ const r=await req('key_assets');if(!current(token))return;const rows=r.data||[];
+ $('sContent').innerHTML=card('Key Assets','Master inventory for physical hotel keys',`<div class="s-table"><table><thead><tr><th>Key Number</th><th>Description</th><th>Location / Department</th><th>Quantity</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.length?rows.map(x=>`<tr><td><b>${esc(x.key_number)}</b></td><td>${esc(x.key_description||'—')}</td><td>${esc(x.location_department||'—')}</td><td>${esc(x.quantity)}</td><td><span class="s-badge ${x.active?'s-on':'s-off'}">${x.active?'ACTIVE':'INACTIVE'}</span></td><td><button class="s-btn" data-key-edit="${x.id}">Edit</button></td></tr>`).join(''):'<tr><td colspan="6">No key assets configured</td></tr>'}</tbody></table></div>`, '<button class="s-btn primary" id="addKey">Add Key Asset</button>');
+ const toolbar='<div class="key-toolbar"><input id="keySearch" class="key-search" type="search" placeholder="Search key number, description, location or department..." autocomplete="off"><span id="keyCount" class="key-count"></span><button class="s-btn key-export" id="exportKeys">Export CSV</button></div>';
+ $('sContent').querySelector('.s-body').insertAdjacentHTML('afterbegin',toolbar);
+ const search=$('keySearch'),tbody=document.querySelector('#sContent tbody'),count=$('keyCount');
+ const filterRows=()=>{const q=String(search.value||'').trim().toLowerCase();const filtered=!q?rows:rows.filter(x=>[x.key_number,x.key_description,x.location_department,x.quantity,x.active?'active':'inactive'].some(v=>String(v??'').toLowerCase().includes(q)));tbody.innerHTML=filtered.length?filtered.map(x=>`<tr><td><b>${esc(x.key_number)}</b></td><td>${esc(x.key_description||'—')}</td><td>${esc(x.location_department||'—')}</td><td>${esc(x.quantity)}</td><td><span class="s-badge ${x.active?'s-on':'s-off'}">${x.active?'ACTIVE':'INACTIVE'}</span></td><td><button class="s-btn" data-key-edit="${x.id}">Edit</button></td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:18px">No matching key assets found</td></tr>';count.textContent=filtered.length+' of '+rows.length+' assets';document.querySelectorAll('[data-key-edit]').forEach(b=>b.onclick=()=>keyDialog(rows.find(x=>x.id===b.dataset.keyEdit),token));};
+ search.oninput=filterRows;count.textContent=rows.length+' assets';$('exportKeys').onclick=()=>{const q=String(search.value||'').trim().toLowerCase();const filtered=!q?rows:rows.filter(x=>[x.key_number,x.key_description,x.location_department,x.quantity,x.active?'active':'inactive'].some(v=>String(v??'').toLowerCase().includes(q)));exportKeyAssets(filtered)};
+ $('addKey').onclick=()=>keyDialog(null,token);document.querySelectorAll('[data-key-edit]').forEach(b=>b.onclick=()=>keyDialog(rows.find(x=>x.id===b.dataset.keyEdit),token));
+}
+function keyDialog(row=null,token=null){
+ const d=document.createElement('dialog');
+ d.style.cssText='border:0;border-radius:14px;padding:0;width:min(520px,calc(100% - 24px));box-shadow:0 25px 80px #0005';
+ d.innerHTML=`<form method="dialog" class="s-body"><h2 style="margin:0 0 14px;color:#071a30;font-size:16px">${row?'Edit Key Asset':'Add Key Asset'}</h2><div class="s-grid"><div class="s-field"><label>Key Number</label><input class="kaNum" required value="${esc(row?.key_number||'')}" ${row?'readonly':''}></div><div class="s-field"><label>Quantity</label><input class="kaQty" type="number" min="1" required value="${esc(row?.quantity||1)}"></div><div class="s-field"><label>Description</label><input class="kaDesc" value="${esc(row?.key_description||'')}"></div><div class="s-field"><label>Location / Department</label><input class="kaLoc" value="${esc(row?.location_department||'')}"></div></div><div class="s-toggle" style="margin-top:12px"><label>Active</label><input class="kaActive" type="checkbox" ${row?.active!==false?'checked':''}></div><div class="s-actions"><button type="button" class="s-btn kaCancel">Cancel</button><button type="button" class="s-btn primary kaSave">Save</button></div><div class="s-msg kaMsg"></div></form>`;
+ document.body.appendChild(d);
+ const num=d.querySelector('.kaNum'),qty=d.querySelector('.kaQty'),desc=d.querySelector('.kaDesc'),loc=d.querySelector('.kaLoc'),active=d.querySelector('.kaActive'),cancel=d.querySelector('.kaCancel'),save=d.querySelector('.kaSave'),message=d.querySelector('.kaMsg');
+ const cleanup=()=>d.remove();
+ d.addEventListener('close',cleanup,{once:true});
+ d.showModal();
+ cancel.onclick=()=>d.close();
+ save.onclick=async()=>{
+   save.disabled=true;cancel.disabled=true;save.textContent='Saving...';
+   try{
+     const body={id:row?.id,key_number:num.value.trim(),quantity:Number(qty.value),key_description:desc.value.trim(),location_department:loc.value.trim(),active:active.checked};
+     if(!body.key_number)throw Error('Key Number is required');
+     if(!Number.isInteger(body.quantity)||body.quantity<1)throw Error('Quantity must be at least 1');
+     await req(row?'update_key_asset':'create_key_asset','POST',body);
+     if(!current(token)){d.close();return;}
+     d.close();
+     await keys(token);
+   }catch(e){
+     message.textContent=e.message||'Request failed';message.classList.add('err');
+     save.disabled=false;cancel.disabled=false;save.textContent='Save';
+   }
+ }
+}
+async function operations(token){
+ const r=await req('settings');if(!current(token))return;const o=r.settings?.operations||{},role=String(window.HIKJAdminRole||'').toUpperCase(),canEdit=role==='SUPERADMIN'||role==='MANAGER';const fields=[['visitor_entry_enabled','Visitor Entry Registration'],['visitor_exit_enabled','Visitor Exit Registration'],['key_borrowing_enabled','Key Borrowing'],['key_return_enabled','Key Return'],['package_registration_enabled','Package Registration'],['package_distribution_enabled','Package Distribution']];
+ $('sContent').innerHTML=card('System / Operations','Enable or disable operational modules',`<div style="display:grid;gap:8px">${fields.map(([k,l])=>`<div class="s-toggle"><label>${l}</label><input type="checkbox" data-op="${k}" ${o[k]!==false?'checked':''} ${canEdit?'':'disabled'}></div>`).join('')}</div><div class="s-msg" id="opMsg"></div>`, canEdit?'<button class="s-btn primary" id="opSave">Save Changes</button>':'<span class="s-note">ADMIN access is read-only for Operational Settings.</span>');$('opSave').onclick=async()=>{try{const value={...o};fields.forEach(([k])=>value[k]=document.querySelector('[data-op="'+k+'"]').checked);await req('save_operations','POST',{value});msg('opMsg','Operational settings updated')}catch(e){msg('opMsg',e.message,true)}}}
+async function audit(token){const r=await req('audit_logs');if(!current(token))return;const rows=r.data||[];$('sContent').innerHTML=card('Audit Log','Administrative changes and security-sensitive actions',`<div class="s-table"><table><thead><tr><th>Date / Time</th><th>User</th><th>Action</th><th>Module</th><th>Target</th><th>Description</th></tr></thead><tbody>${rows.length?rows.map(x=>`<tr><td>${esc(new Date(x.created_at).toLocaleString('en-GB'))}</td><td>${esc(x.user_name||'—')}</td><td>${esc(x.action)}</td><td>${esc(x.module)}</td><td>${esc(x.target||'—')}</td><td>${esc(x.description||'—')}</td></tr>`).join(''):'<tr><td colspan="6">No audit entries found</td></tr>'}</tbody></table></div>`)}
+async function render(tab='whatsapp',token=null){if(!current(token))return;
+ style();const role=String(window.HIKJAdminRole||'').toUpperCase(),tabs=role==='SUPERADMIN'?['property','whatsapp','admins','keys','operations','audit']:['property','whatsapp','operations'];
+$('aPage').innerHTML='<div class="a-head"><div><div class="a-kicker">SECUREOPS</div><h1>Settings</h1><p>System configuration, access control and key inventory</p></div></div><div class="a-tabs">'+tabs.map((x,i)=>`<button class="${x===tab?'active':''}" data-stab="${x}">${x==='property'?'Property':x==='whatsapp'?'WhatsApp':x==='admins'?'Admin Users':x==='keys'?'Key Assets':x==='operations'?'System / Operations':'Audit Log'}</button>`).join('')+'</div><div id="sContent" class="s-wrap"></div>';
+ document.querySelectorAll('[data-stab]').forEach(b=>b.onclick=()=>render(b.dataset.stab,token));
+ try{if(tab==='property')await properties(token);else if(tab==='whatsapp')await whatsapp(token);else if(tab==='admins')await admins(token);else if(tab==='keys')await keys(token);else if(tab==='operations')await operations(token);else await audit(token)}catch(e){if(current(token)){const target=$('sContent');if(target)target.innerHTML='<div class="a-error">'+esc(e.message)+'</div>'}}
+}
+window.HIKJSettingsRender=render;
+})();
