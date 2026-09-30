@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="../app-config.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SECUREOPS | Security Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../assets/secureops-config.js"></script>
+<style>
+:root{--navy:#071a30;--navy2:#102d4b;--gold:#c99a3d;--bg:#f4f6f9;--card:#fff;--line:#e5e7eb;--muted:#64748b;--text:#111827;--red:#b91c1c}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font:14px Poppins,Arial,sans-serif;color:var(--text);background:var(--bg)}button,input{font:inherit}.hidden{display:none!important}
+.login{min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at 50% 0,#173c64,#071a30 68%)}
+.login-card{width:min(430px,100%);background:#fff;border-radius:18px;padding:30px;box-shadow:0 25px 80px #0007}.logo-text{width:120px;height:76px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:var(--navy);font-weight:700;font-size:24px;letter-spacing:3px}.logo{width:120px;height:76px;object-fit:contain;display:block;margin:0 auto 12px;filter:brightness(0)}.brand{text-align:center;color:var(--navy);font-weight:700;font-size:20px}.brand small{display:block;color:var(--muted);font-weight:400;font-size:10px;margin-top:5px;letter-spacing:1px}.login-card h1{font-size:14px;margin:28px 0 6px}.login-card p{color:var(--muted);font-size:12px;margin:0 0 22px}.field{margin:15px 0}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}.field input{width:100%;padding:12px;border:1px solid var(--line);border-radius:9px;outline:none}.login-btn{width:100%;padding:13px;border:1px solid var(--navy);border-radius:9px;background:var(--navy);color:#fff;font-weight:700;cursor:pointer;transition:transform .14s ease,background .14s ease,border-color .14s ease,box-shadow .14s ease;box-shadow:0 2px 5px rgba(7,26,48,.12)}.login-btn:hover{background:#102d4b;border-color:#c99a3d;transform:translateY(-1px);box-shadow:0 5px 14px rgba(7,26,48,.16)}.login-btn:active{transform:translateY(0);box-shadow:0 1px 3px rgba(7,26,48,.08)}.login-btn:focus-visible{outline:2px solid #c99a3d;outline-offset:2px}.login-btn:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}.back-form{display:block;text-align:center;margin-top:14px;color:var(--navy);font-size:12px;font-weight:700;text-decoration:none}.back-form:hover{text-decoration:underline}.error{color:var(--red);font-size:12px;min-height:18px;margin-top:10px}
+@media (min-width:901px) and (max-height:850px){
+  .login{padding:12px}
+  .login-card{width:min(430px,100%);border-radius:18px;padding:22px 30px;box-shadow:0 20px 60px #0007}
+  .logo-text{width:88px;height:52px;margin-bottom:7px;font-size:20px}.logo{width:88px;height:52px;margin:0 auto 7px}
+  .brand{font-size:19px}
+  .brand small{font-size:9px;margin-top:3px}
+  .login-card h1{font-size:14px;margin:18px 0 4px}
+  .login-card p{font-size:11px;margin:0 0 14px}
+  .field{margin:10px 0}
+  .field label{font-size:11px;margin-bottom:5px}
+  .field input{padding:10px;border-radius:8px}
+  .login-btn{padding:11px;border-radius:8px}
+  .back-form{margin-top:10px;font-size:11px}
+  .error{font-size:11px;min-height:16px;margin-top:7px}
+}
+.top{height:70px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:1000}.top-logo-text{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#fff;font-weight:700;font-size:20px;letter-spacing:3px;white-space:nowrap}.top-logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:46px;max-width:170px;width:auto;object-fit:contain;background:transparent;border-radius:0;padding:0;box-sizing:border-box}.top-logo:focus{outline:2px solid #c99a3d;outline-offset:4px}.top-title{font-weight:700;font-size:14px;line-height:1.15;letter-spacing:0;text-transform:uppercase}.top-title small{display:block;font-weight:400;opacity:.6;font-size:9px;line-height:1.2;margin-top:4px;letter-spacing:1px;text-transform:uppercase}.user{display:flex;align-items:center;gap:12px}.user-info{text-align:right;font-size:11px}.user-info small{display:block;opacity:.6;margin-top:3px}.logout{background:#fff1;color:#fff;border:1px solid #ffffff33;border-radius:8px;padding:8px 12px;cursor:pointer;transition:transform .14s ease,background .14s ease,border-color .14s ease,box-shadow .14s ease}.logout:hover{background:#ffffff12;border-color:#c99a3d;color:#fff;transform:translateY(-1px);box-shadow:0 4px 12px #0003}.logout:active{transform:translateY(0)}.logout:focus-visible{outline:2px solid #c99a3d;outline-offset:2px}
+.actionbar{height:48px;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 2px 8px rgba(7,26,48,.035);display:flex;align-items:center;justify-content:flex-end;padding:0 24px;position:sticky;top:70px;z-index:999}.actionbar-inner{display:flex;justify-content:flex-end;align-items:center;gap:8px;width:100%;max-width:1400px}.actionbar a,.actionbar button{color:var(--navy);background:#fff;border:1px solid #d6dde5;border-radius:8px;padding:8px 12px;text-decoration:none;cursor:pointer;font:600 10px Poppins,Arial,sans-serif;transition:transform .14s ease,border-color .14s ease,box-shadow .14s ease}.actionbar a.emergency-link{background:var(--red);color:#fff;border-color:var(--red)}.actionbar a:hover,.actionbar button:hover{border-color:var(--gold);background:#fbfcfd;transform:translateY(-1px);box-shadow:0 4px 12px rgba(7,26,48,.08)}.actionbar a.emergency-link:hover{background:#991b1b;border-color:#991b1b;color:#fff}.actionbar a:focus-visible,.actionbar button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}#app:not(.hidden){min-height:100vh}.v2-loading{display:none!important}
+</style>
+<script>document.addEventListener('DOMContentLoaded',function(){document.querySelectorAll('[data-app-version]').forEach(function(el){el.textContent=window.SECUREOPS_APP_VERSION||'';});});</script>
+</head>
+<body>
+<section id="login" class="login hidden"><div class="login-card">
+<div class="logo-text" aria-label="SECUREOPS">SECUREOPS</div>
+<div class="brand">SECUREOPS<small>SECURITY ADMINISTRATION CONSOLE<br><span class="app-version">ks.v.001</span></small></div>
+<h1>SECUREOPS Admin Sign In</h1><p>Authorized SECUREOPS administrators only</p>
+<form id="loginForm"><div class="field"><label>Email</label><input id="email" type="email" autocomplete="username" required></div><div class="field"><label>Password</label><input id="password" type="password" autocomplete="current-password" required></div><button id="loginBtn" class="login-btn" type="submit">SIGN IN</button><a class="back-form" href="../">← Back to Form</a><div id="loginError" class="error"></div></form>
+</div></section>
+<section id="app" class="hidden"><header class="top"><div class="top-title">SECUREOPS<small>SECURITY ADMIN CONSOLE<br><span class="app-version">ks.v.001</span></small></div><div id="propertyBrand"><div class="top-logo-text" aria-label="SECUREOPS">SECUREOPS</div></div><div class="user"><div class="user-info"><b id="userName">Admin</b><small id="userRole">—</small></div></div></header><div class="actionbar"><div class="actionbar-inner"><a class="emergency-link" href="../emergency/">Emergency</a><button id="logout">Sign Out</button></div></div><div id="v2Boot" class="v2-loading">Loading Security Admin Console…</div></section>
+<script>
+const SUPABASE_URL=window.SECUREOPS_CONFIG.SUPABASE_URL;
+const SUPABASE_PUBLISHABLE_KEY=window.SECUREOPS_CONFIG.SUPABASE_PUBLISHABLE_KEY;
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'sb-hmqgmusellcetakoalva-auth-token'}});
+const API=SUPABASE_URL+'/functions/v1/admin-console-api';
+async function profile(session){const r=await fetch(API+'?action=summary',{headers:{apikey:SUPABASE_PUBLISHABLE_KEY,Authorization:'Bearer '+session.access_token}});const j=await r.json();if(!r.ok)throw Error(j.error||'Unable to load admin profile');document.getElementById('userName').textContent=j.profile?.full_name||session.user.email;document.getElementById('userRole').textContent=j.profile?.role||'ADMIN';window.HIKJAdminRole=String(j.profile?.role||'').toUpperCase();window.HIKJPropertyBranding=j.branding||null;applyPropertyBranding(j.branding)}
+function applyPropertyBranding(b){
+ const wrap=document.getElementById('propertyBrand');if(!wrap)return;
+ const url=String(b?.logo_url||'').trim();
+ if(url){wrap.innerHTML='<img class="top-logo" alt="" title="">';const img=wrap.querySelector('img');img.src=url;img.alt=b?.property_name||'Property Logo';img.title=b?.property_name||'Property Logo';img.onerror=()=>{wrap.innerHTML='<div class="top-logo-text" aria-label="SECUREOPS">SECUREOPS</div>'};}
+ else wrap.innerHTML='<div class="top-logo-text" aria-label="SECUREOPS">SECUREOPS</div>';
+}
+async function loadPublicBranding(){
+ try{
+  const r=await fetch(SUPABASE_URL+'/functions/v1/visitor-submit',{headers:{apikey:SUPABASE_PUBLISHABLE_KEY}});
+  const j=await r.json();const b=j.branding,url=String(b?.logo_url||'').trim();
+  if(!url)return;
+  const logo=document.querySelector('#login .logo-text');
+  if(logo){const img=document.createElement('img');img.className='logo';img.alt=b?.property_name||'Property Logo';img.src=url;img.onerror=()=>img.remove();logo.replaceWith(img);}
+  const brand=document.querySelector('#login .brand');
+  if(brand&&b?.property_name)brand.innerHTML=escBrand(b.property_name)+'<small>SECURITY ADMIN CONSOLE<br><span class="app-version" data-app-version>ks.v.001</span></small>';
+ }catch(e){}
+}
+function escBrand(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+loadPublicBranding();
+function showLogin(message=''){document.getElementById('app').classList.add('hidden');document.getElementById('login').classList.remove('hidden');document.getElementById('loginError').textContent=message}
+async function enter(session){await profile(session);document.getElementById('login').classList.add('hidden');document.getElementById('app').classList.remove('hidden');window.dispatchEvent(new CustomEvent('hikj-admin-ready',{detail:{session}}));if(window.HIKJAdminV2Build)window.HIKJAdminV2Build()}
+async function initAuth(){const {data,error}=await sb.auth.getSession();if(error||!data.session){showLogin(error?.message||'Please sign in to continue');return}try{await enter(data.session)}catch(e){console.error('Admin bootstrap failed:',e);showLogin('Session could not be validated. Please sign in again.')}}
+document.getElementById('loginForm').addEventListener('submit',async ev=>{ev.preventDefault();const b=document.getElementById('loginBtn'),err=document.getElementById('loginError');b.disabled=true;b.textContent='SIGNING IN…';err.textContent='';try{const {data,error}=await sb.auth.signInWithPassword({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value});if(error)throw error;if(!data.session)throw Error('No authenticated session returned');await enter(data.session)}catch(e){showLogin(e.message||String(e))}finally{b.disabled=false;b.textContent='SIGN IN'}});
+document.getElementById('logout').onclick=async()=>{await sb.auth.signOut();showLogin('Signed out successfully')};
+sb.auth.onAuthStateChange((event,s)=>{if(event==='SIGNED_OUT')showLogin('Your session has ended. Please sign in again');else if(event==='SIGNED_IN'&&s)setTimeout(()=>enter(s).catch(e=>showLogin('Session could not be validated. Please sign in again.')),0)});
+initAuth();
+</script>
+<script src="admin-console-v2.js?v=27"></script>
+<style id="kempinski-display-font">
+/* Luxury editorial display typography inspired by the Kempinski reference */
+.a-head h1,
+.a-ph h2,
+.login-card h1 {
+  font-family:Poppins,Arial,sans-serif !important;
+  font-optical-sizing:auto;
+  letter-spacing:-0.015em;
+}
+.a-head h1 {
+  font-weight:500 !important;
+  font-size:28px !important;
+  line-height:1.12 !important;
+}
+.a-ph h2 {
+  font-weight:500 !important;
+  letter-spacing:-0.01em;
+}
+</style>
+<script src="visitor-detail-popup.js?v=3"></script>
+<script src="settings.js?v=8"></script><style id="mobile-header-fix">
+@media (max-width:760px){
+  .top{
+    height:72px;
+    min-height:72px;
+    padding:0 12px;
+    gap:10px;
+    position:sticky;
+    overflow:hidden;
+    box-sizing:border-box;
+  }
+  .top-logo-text,.top-logo{display:none!important}
+  .top-title{
+    position:static;
+    flex:1 1 60%;
+    width:auto;
+    min-width:0;
+    max-width:62%;
+    font-size:13px;
+    line-height:1.15;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .top-title small{
+    font-size:7px;
+    letter-spacing:.7px;
+    margin-top:4px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .user{
+    flex:0 1 38%;
+    min-width:0;
+    max-width:38%;
+    gap:0;
+    margin-left:auto;
+    justify-content:flex-end;
+  }
+  .user-info{
+    width:100%;
+    max-width:100%;
+    font-size:10px;
+    line-height:1.15;
+    overflow:hidden;
+    text-align:right;
+  }
+  .user-info b{
+    display:block;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .user-info small{display:none}
+  .actionbar{height:46px;padding:0 12px;top:72px}
+  .actionbar a,.actionbar button{padding:7px 9px;font-size:9px}
+}
+@media (max-width:380px){
+  .top{padding:0 9px;gap:7px}
+  .top-title{font-size:11px;max-width:60%}
+  .top-title small{font-size:6px}
+  .user{max-width:40%;flex-basis:40%}
+  .user-info{font-size:9px}
+}
+@media (max-width:380px){
+  .top{
+    padding:0 9px;
+  }
+  .top-title{
+    font-size:12px;
+  }
+  .top-title small{
+    font-size:6.5px;
+  }
+  .user-info{
+    max-width:58px;
+  }
+  .logout{
+    padding:7px 8px;
+    font-size:8px;
+  }
+}
+</style>
+</body></html>
