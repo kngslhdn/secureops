@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SECUREOPS | Security Operations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#071a30;--gold:#d9a441;--gold2:#f0c66b;--white:#fff;--line:rgba(185,213,238,.25);--glass:rgba(12,39,67,.72);--danger:#ff9d9d}*{box-sizing:border-box;font-family:Poppins,Arial,sans-serif}html{scroll-behavior:smooth}body{margin:0;min-height:100vh;color:var(--white);background:radial-gradient(circle at 50% 8%,#163d66 0,#0a2747 34%,#06192e 70%,#031120 100%);overflow-x:hidden}body:before{content:"";position:fixed;inset:0;pointer-events:none;background:linear-gradient(115deg,rgba(255,255,255,.025),transparent 35%,rgba(217,164,65,.035) 70%,transparent);box-shadow:inset 0 0 180px rgba(0,0,0,.3)}.shell{width:min(1180px,calc(100% - 36px));margin:auto;padding:28px 0 42px}.brand{text-align:center;margin-bottom:18px}.subtitle{margin-top:6px;font-size:.88rem;font-weight:500;letter-spacing:.4px;color:rgba(255,255,255,.78)}.brand-logo-text{display:flex;align-items:center;justify-content:center;width:120px;height:74px;margin:0 auto 14px;color:#f0c66b;font-size:28px;font-weight:700;letter-spacing:4px;text-shadow:0 2px 12px rgba(0,0,0,.28)}.brand-logo{display:block;width:120px;height:auto;max-height:120px;object-fit:contain;margin:0 auto 14px;opacity:.98}.brand-line{width:70px;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:0 auto 17px}.title{text-align:center;margin:0;font-size:28px;font-weight:700;letter-spacing:-1px}.security{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:7px;color:var(--gold2);font-size:.82rem;font-weight:600;letter-spacing:7px}.security:before,.security:after{content:"";height:1px;width:92px;background:linear-gradient(90deg,transparent,var(--gold))}.security:after{background:linear-gradient(90deg,var(--gold),transparent)}.choices{display:grid;grid-template-columns:repeat(6,158px);gap:8px;width:max-content;max-width:100%;margin:34px auto 0}.choice{width:158px;height:189px;min-height:189px;justify-self:center;display:flex;flex-direction:column;align-items:center;border:1px solid rgba(128,174,214,.38);border-radius:18px;background:linear-gradient(145deg,rgba(27,67,106,.62),rgba(6,31,56,.82));color:#fff;padding:17px 14px 12px;text-align:center;cursor:pointer;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;box-shadow:inset 0 1px rgba(255,255,255,.05)}.choice:hover,.choice[aria-pressed="true"]{transform:translateY(-5px);border-color:rgba(240,198,107,.72);box-shadow:0 16px 35px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.08)}.choice-icon{width:58px;height:58px;min-width:58px;min-height:58px;flex:0 0 58px;aspect-ratio:1/1;box-sizing:border-box;margin:0 auto 10px;border:1px solid rgba(210,228,245,.34);border-radius:50%;display:grid;place-items:center;color:var(--gold2);background:rgba(3,21,38,.5);overflow:hidden}.choice-icon svg{width:31px;height:31px;max-width:31px;max-height:31px;display:block;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.choice strong{display:flex;align-items:center;justify-content:center;width:100%;min-height:46px;font-size:1rem;line-height:1.35}.choice .arrow{display:flex;align-items:center;justify-content:center;width:100%;height:22px;margin-top:auto;color:var(--gold2);font-size:1.25rem;line-height:1}.panel{display:none;max-width:650px;margin:30px auto 0;overflow:hidden;border-radius:18px;background:var(--glass);border:1px solid var(--line);box-shadow:0 24px 60px rgba(0,0,0,.38);backdrop-filter:blur(12px)}.panel.visible{display:block;animation:panelIn .25s ease}@keyframes panelIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}.panel-header{padding:23px;border-bottom:1px solid var(--line)}.panel-header h2{margin:0;font-size:.94rem}.panel-header p{margin:6px 0 0;opacity:.75;font-size:.82rem}form{padding:23px}.field{margin-bottom:18px}label{display:block;margin-bottom:6px;font-size:.82rem;font-weight:500}input,select,textarea{width:100%;border:0;border-bottom:2px solid var(--line);outline:0;padding:11px 5px;background:transparent;color:#fff;font-size:.92rem}select option{color:#111}textarea{min-height:88px;resize:vertical}input:focus,select:focus,textarea:focus{border-color:var(--gold2)}input[readonly]{opacity:.78}input[type=file]{border:1px dashed var(--line);border-radius:10px;padding:10px}.submit{width:100%;border:0;border-radius:12px;padding:14px;background:linear-gradient(135deg,#d49a2c,#efc363);color:#071a30;font-weight:700;font-size:.92rem;cursor:pointer}.submit:disabled{opacity:.55;cursor:wait}.notice{padding:0 23px 20px;color:#c7f9d8;font-size:.8rem;min-height:24px;line-height:1.5}.notice.error{color:var(--danger)}.success{padding:27px 23px 23px}.success h3{margin:0 0 8px;font-size:1.15rem}.success p{margin:5px 0;opacity:.82;font-size:.84rem}.success-id{margin:16px 0;padding:12px;border:1px solid var(--line);border-radius:10px;text-align:center;font-weight:600;letter-spacing:.03em}.actions{display:grid;grid-template-columns:1fr;gap:10px;margin-top:18px}.action{display:inline-flex;justify-content:center;align-items:center;min-height:48px;padding:12px 14px;border-radius:12px;text-decoration:none;font-weight:700;font-size:.84rem;cursor:pointer;border:1px solid var(--line)}.action.whatsapp{background:#25d366;color:#fff;border-color:transparent}.action.home{background:transparent;color:#fff}.signin{display:flex;align-items:center;justify-content:center;width:min(220px,100%);min-height:48px;margin:28px auto 0;padding:14px 24px;border:0;border-radius:12px;background:linear-gradient(135deg,#d49a2c,#efc363);color:#071a30;font-weight:700;font-size:.92rem;text-decoration:none;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.18);transition:transform .2s ease,box-shadow .2s ease}.signin:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.25)}.footer{margin:48px auto 0;text-align:center;color:rgba(255,255,255,.62);font-size:.68rem;letter-spacing:5px}.footer:before,.footer:after{content:"";display:inline-block;width:85px;height:1px;background:rgba(255,255,255,.28);vertical-align:middle;margin:0 18px}.privacy{margin:17px auto 0;text-align:center;color:rgba(255,255,255,.38);font-size:.65rem}
+@media (min-width:901px) and (max-height:850px){
+  html,body{height:100%;overflow-x:hidden}
+  body{overflow-y:hidden}
+  body:has(.panel.visible){overflow-y:auto}
+  .shell{height:100vh;min-height:100vh;padding:10px 0 10px;justify-content:center}
+  .brand{margin-bottom:8px}
+  .brand-logo{width:88px;max-height:88px;margin-bottom:7px}.brand-logo-text{width:88px;height:52px;margin-bottom:7px;font-size:21px;letter-spacing:3px}
+  .title{font-size:25px;line-height:1.15}
+  .subtitle{margin-top:4px;font-size:.82rem}
+  .choices{margin-top:17px}
+  .choice{height:158px;min-height:158px;padding:14px 12px 10px}
+  .choice-icon{width:52px;height:52px;min-width:52px;flex-basis:52px;margin-bottom:8px}
+  .choice-icon svg{width:28px;height:28px}
+  .choice strong{min-height:42px;font-size:.94rem;line-height:1.28}
+  .choice .arrow{height:18px;font-size:1.1rem}
+  .signin{min-height:44px;margin-top:17px;padding:11px 22px;font-size:.86rem}
+  .footer{margin-top:20px}
+  .privacy{margin-top:9px}
+}@media(max-width:900px){.choices{grid-template-columns:repeat(3,158px);width:490px;max-width:100%;justify-content:center}.choice:last-child{grid-column:auto;max-width:none;width:158px;justify-self:center}}@media(max-width:520px){.shell{width:min(100% - 20px,1180px);padding-top:22px}.brand-logo{width:92px;max-height:92px}.brand-logo-text{width:92px;height:58px;font-size:22px;letter-spacing:3px}.title{font-size:24px;line-height:1.2}.choices{grid-template-columns:1fr;gap:11px;width:100%;margin-top:27px}.choice,.choice:last-child{width:100%;height:116px;min-height:116px;max-width:none;grid-column:auto;justify-self:stretch;flex-direction:row;align-items:center;justify-content:flex-start;padding:14px 18px;border-radius:18px;text-align:left}.choice-icon{width:58px;height:58px;min-width:58px;flex:0 0 58px;margin:0 17px 0 0}.choice strong{width:auto;min-height:0;flex:1;justify-content:flex-start;font-size:.98rem;line-height:1.3}.choice .arrow{width:auto;height:auto;margin:0 0 0 12px;font-size:1.25rem}.security{letter-spacing:5px}.security:before,.security:after{width:45px}.footer{letter-spacing:3px}.footer:before,.footer:after{width:35px;margin:0 9px}.actions{grid-template-columns:1fr}.signin{width:min(220px,100%);margin-top:24px}}
+</style>
+<style id="perfect-form-icon-circle">
+/* Force every service icon container to remain geometrically circular at every breakpoint. */
+.choice-icon{
+  display:grid !important;
+  inline-size:56px !important;
+  block-size:56px !important;
+  min-inline-size:56px !important;
+  max-inline-size:56px !important;
+  min-block-size:56px !important;
+  max-block-size:56px !important;
+  width:56px !important;
+  height:56px !important;
+  flex:0 0 56px !important;
+  aspect-ratio:1 / 1 !important;
+  border-radius:50% !important;
+  padding:0 !important;
+  margin:0 auto 10px !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+}
+.choice-icon svg{
+  display:block !important;
+  width:30px !important;
+  height:30px !important;
+  max-width:30px !important;
+  max-height:30px !important;
+  flex:none !important;
+}
+@media (min-width:901px) and (max-height:850px){
+  .choice-icon{
+    inline-size:56px !important;
+    block-size:56px !important;
+    min-inline-size:56px !important;
+    min-block-size:56px !important;
+    width:56px !important;
+    height:56px !important;
+    flex:0 0 56px !important;
+    margin-bottom:8px !important;
+  }
+  .choice-icon svg{
+    width:28px !important;
+    height:28px !important;
+  }
+}
+@media (max-width:520px){
+  .choice-icon{
+    inline-size:58px !important;
+    block-size:58px !important;
+    min-inline-size:58px !important;
+    min-block-size:58px !important;
+    width:58px !important;
+    height:58px !important;
+    flex:0 0 58px !important;
+    margin:0 17px 0 0 !important;
+  }
+}
+</style></head>
+<body>
+<main class="shell">
+<header class="brand">
+  <div id="propertyBrandLogo" class="brand-logo-text" aria-label="SECUREOPS">SECUREOPS</div>
+  <h1 class="title">SECUREOPS</h1>
+  <div class="subtitle">Security Operations Platform • HIKJ Property</div>
+</header>
+<section id="choices" class="choices" aria-label="Security services"></section>
+<section id="panel" class="panel" aria-live="polite"></section>
+<a class="action home signin" href="admin/">ADMIN CONSOLE</a>
+<div class="footer">SECURE&nbsp;&nbsp;•&nbsp;&nbsp;SAFE&nbsp;&nbsp;•&nbsp;&nbsp;WELCOMING</div>
+<p class="privacy">SECUREOPS • ks.v.001</p>
+</main>
+<script src="assets/secureops-config.js"></script>
+<script>
+async function loadPropertyBranding(){
+ try{
+  const base=window.SECUREOPS_CONFIG?.SUPABASE_FUNCTIONS_URL||'';
+  const r=await fetch(base+'/visitor-submit',{headers:{apikey:window.SECUREOPS_CONFIG?.SUPABASE_PUBLISHABLE_KEY||''}});
+  const j=await r.json();
+  const b=j.branding,url=String(b?.logo_url||'').trim(),el=document.getElementById('propertyBrandLogo');
+  if(!el)return;
+  if(url){
+   const img=document.createElement('img');img.className='brand-logo';img.alt=b?.property_name||'Property Logo';img.src=url;
+   img.onerror=()=>{img.replaceWith(document.createTextNode('SECUREOPS'));};
+   el.replaceWith(img);
+  }
+ }catch(e){/* fallback SECUREOPS */}
+}
+loadPropertyBranding();
+</script>
+<script>
+const SUPABASE_FUNCTION_URL=(window.SECUREOPS_CONFIG?.SUPABASE_FUNCTIONS_URL||window.location.origin+'/functions/v1')+'/visitor-submit';
+const locations=['Receiving','Purchasing','Grand Ball Room','Bali Room','Ramayana Terrace','Heritage 1','Heritage 2','Cendana + Eboni','Palapi + Jati','Damar + Angsana','Mahoni + Ulin','Business Center','Signature Restaurant','Paulaner Restaurant','Oku Restaurant','Executive Lounge','President Suite Room 832','Room','Other'];
+const icons={entry:'<svg viewBox="0 0 48 48"><circle cx="24" cy="14" r="7"/><path d="M11 38c1.5-8 6.2-12 13-12s11.5 4 13 12"/></svg>',exit:'<svg viewBox="0 0 48 48"><path d="M28 9H13v30h15"/><path d="M22 24h17M32 17l7 7-7 7"/></svg>',key:'<svg viewBox="0 0 48 48"><circle cx="16" cy="31" r="8"/><path d="M22 25 37 10M31 16l5 5M27 20l5 5"/></svg>',return:'<svg viewBox="0 0 48 48"><circle cx="16" cy="18" r="6.5"/><path d="M21 23 36 8M29 15l5 5M25 19l5 5"/><path d="M8 30c1 7 7 11 14 11 8 0 14-5 16-12"/><path d="M38 29l-1 6-6-1"/></svg>',package:'<svg viewBox="0 0 48 48"><path d="M9 15l15-7 15 7-15 7zM9 15v18l15 8 15-8V15M24 22v19M16 11l15 7"/></svg>'};
+const forms={
+masuk:{title:'Visitor Entry Registration',description:'Please complete the information before entering Hotel Indonesia Kempinski Jakarta',type:'visitor_entry',icon:'entry',fields:[['nama','Name'],['phone','Mobile Phone Number','tel'],['perusahaan','Company / Vendor Name'],['kategori','Category','select',['Contractor','Supplier','Visitor','Part-time']],['lokasi','Work Location','select',locations],['tujuan','Purpose','textarea'],['security','Security Officer Name'],['pass','Pass / Vest Number'],['datetime','Entry Date & Time','datetime']]},
+keluar:{title:'Visitor Exit Registration',description:'Enter the Pass / Vest Number and Security Officer Name. Exit date and time are recorded automatically',type:'visitor_exit',icon:'exit',fields:[['pass','Pass / Vest Number'],['security','Security Officer Name']]},
+pinjamKunci:{title:'Key Borrowing',description:'Complete this form before borrowing keys',type:'key_borrowing',icon:'key',fields:[['borrowerName','Borrower Name'],['department','Department'],['keyNumber','Key Number'],['description','Key Description','textarea'],['qty','Quantity of Keys','number'],['security','Issued By Security Officer'],['datetime','Date & Time Borrowed','datetime'],['expectedReturn','Expected Return','expected-datetime']]},
+kembaliKunci:{title:'Key Return',description:'Enter the key details. The system verifies the key against the outstanding borrowing and prevents returning more than the outstanding quantity',type:'key_return',icon:'return',fields:[['returnName','Returned By'],['department','Department'],['keyNumber','Key Number'],['qty','Quantity of Keys','number'],['security','Received By Security Officer'],['datetime','Date & Time Returned','datetime']]},
+paket:{title:'Package Registration',description:'Record the package delivery and item photo',type:'package_registration',icon:'package',upload:true,fields:[['namaPengantar','Courier Name'],['telepon','Phone Number','tel'],['perusahaan','Expedition Company'],['jenisBarang','Item Type','select',['LETTER','PACKAGE']],['jumlah','Number of Items','number'],['tujuan','Recipient Type','select',['STAFF','GUEST']],['namaTujuan','Recipient Name'],['security','Security Officer Name'],['foto','Item Photo','file']]}};
+const DEVICE_LANG=/^id(?:-|$)/i.test(navigator.languages?.[0]||navigator.language||'en')?'id':'en';const LANG={en:{title:'VISITOR MANAGEMENT',admin:'ADMIN CONSOLE',footer:'SECURE  •  SAFE  •  WELCOMING',privacy:'SECUREOPS • ks.v.001',select:'Select',submit:'SUBMIT'},id:{title:'MANAJEMEN PENGUNJUNG',admin:'KONSOL ADMIN',footer:'AMAN  •  TERJAGA  •  RAMAH',privacy:'SECUREOPS • ks.v.001',select:'Pilih',submit:'KIRIM'}};const L=LANG[DEVICE_LANG];const FORM_I18N={masuk:{title:{en:'Visitor Entry Registration',id:'Registrasi Masuk Pengunjung'},description:{en:'Please complete the information before entering Hotel Indonesia Kempinski Jakarta',id:'Silakan lengkapi informasi sebelum memasuki Hotel Indonesia Kempinski Jakarta'}},keluar:{title:{en:'Visitor Exit Registration',id:'Registrasi Keluar Pengunjung'},description:{en:'Enter the Pass / Vest Number and Security Officer Name. Exit date and time are recorded automatically',id:'Masukkan Nomor Pass / Vest dan Nama Petugas Keamanan. Tanggal dan waktu keluar dicatat otomatis'}},pinjamKunci:{title:{en:'Key Borrowing',id:'Peminjaman Kunci'},description:{en:'Complete this form before borrowing keys',id:'Lengkapi formulir ini sebelum meminjam kunci'}},kembaliKunci:{title:{en:'Key Return',id:'Pengembalian Kunci'},description:{en:'Enter the key details. The system verifies the key against the outstanding borrowing and prevents returning more than the outstanding quantity',id:'Masukkan detail kunci. Sistem memverifikasi kunci berdasarkan peminjaman yang masih aktif dan mencegah pengembalian melebihi jumlah yang dipinjam'}},paket:{title:{en:'Package Registration',id:'Registrasi Paket'},description:{en:'Record the package delivery and item photo',id:'Catat pengiriman paket dan foto barang'}}};const FIELD_I18N={
+nama:{en:'Name',id:'Nama'},
+phone:{en:'Mobile Phone Number',id:'Nomor HP'},
+perusahaan:{en:'Company / Vendor Name',id:'Nama Perusahaan / Vendor'},
+kategori:{en:'Category',id:'Kategori'},
+lokasi:{en:'Work Location',id:'Lokasi Kerja'},
+tujuan:{en:'Purpose',id:'Keperluan'},
+security:{en:'Security Officer Name',id:'Nama Petugas Keamanan'},
+pass:{en:'Pass / Vest Number',id:'Nomor Pass / Vest'},
+datetime:{en:'Entry Date & Time',id:'Tanggal & Waktu Masuk'},
+borrowerName:{en:'Borrower Name',id:'Nama Peminjam'},
+department:{en:'Department',id:'Departemen'},
+keyNumber:{en:'Key Number',id:'Nomor Kunci'},
+description:{en:'Key Description',id:'Deskripsi Kunci'},
+qty:{en:'Quantity of Keys',id:'Jumlah Kunci'},
+expectedReturn:{en:'Expected Return',id:'Rencana Pengembalian'},
+returnName:{en:'Returned By',id:'Dikembalikan Oleh'},
+namaPengantar:{en:'Courier Name',id:'Nama Kurir'},
+telepon:{en:'Phone Number',id:'Nomor Telepon'},
+perusahaanEkspedisi:{en:'Expedition Company',id:'Perusahaan Ekspedisi'},
+jenisBarang:{en:'Item Type',id:'Jenis Barang'},
+jumlah:{en:'Number of Items',id:'Jumlah Barang'},
+namaTujuan:{en:'Recipient Name',id:'Nama Penerima'},
+foto:{en:'Item Photo',id:'Foto Barang'}
+};const OPT_I18N={Contractor:'Kontraktor',Supplier:'Supplier',Visitor:'Pengunjung','Part-time':'Paruh Waktu',LETTER:'SURAT',PACKAGE:'PAKET',STAFF:'STAF',GUEST:'TAMU'};document.documentElement.lang=DEVICE_LANG;document.title=DEVICE_LANG==='id'?'SECUREOPS | Operasional Keamanan':'SECUREOPS | Security Operations';document.querySelector('.title').textContent=L.title;document.querySelector('.signin').textContent=L.admin;document.querySelector('.footer').textContent=L.footer;document.querySelector('.privacy').textContent=L.privacy;const FORM_FIELD_I18N={
+pinjamKunci:{security:{en:'Issued By Security Officer',id:'Diserahkan Oleh Petugas Security'},datetime:{en:'Date & Time Borrowed',id:'Tanggal & Waktu Peminjaman'}} ,
+kembaliKunci:{security:{en:'Received By Security Officer',id:'Diterima Oleh Petugas Security'},datetime:{en:'Date & Time Returned',id:'Tanggal & Waktu Pengembalian'}},
+paket:{perusahaan:{en:'Expedition Company',id:'Perusahaan Ekspedisi'},security:{en:'Security Officer Name',id:'Nama Petugas Keamanan'}}
+};
+Object.keys(forms).forEach(k=>{
+ forms[k].title=FORM_I18N[k].title[DEVICE_LANG];
+ forms[k].description=FORM_I18N[k].description[DEVICE_LANG];
+ forms[k].fields=forms[k].fields.map(f=>[f[0],FORM_FIELD_I18N[k]?.[f[0]]?.[DEVICE_LANG]||FIELD_I18N[f[0]]?.[DEVICE_LANG]||f[1],f[2],f[3]]);
+});const choiceRoot=document.querySelector('#choices'),panel=document.querySelector('#panel');
+let lastSubmission=null;
+let keyAssetLookupTimer=null;
+let keyAssetLookupSeq=0;
+const dateText=()=>{const n=new Date();return n.toLocaleDateString('en-GB')+' '+n.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})};
+function generateUUID(){
+  if(typeof crypto?.randomUUID==='function')return crypto.randomUUID();
+  if(typeof crypto?.getRandomValues==='function'){
+    const bytes=new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    bytes[6]=(bytes[6]&0x0f)|0x40;
+    bytes[8]=(bytes[8]&0x3f)|0x80;
+    return Array.from(bytes).map((b,i)=>[4,6,8,10].includes(i)?'-'+b.toString(16).padStart(2,'0'):b.toString(16).padStart(2,'0')).join('').replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/,'$1-$2-$3-$4-$5');
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0,v=c==='x'?r:(r&0x3)|0x8;return v.toString(16)});
+}
+const escapeHtml=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#039;');
+function futureDateTimeValue(){const d=new Date(Date.now()+2*60*60*1000),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes())}
+function inputMarkup([name,label,type='text',options=[]]){if(type==='textarea')return `<div class="field"><label for="${name}">${label}</label><textarea id="${name}" name="${name}" required></textarea></div>`;if(type==='select')return `<div class="field"><label for="${name}">${label}</label><select id="${name}" name="${name}" required><option value="">${L.select}</option>${options.map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(DEVICE_LANG==='id'?(OPT_I18N[x]||x):x)}</option>`).join('')}</select></div>`;if(type==='datetime')return `<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" readonly value="${dateText()}"></div>`;if(type==='future-datetime')return `<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" type="datetime-local" min="${futureDateTimeValue()}" value="${futureDateTimeValue()}" required></div>`;if(type==='expected-datetime')return `<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" readonly value="${new Date(Date.now()+24*60*60*1000).toLocaleDateString('en-GB')+' '+new Date(Date.now()+24*60*60*1000).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}"></div>`;if(type==='file')return `<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" type="file" accept="image/jpeg,image/png,image/webp" required></div>`;return `<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" type="${type}" min="1" required></div>`}
+Object.entries(forms).forEach(([key,form])=>choiceRoot.insertAdjacentHTML('beforeend',`<button type="button" class="choice" data-form="${key}" aria-pressed="false"><span class="choice-icon">${icons[form.icon]}</span><strong>${form.title}</strong><span class="arrow">→</span></button>`));
+choiceRoot.addEventListener('click',e=>{const b=e.target.closest('[data-form]');if(b)showForm(b.dataset.form)});
+function formatMessage(title,data){const lines=['SECUREOPS VISITOR MANAGEMENT','',`NEW ${title.toUpperCase()}`,''];for(const [key,value] of data.entries()){if(key==='foto')continue;const field=document.querySelector(`[name="${CSS.escape(key)}"]`);lines.push(`${field?.closest('.field')?.querySelector('label')?.textContent||key}: ${value}`)}if(lastSubmission?.submissionId)lines.push('',`Submission ID: ${lastSubmission.submissionId}`);return lines.join('\n')}
+async function readFile(file){if(!file)return '';return await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)})}
+async function submitToSupabase(form,data){const payload=Object.fromEntries(data.entries());payload.type=form.type;payload.submission_source='public-web';payload.idempotency_key=generateUUID();if(form.upload){const file=data.get('foto');payload.foto=await readFile(file)}const r=await fetch(SUPABASE_FUNCTION_URL,{method:'POST',headers:{'Content-Type':'application/json','idempotency-key':payload.idempotency_key},body:JSON.stringify(payload)});let result=null;try{result=await r.json()}catch{}if(!r.ok||!result?.ok)throw Error(result?.error||`HTTP ${r.status}`);return result}
+function resetHome(){panel.classList.remove('visible');panel.innerHTML='';document.querySelectorAll('.choice').forEach(x=>x.setAttribute('aria-pressed','false'));window.scrollTo({top:0,behavior:'smooth'})}
+function showSuccess(key,data,result,waWindow){const form=forms[key],id=result?.submission_id||'SECUREOPS-SUBMISSION';lastSubmission={submissionId:id};if(key==='kembaliKunci'&&result?.key_return?.discrepancy){window.alert(`⚠️ DISCREPANCY QTY\nBorrowed: ${result.key_return.original_borrowed_quantity}\nReturned: ${result.key_return.total_returned}\nKey Number: ${result.key_return.key_number}`)}const waNumber=String(result?.whatsapp_number||'').replace(/[^0-9]/g,'');
+const waReady=/^62[0-9]{8,15}$/.test(waNumber);
+if(waReady){const wa=`https://wa.me/${waNumber}?text=${encodeURIComponent(formatMessage(form.title,data))}`;if(waWindow&&!waWindow.closed){waWindow.location.href=wa}else{window.open(wa,'_blank','noopener,noreferrer')}}else{if(waWindow&&!waWindow.closed)waWindow.close();window.alert(`✅ Submission successful\\n\\nSubmission ID: ${id}\\n\\nWhatsApp notification was not opened because no valid recipient is configured. Please contact Security Administration if needed.`) }resetHome()}
+async function lookupKeyAsset(keyNumber,form,notice){
+ const key=String(keyNumber||'').trim();
+ const description=document.querySelector('#description');
+ const qty=document.querySelector('#qty');
+ if(description)description.value='';
+ if(qty)qty.value='';
+ if(form)form.dataset.keyAssetValid='false';
+ if(!key){if(notice)notice.textContent=DEVICE_LANG==='id'?'Masukkan Nomor Kunci untuk memuat Deskripsi Kunci dan Jumlah':'Enter a Key Number to load Key Description and Quantity';return}
+ if(notice){notice.textContent=DEVICE_LANG==='id'?'Memeriksa aset kunci…':'Checking Key Asset…';notice.classList.remove('error')}
+ const requestId=++keyAssetLookupSeq;
+ try{
+  const r=await fetch(SUPABASE_FUNCTION_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'key_asset_lookup',key_number:key})});
+  let result=null;try{result=await r.json()}catch{}
+  if(requestId!==keyAssetLookupSeq)return;
+  if(!r.ok||!result?.ok)throw Error(result?.error||DEVICE_LANG==='id'?'Nomor Kunci tidak dapat diverifikasi':'Key Number could not be verified');
+  const asset=result.key_asset||{};
+  if(description)description.value=asset.description||'';
+  if(qty)qty.value=asset.quantity??'';
+  if(form)form.dataset.keyAssetValid='true';
+  if(notice){notice.textContent=DEVICE_LANG==='id'?'Aset kunci terverifikasi. Deskripsi dan jumlah dimuat dari Key Assets':'Key Asset verified. Description and Quantity are loaded from Key Assets';notice.classList.remove('error')}
+ }catch(err){
+  if(requestId!==keyAssetLookupSeq)return;
+  if(form)form.dataset.keyAssetValid='false';
+  if(notice){notice.textContent=err?.message||'Unable to verify Key Number';notice.classList.add('error')}
+ }
+}
+function wireKeyBorrowingLookup(form){
+ const keyInput=document.querySelector('#keyNumber');
+ const description=document.querySelector('#description');
+ const qty=document.querySelector('#qty');
+ const notice=document.querySelector('#notice');
+ if(!keyInput||!form)return;
+ if(description){description.readOnly=true;description.setAttribute('aria-readonly','true')}
+ if(qty){qty.readOnly=true;qty.setAttribute('aria-readonly','true')}
+ form.dataset.keyAssetValid='false';
+ keyInput.addEventListener('input',()=>{
+  clearTimeout(keyAssetLookupTimer);
+  ++keyAssetLookupSeq;
+  form.dataset.keyAssetValid='false';
+  if(description)description.value='';
+  if(qty)qty.value='';
+  if(notice){notice.textContent='';notice.classList.remove('error')}
+  const value=keyInput.value.trim();
+  if(!value)return;
+  keyAssetLookupTimer=setTimeout(()=>lookupKeyAsset(value,form,notice),350);
+ });
+ keyInput.addEventListener('blur',()=>{
+  clearTimeout(keyAssetLookupTimer);
+  const value=keyInput.value.trim();
+  if(value)lookupKeyAsset(value,form,notice);
+ });
+}
+function showForm(key){const form=forms[key];document.querySelectorAll('.choice').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.form===key)));panel.innerHTML=`<div class="panel-header"><h2>${form.title}</h2><p>${form.description}</p></div><form id="activeForm" novalidate>${form.fields.map(inputMarkup).join('')}<button class="submit" type="submit">${L.submit}</button></form><div class="notice" id="notice"></div>`;panel.classList.add('visible');panel.scrollIntoView({behavior:'smooth',block:'start'});const activeForm=panel.querySelector('form');activeForm.addEventListener('submit',e=>submitForm(e,key));if(key==='pinjamKunci')wireKeyBorrowingLookup(activeForm)}
+async function submitForm(e,key){e.preventDefault();const form=forms[key],el=e.currentTarget,notice=panel.querySelector('#notice');if(!el.reportValidity())return;if(key==='pinjamKunci'&&el.dataset.keyAssetValid!=='true'){notice.textContent=DEVICE_LANG==='id'?'Masukkan Nomor Kunci aktif yang valid dan tunggu Deskripsi Kunci serta Jumlah dimuat':'Please enter a valid active Key Number and wait for Key Description and Quantity to load';notice.classList.add('error');return;}const btn=el.querySelector('.submit');btn.disabled=true;notice.textContent=DEVICE_LANG==='id'?'Mengirim…':'Submitting…';notice.classList.remove('error');const data=new FormData(el);
+if(key==='kembaliKunci'){
+  const confirmed=window.confirm(
+    (DEVICE_LANG==='id'?'KONFIRMASI PENGEMBALIAN KUNCI\n\n':'CONFIRM KEY RETURN\n\n')+
+    'Key Number: '+(data.get('keyNumber')||'—')+'\n'+
+    (DEVICE_LANG==='id'?'Dikembalikan Oleh: ':'Returned By: ')+(data.get('returnName')||'—')+'\n'+
+    (DEVICE_LANG==='id'?'Departemen: ':'Department: ')+(data.get('department')||'—')+'\n'+
+    (DEVICE_LANG==='id'?'Jumlah Dikembalikan: ':'Quantity Returning: ')+(data.get('qty')||'—')+'\n'+
+    (DEVICE_LANG==='id'?'Diterima Oleh Petugas Keamanan: ':'Received By Security: ')+(data.get('security')||'—')+'\n\n'+
+    (DEVICE_LANG==='id'?'Mohon periksa jumlah kunci sebelum melakukan konfirmasi':'Please verify the quantity before confirming')
+  );
+  if(!confirmed){btn.disabled=false;notice.textContent=DEVICE_LANG==='id'?'Pengembalian dibatalkan':'Return cancelled';return}
+}
+let waWindow=null;try{waWindow=window.open('about:blank','_blank');const result=await submitToSupabase(form,data);showSuccess(key,data,result,waWindow)}catch(err){if(waWindow&&!waWindow.closed)waWindow.close();const message=err?.message||'The form could not be submitted. Please try again';notice.textContent=message;notice.classList.add('error');btn.disabled=false;if(key==='keluar'&&/Visitor not found/i.test(message)){window.alert('⚠️ WARNING\n\nNama atau Pass / Vest Number tidak ditemukan pada visitor yang masih berada di dalam hotel\n\nSilakan periksa kembali data Exit Registration');}else{window.alert(`⚠️ WARNING\n\n${message}`);}}}
+</script>
+<script src="assets/package-distribution.js"></script>
+</body>
+</html>
