@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="../app-config.js"></script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SECUREOPS Emergency Response</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../assets/secureops-config.js"></script>
+<style>
+:root{--navy:#071a30;--navy2:#102d4b;--gold:#c99a3d;--gold2:#ead7a5;--bg:#f5f6f8;--card:#fff;--line:#e4e7eb;--text:#18212b;--muted:#64748b;--red:#b91c1c;--amber:#b45309;--green:#166534;--shadow:0 1px 2px rgba(7,26,48,.025)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px Poppins,Arial,sans-serif}.hidden{display:none!important}
+.top{height:70px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:20;min-width:0;overflow:hidden}.brand{flex:0 0 250px;min-width:250px;white-space:nowrap;font-weight:700;font-size:14px;line-height:1.15;letter-spacing:0;text-transform:uppercase}.brand small{display:block;opacity:.65;font-size:9px;line-height:1.2;letter-spacing:1px;margin-top:4px;text-transform:uppercase}.top-logo-text{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#fff;font-weight:700;font-size:20px;letter-spacing:3px;white-space:nowrap}.top-logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:46px;width:auto;object-fit:contain}.top-user{flex:0 0 auto;margin-left:auto;text-align:right;line-height:1.35}.top-user b{font-size:11px}.top-user span{font-size:9px;opacity:.8;font-weight:600;letter-spacing:.3px}.actionbar{height:48px;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 2px 8px rgba(7,26,48,.035);position:sticky;top:70px;z-index:15}.actionbar-inner{max-width:1400px;margin:0 auto;height:100%;padding:8px 24px;display:flex;justify-content:flex-end;align-items:center;gap:8px}.actionbar a,.actionbar button{color:var(--navy);background:#fff;border:1px solid #d6dde5;border-radius:8px;padding:8px 12px;text-decoration:none;cursor:pointer;font:600 10px Poppins,Arial,sans-serif}.actionbar a:first-child{background:var(--navy);color:#fff;border-color:var(--navy)}.actionbar a:hover,.actionbar button:hover{border-color:var(--gold);background:#fbfcfd}.actionbar a:first-child:hover{background:var(--navy2);color:#fff}
+main{max-width:1700px;margin:0 auto;padding:28px 30px 34px}.hero{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:14px}.hero>div:first-child{position:static;padding-top:0}.security-label{display:block;position:static;height:auto;padding:0;margin:0 0 5px;background:transparent;color:#9a7a3b;font-size:9px;font-weight:700;letter-spacing:1.7px;line-height:1.2;text-transform:uppercase;clip-path:none}.security-label::before{display:none}.hero h1{font:500 28px/1.12 Poppins,Arial,sans-serif;margin:0 0 4px;color:var(--navy);letter-spacing:-.015em}.hero p{margin:0;color:var(--muted);font-size:11px}.mode{font-size:10px;font-weight:700;padding:8px 12px;border-radius:999px;background:#fff7ed;color:var(--amber);border:1px solid #fed7aa;white-space:nowrap}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(360px,.75fr);gap:13px}.card{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:var(--shadow)}.head{padding:13px 15px;border-bottom:1px solid #edf0f2;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(180deg,#fff,#fbfcfd)}.head h2{font-size:13px;margin:0;color:var(--navy)}.body{padding:17px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field.full{grid-column:1/-1}.field label{display:block;font-size:9px;font-weight:700;color:var(--muted);margin-bottom:5px}.field input,.field select,.field textarea{width:100%;border:1px solid #d6dee7;border-radius:9px;padding:10px 11px;background:#fff;font:inherit;font-size:10px;transition:border-color .15s,box-shadow .15s}.field input:focus,.field select:focus,.field textarea:focus{outline:0;border-color:#8aa0b8;box-shadow:0 0 0 3px rgba(7,26,48,.07)}.field textarea{min-height:110px;resize:vertical}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.btn{border:1px solid #d6dde5;background:#fff;color:var(--navy);border-radius:8px;padding:8px 12px;font-weight:700;font-size:10px;line-height:1.4;cursor:pointer;transition:transform .14s ease,background .14s ease,border-color .14s ease,box-shadow .14s ease,color .14s ease;box-shadow:0 1px 2px rgba(7,26,48,.04)}.btn:hover{border-color:var(--gold);background:#fffaf0;color:var(--navy);transform:translateY(-1px);box-shadow:0 4px 12px rgba(7,26,48,.10)}.btn:active{transform:translateY(0);box-shadow:0 1px 3px rgba(7,26,48,.08)}.btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}.btn.primary{background:var(--navy);color:#fff;border-color:var(--navy);box-shadow:0 2px 5px rgba(7,26,48,.12)}.btn.primary:hover{background:var(--navy2);border-color:var(--gold);color:#fff;box-shadow:0 5px 14px rgba(7,26,48,.16)}.btn.danger{background:#991b1b;color:#fff;border-color:#991b1b}.btn:disabled{opacity:.5;cursor:not-allowed}
+.sev{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.sev label{padding:9px;border:1px solid #dfe4e9;border-radius:8px;text-align:center;font-size:9px;font-weight:700;cursor:pointer}.sev input{display:none}.sev input:checked+span{display:block}.sev label:has(input:checked){border-color:var(--navy);box-shadow:0 0 0 1px var(--navy) inset}
+.recips{max-height:260px;overflow:auto;border:1px solid #e4e9ef;border-radius:10px;padding:8px;background:#fbfcfd}.recip{display:flex;gap:8px;padding:8px;border-bottom:1px solid #edf1f4;font-size:10px;align-items:flex-start}.recip:last-child{border-bottom:0}.recip small{display:block;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}.stat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 15px;box-shadow:0 4px 14px rgba(7,26,48,.035)}.stat b{display:block;font-size:25px;color:var(--navy)}.stat span{font-size:9px;color:var(--muted)}
+.table{overflow:auto}.table table{width:100%;border-collapse:collapse}.table th,.table td{padding:10px 9px;border-bottom:1px solid #edf0f2;text-align:left;font-size:10px}.table th{text-transform:uppercase;color:var(--muted);font-size:8px}.badge{padding:3px 7px;border-radius:999px;font-size:8px;font-weight:700}.urgent{background:#fee2e2;color:#991b1b}.high{background:#ffedd5;color:#9a3412}.normal{background:#fef9c3;color:#854d0e}.info{background:#e2e8f0;color:#475569}.active{background:#dcfce7;color:#166534}.draft{background:#f1f5f9;color:#64748b}
+.notice{margin-top:10px;font-size:10px;color:var(--green);min-height:16px}.notice.err{color:#991b1b}.login{display:none!important;min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at 50% 0,#173c64,#071a30 68%)}
+.login-card{width:min(430px,100%);background:#fff;border-radius:18px;padding:30px;box-shadow:0 25px 80px #0007}
+.secureops-logo{width:120px;height:76px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:var(--navy);font-weight:700;font-size:24px;letter-spacing:3px}.login-logo{width:120px;height:76px;object-fit:contain;display:block;margin:0 auto 12px;filter:brightness(0)}
+.login-brand{text-align:center;color:var(--navy);font-weight:700;font-size:20px}
+.login-brand small{display:block;color:var(--muted);font-weight:400;font-size:10px;margin-top:5px;letter-spacing:1px}
+.login-card h1{font-size:22px;margin:28px 0 6px}
+.login-card p{color:var(--muted);font-size:12px;margin:0 0 22px}
+.login-card .field{margin:15px 0}
+.login-card .field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}
+.login-card .field input{width:100%;padding:12px;border:1px solid var(--line);border-radius:9px;outline:none}
+.login-btn{width:100%;padding:13px;border:1px solid var(--navy);border-radius:9px;background:var(--navy);color:#fff;font-weight:700;cursor:pointer;transition:transform .14s ease,background .14s ease,border-color .14s ease,box-shadow .14s ease;box-shadow:0 2px 5px rgba(7,26,48,.12)}
+.login-btn:hover{background:#102d4b;border-color:#c99a3d;transform:translateY(-1px);box-shadow:0 5px 14px rgba(7,26,48,.16)}
+.login-btn:active{transform:translateY(0);box-shadow:0 1px 3px rgba(7,26,48,.08)}
+.login-btn:focus-visible{outline:2px solid #c99a3d;outline-offset:2px}
+.login-btn:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}
+.back-form{display:block;text-align:center;margin-top:14px;color:var(--navy);font-size:12px;font-weight:700;text-decoration:none}
+.back-form:hover{text-decoration:underline}
+.login-error{color:var(--red);font-size:12px;min-height:18px;margin-top:10px}
+@media (min-width:901px) and (max-height:850px){
+  .login{padding:12px}
+  .login-card{width:min(430px,100%);border-radius:18px;padding:22px 30px;box-shadow:0 20px 60px #0007}
+  .login-logo{width:88px;height:52px;margin:0 auto 7px}
+  .login-brand{font-size:19px}
+  .login-brand small{font-size:9px;margin-top:3px}
+  .login-card h1{font-size:21px;margin:18px 0 4px}
+  .login-card p{font-size:11px;margin:0 0 14px}
+  .login-card .field{margin:10px 0}
+  .login-card .field label{font-size:11px;margin-bottom:5px}
+  .login-card .field input{padding:10px;border-radius:8px}
+  .login-btn{padding:11px;border-radius:8px}
+  .back-form{margin-top:10px;font-size:11px}
+  .login-error{font-size:11px;min-height:16px;margin-top:7px}
+}.user{font-size:10px;text-align:right}.modal{position:fixed;inset:0;background:#071a3088;display:none;align-items:center;justify-content:center;padding:18px;z-index:50}.modal.open{display:flex}.modalbox{width:min(700px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:14px;padding:18px}.timeline{border-left:2px solid #e5e7eb;padding-left:14px}.event{margin-bottom:13px}.event b{font-size:10px}.event small{display:block;color:var(--muted);font-size:9px}.event p{font-size:10px;margin:3px 0}
+.shell{display:grid;grid-template-columns:232px minmax(0,1fr);height:calc(100vh - 118px);margin:0;overflow:hidden}.anchor-section{scroll-margin-top:132px}.side{background:#fff;border-right:1px solid var(--line);height:100%;min-height:0;padding:22px 12px;position:sticky;top:0;align-self:start;overflow:auto}.side-title{font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:1.2px;padding:10px 9px 6px}.side-nav{display:flex;flex-direction:column;gap:3px}.side-nav a{display:flex;gap:8px;align-items:center;padding:11px 13px;margin:2px 0;border:1px solid transparent;border-radius:8px;text-decoration:none;color:#475569;font-size:11px;font-weight:600;transition:transform .14s ease,background .14s ease,border-color .14s ease,box-shadow .14s ease,color .14s ease}.side-nav a:hover{background:#faf8f3;color:var(--navy);border-color:#f0e8d8;transform:translateX(2px);box-shadow:0 3px 9px rgba(7,26,48,.06)}.side-nav a.active{background:#f8f1e3;color:var(--navy);border-color:#ead9b9;box-shadow:inset 3px 0 0 var(--gold);font-weight:700}.side-nav a:focus-visible{outline:2px solid var(--gold);outline-offset:2px}.shell>main{min-width:0;max-width:none;margin:0;padding:28px 30px 34px;height:100%;overflow:auto}.settings-link{margin-top:5px}@media(max-width:900px){
+  .top{
+    height:72px;
+    min-height:72px;
+    padding:0 12px;
+    gap:8px;
+    box-sizing:border-box;
+    overflow:hidden;
+  }
+  .top-logo-text,.top-logo{display:none!important}
+  .brand{
+    flex:1 1 62%;
+    width:auto;
+    min-width:0;
+    max-width:62%;
+    font-size:10px;
+    line-height:1.15;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .brand small{
+    font-size:6.5px;
+    letter-spacing:.7px;
+    margin-top:4px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .top-user{
+    flex:0 1 38%;
+    width:38%;
+    min-width:0;
+    max-width:38%;
+    margin-left:auto;
+    text-align:right;
+    line-height:1.2;
+    overflow:hidden;
+  }
+  .top-user b{
+    display:block;
+    font-size:10px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .top-user span{font-size:8px;white-space:nowrap}
+  .actionbar-inner{padding:8px 12px}
+  .shell{display:block;height:auto;overflow:visible}
+  .side{position:static;height:auto;min-height:auto;border-right:0;border-bottom:1px solid var(--line);display:flex;gap:12px;overflow:auto;padding:10px 12px}
+  .side-title{display:none}
+  .side-nav{flex-direction:row;white-space:nowrap}
+  .side-nav a{padding:8px 10px}
+  .shell>main{height:auto;overflow:visible;padding:22px 16px}
+}
+@media(max-width:380px){
+  .top{padding:0 9px;gap:6px}
+  .brand{font-size:9px;max-width:60%;flex-basis:60%}
+  .brand small{font-size:5.8px}
+  .top-user{width:40%;max-width:40%;flex-basis:40%}
+  .top-user b{font-size:9px}
+  .top-user span{font-size:7px}
+}@media(max-width:850px){.grid{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.hero{align-items:flex-start;flex-direction:column}.sev{grid-template-columns:1fr 1fr}}
+</style>
+<script>document.addEventListener('DOMContentLoaded',function(){document.querySelectorAll('[data-app-version]').forEach(function(el){el.textContent=window.SECUREOPS_APP_VERSION||'';});});</script>
+</head>
+<body>
+<section id="sessionGate" class="login" aria-hidden="true"><div class="login-card">
+<div class="secureops-logo" aria-label="SECUREOPS">SECUREOPS</div>
+<div class="login-brand">SECUREOPS<small>EMERGENCY NOTIFICATION SYSTEM • <span class="app-version" data-app-version>ks.v.001</span></small></div>
+<h1>Opening Emergency Operations…</h1><p>Using your existing SECUREOPS Admin Console session.</p>
+</div></section>
+<section id="app">
+<header class="top"><div class="brand">EMERGENCY RESPONSE<small>EMERGENCY NOTIFICATION SYSTEM<br><span class="app-version" data-app-version>ks.v.001</span></small></div><div id="propertyBrandLogo" class="top-logo-text" aria-label="SECUREOPS">SECUREOPS</div><div class="top-user"><b id="userName">—</b><br><span id="userRole">—</span></div></header>
+<div class="actionbar"><div class="actionbar-inner"><a href="../admin/">Visitor Admin</a><button id="logout">Sign Out</button></div></div>
+<div class="shell"><aside class="side">
+<div class="side-title">MAIN</div><nav class="side-nav">
+<a data-section="operations" class="active" href="./">Emergency Operations</a>
+<a data-section="active" href="#active">Active Incidents</a>
+<a data-section="history" href="#history">Incident History</a>
+</nav>
+<div class="side-title">EMERGENCY SETTINGS</div><nav class="side-nav">
+<a class="settings-link" href="./settings/">Emergency Settings</a>
+</nav>
+</aside><main>
+<div class="hero"><div><div class="security-label">SECUREOPS</div><h1>Emergency Operations</h1><p>Create, notify, track and close hotel safety incidents</p></div><div class="mode" id="modeBadge">TEST / DRILL MODE</div></div>
+<div class="stats"><div class="stat"><b id="sActive">0</b><span>ACTIVE INCIDENTS</span></div><div class="stat"><b id="sUrgent">0</b><span>URGENT</span></div><div class="stat"><b id="sToday">0</b><span>NOTIFICATIONS TODAY</span></div><div class="stat"><b id="sAck">0</b><span>PENDING ACKNOWLEDGEMENT</span></div></div>
+<div class="grid">
+<section class="card"><div class="head"><h2>Create Incident</h2><span class="badge urgent">ERT</span></div><div class="body">
+<form id="incidentForm">
+<div class="fields">
+<div class="field"><label>Incident Type</label><select id="type" required></select></div>
+<div class="field"><label>Template</label><select id="template"></select></div>
+<div class="field full"><label>Incident Title</label><input id="title" required placeholder="e.g. Fire Alarm Activation – Lobby"></div>
+<div class="field"><label>Location</label><input id="location" required placeholder="e.g. Lobby – Ground Floor"></div>
+<div class="field"><label>Mode</label><select id="testMode"><option value="true">TEST / DRILL</option><option value="false">PRODUCTION EMERGENCY</option></select></div>
+<div class="field full"><label>Severity</label><div class="sev">
+<label><input type="radio" name="severity" value="URGENT" checked><span>🔴 URGENT</span></label>
+<label><input type="radio" name="severity" value="HIGH"><span>🟠 HIGH</span></label>
+<label><input type="radio" name="severity" value="NORMAL"><span>🟡 NORMAL</span></label>
+<label><input type="radio" name="severity" value="INFORMATION"><span>🔵 INFORMATION</span></label>
+</div></div>
+<div class="field full"><label>Message</label><textarea id="message" required></textarea></div>
+</div>
+<div class="field" style="margin-top:14px"><label>Recipient Groups</label><div class="recips" id="groups"></div></div><div class="field" style="margin-top:10px"><label>Direct Recipients</label><div class="recips" id="recipients"></div></div>
+<div class="actions"><button class="btn primary" id="sendBtn">REVIEW &amp; CREATE NOTIFICATION</button><button type="button" class="btn" id="clearBtn">Clear</button></div>
+<div class="notice" id="sendNotice"></div>
+</form></div></section>
+<section class="card anchor-section" id="active"><div class="head"><h2>Active Incidents</h2><button class="btn" id="refresh">Refresh</button></div><div class="body"><div class="table"><table><thead><tr><th>Incident</th><th>Severity</th><th>Status</th><th>Time</th></tr></thead><tbody id="incidentRows"></tbody></table></div></div></section>
+</div>
+<section class="card anchor-section" id="history" style="margin-top:14px">
+<div class="head"><h2>Incident History</h2><button class="btn" id="refreshHistory">Refresh</button></div>
+<div class="body"><div class="table"><table><thead><tr><th>Incident</th><th>Severity</th><th>Status</th><th>Location</th><th>Time</th></tr></thead>
+<tbody id="historyRows"></tbody></table></div></div></section>
+</main></div></section>
+<div class="modal" id="modal"><div class="modalbox"><div class="head" style="padding:0 0 12px;border:0"><h2 id="mTitle">Incident</h2><button class="btn" id="mClose">Close</button></div><div id="mBody"></div></div></div>
+<div class="modal" id="waModal"><div class="modalbox"><div class="head" style="padding:0 0 12px;border:0"><h2>WhatsApp Dispatch</h2><button class="btn" id="waClose">Close</button></div><p id="waStatus" style="margin:0 0 10px;color:#166534"></p><textarea id="waMessage" style="width:100%;min-height:230px;border:1px solid #d6dde5;border-radius:10px;padding:12px;font:12px Arial;box-sizing:border-box" readonly></textarea><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px"><button class="btn" id="waCopy">Copy Message</button><button class="btn" id="waOpen">Open WhatsApp Group</button></div></div></div>
+<script>
+const U=window.SECUREOPS_CONFIG.SUPABASE_URL,K=window.SECUREOPS_CONFIG.SUPABASE_PUBLISHABLE_KEY;
+const sb=window.supabase.createClient(U,K,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'sb-hmqgmusellcetakoalva-auth-token'}}),API=U+'/functions/v1/emergency-api';
+const $=id=>document.getElementById(id), esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+let session=null, types=[], templates=[], contacts=[], groups=[], systemSettings={}, currentWaDispatches=[];
+async function api(action,method='GET',body=null,query=null){const qs=new URLSearchParams({action,...(query||{})});const r=await fetch(API+'?'+qs.toString(),{method,headers:{apikey:K,Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Request failed');return j}
+async function loadPropertyBranding(){
+ try{
+  const r=await fetch(U+'/functions/v1/visitor-submit',{headers:{apikey:K}});
+  const j=await r.json();const b=j.branding,url=String(b?.logo_url||'').trim(),wrap=$('propertyBrandLogo');
+  if(url&&wrap){const img=document.createElement('img');img.className='top-logo';img.alt=b?.property_name||'Property Logo';img.src=url;img.onerror=()=>{wrap.textContent='SECUREOPS'};wrap.replaceWith(img);}
+ }catch(e){}
+}
+loadPropertyBranding();
+async function enter(s){session=s;try{const me=await api('me');$('userName').textContent=me.profile?.full_name||s.user.email;$('userRole').textContent=me.profile?.role||'ADMIN';$('sessionGate').classList.add('hidden');$('app').classList.remove('hidden');await boot()}catch(e){console.error('Emergency bootstrap failed:',e);await sb.auth.signOut();location.href='../admin/'}}
+async function initAuth(){
+  const {data,error}=await sb.auth.getSession();
+  if(error||!data.session){location.href='../admin/';return}
+  await enter(data.session);
+}
+$('logout').onclick=async()=>{await sb.auth.signOut();location.href='../admin/'};
+sb.auth.onAuthStateChange((event,s)=>{
+  if(event==='SIGNED_OUT'){location.href='../admin/'}
+  else if(event==='SIGNED_IN'&&s){setTimeout(()=>enter(s),0)}
+});
+
+async function boot(){const r=await api('bootstrap');types=r.types||[];templates=r.templates||[];contacts=r.contacts||[];groups=r.groups||[];systemSettings=Object.fromEntries((r.settings||[]).map(x=>[x.setting_key,x.setting_value]));renderTypes();renderTemplates();renderRecipients();renderGroups();applyDefaults();await refresh();syncSidebar();if(location.hash){const el=$(location.hash.slice(1));if(el)setTimeout(()=>el.scrollIntoView({block:'start'}),50)}}
+function renderTypes(){$('type').innerHTML='<option value="">Select</option>'+types.map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join('');$('type').onchange=()=>{const t=types.find(x=>x.id===$('type').value);if(t){const r=document.querySelector('input[name=severity][value="'+(t.default_severity||'URGENT')+'"]');if(r)r.checked=true}}}
+function renderTemplates(){$('template').innerHTML='<option value="">Custom message</option>'+templates.map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join('')}
+function renderRecipients(){$('recipients').innerHTML=(contacts.length?contacts.map(x=>'<label class="recip"><input type="checkbox" value="'+x.id+'"><span><b>'+esc(x.full_name)+'</b><small>'+esc(x.position||x.department||'')+' · '+esc(x.whatsapp_number||x.phone_number||x.email||'No channel')+'</small></span></label>').join(''):'No active emergency contacts configured yet')}
+function renderGroups(){$('groups').innerHTML=(groups.length?groups.map(x=>'<label class="recip"><input type="checkbox" value="'+x.id+'"><span><b>'+esc(x.name)+'</b><small>'+esc(x.code)+' · '+(x.whatsapp_group_url?'WhatsApp configured':'No WhatsApp URL')+'</small></span></label>').join(''):'No active emergency groups configured yet')}
+function applyDefaults(){const sev=systemSettings.default_severity||'URGENT';const typeCode=systemSettings.default_incident_type_code;const t=types.find(x=>x.code===typeCode)||types[0];if(t)$('type').value=t.id;$('location').value=systemSettings.default_location||'';const radio=document.querySelector('input[name=severity][value="'+sev+'"]');if(radio)radio.checked=true;$('testMode').value=systemSettings.production_enabled===false?'true':'false';}
+function renderTemplateText(t){const type=types.find(x=>x.id===$('type').value);const vars={title:$('title').value||'Incident',location:$('location').value||'Location',time:new Date().toLocaleString('en-GB'),incident_id:'[Generated on create]',severity:document.querySelector('input[name=severity]:checked')?.value||'URGENT',incident_type:type?.name||'',description:$('message').value||''};const replace=s=>String(s||'').replace(/{{(title|location|time|incident_id|severity|incident_type|description)}}/g,(_,k)=>vars[k]??'');$('title').value=replace(t.title_template);$('message').value=replace(t.message_template)}
+let templateBase={title:'',message:'',generatedTitle:'',generatedMessage:''};
+function applyTemplate(t,{force=false}={}){
+  if(!t)return;
+  const currentTitle=$('title').value.trim();
+  const currentMessage=$('message').value.trim();
+
+  // Prevent previously generated template output from being used as the
+  // {{title}}/{{description}} input on the next template render.
+  const titleIsGenerated=currentTitle===templateBase.generatedTitle;
+  const messageIsGenerated=currentMessage===templateBase.generatedMessage;
+  const userTitle=(!currentTitle||titleIsGenerated)?'':currentTitle;
+  const userMessage=(!currentMessage||messageIsGenerated)?'':currentMessage;
+
+  const type=types.find(x=>x.id===$('type').value);
+  const vars={
+    title:userTitle||'Incident',
+    location:$('location').value||systemSettings.default_location||'Location',
+    time:new Date().toLocaleString('en-GB'),
+    incident_id:'[Generated on create]',
+    severity:document.querySelector('input[name=severity]:checked')?.value||'URGENT',
+    incident_type:type?.name||'',
+    description:userMessage||''
+  };
+  const replace=s=>String(s||'').replace(/{{(title|location|time|incident_id|severity|incident_type|description)}}/g,(_,k)=>vars[k]??'');
+
+  const nextTitle=replace(t.title_template);
+  const nextMessage=replace(t.message_template);
+  if(force||!currentTitle||titleIsGenerated)$('title').value=nextTitle;
+  if(force||!currentMessage||messageIsGenerated)$('message').value=nextMessage;
+
+  templateBase={
+    title:userTitle,
+    message:userMessage,
+    generatedTitle:$('title').value,
+    generatedMessage:$('message').value
+  };
+}
+$('template').onchange=()=>{
+  const t=templates.find(x=>x.id===$('template').value);
+  if(!t){templateBase={title:'',message:'',generatedTitle:'',generatedMessage:''};return}
+  applyTemplate(t,{force:true});
+};
+$('location').oninput=()=>{
+  const t=templates.find(x=>x.id===$('template').value);
+  if(t)applyTemplate(t);
+};
+$('title').oninput=()=>{
+  if($('template').value)templateBase.generatedTitle='';
+};
+$('message').oninput=()=>{
+  if($('template').value)templateBase.generatedMessage='';
+};
+$('clearBtn').onclick=()=>{
+  $('incidentForm').reset();
+  $('message').value='';
+  templateBase={title:'',message:'',generatedTitle:'',generatedMessage:''};
+  document.querySelectorAll('#recipients input,#groups input').forEach(x=>x.checked=false);
+  applyDefaults();
+};
+$('incidentForm').onsubmit=async e=>{e.preventDefault();const ids=[...document.querySelectorAll('#recipients input:checked')].map(x=>x.value);const groupIds=[...document.querySelectorAll('#groups input:checked')].map(x=>x.value);const requireRecipientSelection=systemSettings.require_recipient_selection!==false;if(requireRecipientSelection&&!ids.length&&!groupIds.length){$('sendNotice').textContent='Select at least one recipient group or direct recipient';$('sendNotice').classList.add('err');return}const production=$('testMode').value==='false';const requireConfirm=systemSettings.require_production_confirmation!==false;if(production&&requireConfirm&&!confirm('CONFIRM PRODUCTION EMERGENCY\n\nThis will create a production emergency notification. Continue?'))return;if(!confirm('Review complete? Create notification for '+(ids.length+groupIds.length)+' recipient target(s)?'))return;
+
+// Pre-open WhatsApp tabs while still inside the user click/submit gesture.
+// This avoids browser popup blockers after the asynchronous API call completes.
+const waWindows=groupIds.map(()=>window.open('about:blank','_blank'));
+waWindows.forEach(w=>{if(w)w.document.title='SECUREOPS Emergency — preparing WhatsApp…'});
+
+$('sendBtn').disabled=true;try{const sev=document.querySelector('input[name=severity]:checked').value;const r=await api('create_incident','POST',{incident_type_id:$('type').value||null,severity:sev,title:$('title').value.trim(),location:$('location').value.trim(),description:$('message').value.trim(),test_mode:!production,contact_ids:ids,group_ids:groupIds});
+
+// Open each configured WhatsApp group with the generated emergency message.
+const dispatches=Array.isArray(r.whatsapp?.dispatches)?r.whatsapp.dispatches:[];
+currentWaDispatches=dispatches;
+if(dispatches.length){
+  const first=dispatches[0];
+  const inc=r.incident||{};
+  const generatedMessage=[
+    inc.test_mode ? '🧪 SECUREOPS EMERGENCY TEST / DRILL' : '🚨 SECUREOPS EMERGENCY',
+    '',
+    'Incident: '+(inc.incident_id||'-'),
+    'Severity: '+(inc.severity||'-'),
+    'Title: '+(inc.title||'-'),
+    'Location: '+(inc.location||'-'),
+    '',
+    inc.description||'',
+    '',
+    'Time: '+(inc.created_at?new Date(inc.created_at).toLocaleString('en-GB',{timeZone:'Asia/Jakarta'}):new Date().toLocaleString('en-GB',{timeZone:'Asia/Jakarta'}))
+  ].join('\n');
+  const message=String(first.message||generatedMessage).trim();
+  $('waMessage').value=message;
+  $('waStatus').textContent=dispatches.length===1?'WhatsApp group opened. The complete emergency message is shown below.':'WhatsApp groups opened. The complete emergency message is shown below.';
+  try{await navigator.clipboard.writeText(message);$('waStatus').textContent+=' Message copied to clipboard.'}catch(_){};
+  dispatches.forEach((d,i)=>{const w=waWindows[i]||window.open('about:blank','_blank');if(!w)return;try{w.location.href=d.url}catch(_){w.close();window.open(d.url,'_blank')}});
+  $('waModal').classList.add('open');
+  $('sendNotice').classList.remove('err');
+  $('sendNotice').textContent='Incident created. WhatsApp group opened. Copy the prepared message and press Send in WhatsApp.';
+}else{
+  waWindows.forEach(w=>{if(w)w.close()});
+  $('sendNotice').classList.remove('err');
+  $('sendNotice').textContent=r.production_ready?'Notification queued and production channels are configured':'Incident created. No configured WhatsApp group was found for the selected recipient group.';
+}
+await refresh();}catch(err){waWindows.forEach(w=>{if(w)w.close()});$('sendNotice').classList.add('err');$('sendNotice').textContent=err.message}finally{$('sendBtn').disabled=false}};
+let refreshTimer=null;
+async function refresh(){
+  const r=await api('dashboard');
+  const all=r.incidents||[];
+  const active=all.filter(x=>['ACTIVE','MONITORING'].includes(x.status));
+
+  $('sActive').textContent=r.stats.active;
+  $('sUrgent').textContent=r.stats.urgent;
+  $('sToday').textContent=r.stats.notifications_today;
+  $('sAck').textContent=r.stats.pending_ack;
+
+  const ready=Boolean(r.production_ready);
+  $('modeBadge').textContent=ready?'PRODUCTION READY':'TEST / DRILL · PROVIDER NOT CONFIGURED';
+  $('modeBadge').style.background=ready?'#dcfce7':'#fff7ed';
+  $('modeBadge').style.color=ready?'#166534':'#b45309';
+
+  $('incidentRows').innerHTML=active.map(x=>'<tr data-id="'+x.id+'" style="cursor:pointer"><td><b>'+esc(x.incident_id)+'</b><br>'+esc(x.title)+'</td><td><span class="badge '+x.severity.toLowerCase()+'">'+esc(x.severity)+'</span></td><td><span class="badge active">'+esc(x.status)+'</span></td><td>'+new Date(x.created_at).toLocaleString('en-GB')+'</td></tr>').join('')||'<tr><td colspan="4">No active incidents</td></tr>';
+
+  $('historyRows').innerHTML=all.map(x=>'<tr data-id="'+x.id+'" style="cursor:pointer"><td><b>'+esc(x.incident_id)+'</b><br>'+esc(x.title)+'</td><td><span class="badge '+x.severity.toLowerCase()+'">'+esc(x.severity)+'</span></td><td><span class="badge '+(x.status==='ACTIVE'?'active':'draft')+'">'+esc(x.status)+'</span></td><td>'+esc(x.location||'-')+'</td><td>'+new Date(x.created_at).toLocaleString('en-GB')+'</td></tr>').join('')||'<tr><td colspan="5">No incident history</td></tr>';
+
+  document.querySelectorAll('#incidentRows tr[data-id],#historyRows tr[data-id]').forEach(x=>x.onclick=()=>openIncident(x.dataset.id));
+
+  if(refreshTimer)clearInterval(refreshTimer);
+  const seconds=Math.max(5,Number(systemSettings.auto_refresh_seconds||30));
+  refreshTimer=setInterval(()=>refresh().catch(()=>{}),seconds*1000);
+}
+function syncSidebar(){
+  const hash=location.hash;
+  const section=hash==='#active'?'active':hash==='#history'?'history':'operations';
+  document.querySelectorAll('.side-nav a[data-section]').forEach(a=>a.classList.toggle('active',a.dataset.section===section));
+}
+function scrollToSection(id,behavior='smooth'){
+  const main=document.querySelector('.shell > main');
+  const el=$(id);
+  if(!main||!el)return;
+  main.scrollTo({top:Math.max(0,el.offsetTop-18),behavior});
+}
+document.querySelectorAll('.side-nav a[data-section]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    const href=a.getAttribute('href')||'';
+    if(!href.startsWith('#'))return;
+    e.preventDefault();
+    history.pushState(null,'',href);
+    syncSidebar();
+    scrollToSection(href.slice(1));
+  });
+});
+async function openIncident(id){
+  const r=await api('incident_detail','GET',null,{incident_id:id});
+  const i=r.incident;
+  $('mTitle').textContent=i.incident_id+' · '+i.title;
+  const isActive=['ACTIVE','MONITORING'].includes(i.status);
+  const resolutionInfo=i.status==='RESOLVED'
+    ? '<div class="notice" style="margin:12px 0"><b>Resolved</b><br>Reason: '+esc(i.resolution_reason||'-')+'<br>Resolved at: '+(i.resolved_at?new Date(i.resolved_at).toLocaleString('en-GB'):'-')+'<br><br>'+esc(i.resolution_notes||'')+'</div>'
+    : '';
+  const action=isActive
+    ? '<div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn primary" id="resolveBtn">Resolve Incident</button></div>'
+    : '<div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn" id="reopenBtn">Reopen Incident</button></div>';
+  $('mBody').innerHTML='<p><b>'+esc(i.severity)+'</b> · '+esc(i.status)+' · '+esc(i.location||'')+'</p><p>'+esc(i.description||'')+'</p>'+resolutionInfo+'<h3>Notification Status</h3><div class="table"><table><tr><th>Recipient</th><th>Channel</th><th>Status</th></tr>'+r.notifications.map(n=>'<tr><td>'+esc(n.name)+'</td><td>'+esc(n.channel)+'</td><td>'+esc(n.status)+'</td></tr>').join('')+'</table></div><h3>Timeline</h3><div class="timeline">'+r.updates.map(u=>'<div class="event"><b>'+esc(u.title||u.status||'Update')+'</b><small>'+new Date(u.created_at).toLocaleString('en-GB')+'</small><p>'+esc(u.message)+'</p></div>').join('')+'</div>'+action;
+  if(isActive) $('resolveBtn').onclick=()=>showResolveForm(i);
+  else $('reopenBtn').onclick=()=>showReopenForm(i);
+  $('modal').classList.add('open');
+}
+function showResolveForm(i){
+  $('mBody').innerHTML='<h3>Resolve Incident</h3><p><b>'+esc(i.incident_id)+'</b> · '+esc(i.title)+'</p><label style="display:block;margin:12px 0 6px;font-weight:700">Resolution Reason *</label><select id="resolutionReason" style="width:100%;padding:10px;border:1px solid #d6dde5;border-radius:8px"><option value="">Select reason</option><option value="FALSE_ALARM">False Alarm</option><option value="HANDLED">Incident Handled</option><option value="UNDER_CONTROL">Situation Under Control</option><option value="EVAC_COMPLETED">Evacuation Completed</option><option value="TECHNICAL_RESOLVED">Technical Issue Resolved</option><option value="OTHER">Other</option></select><label style="display:block;margin:12px 0 6px;font-weight:700">Resolution Notes *</label><textarea id="resolutionNotes" style="width:100%;min-height:120px;padding:10px;border:1px solid #d6dde5;border-radius:8px" placeholder="Describe what happened, action taken, and why the incident is considered resolved."></textarea><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button class="btn" id="cancelResolve">Cancel</button><button class="btn primary" id="confirmResolve">RESOLVE INCIDENT</button></div>';
+  $('cancelResolve').onclick=()=>openIncident(i.id);
+  $('confirmResolve').onclick=async()=>{const reason=$('resolutionReason').value,notes=$('resolutionNotes').value.trim();if(!reason){alert('Resolution reason is required.');return}if(!notes){alert('Resolution notes are required.');return}$('confirmResolve').disabled=true;try{
+    const result=await api('resolve_incident','POST',{incident_id:i.id,reason,notes});
+    const dispatches=Array.isArray(result.whatsapp?.dispatches)?result.whatsapp.dispatches:[];
+    currentWaDispatches=dispatches;
+    if(dispatches.length){
+      const message=String(dispatches[0].message||'').trim();
+      $('waMessage').value=message;
+      $('waStatus').textContent=dispatches.length===1
+        ? 'Incident resolved. Resolution message copied — open the WhatsApp group and paste/send it.'
+        : 'Incident resolved. Resolution message copied — open each WhatsApp group and paste/send it.';
+      try{await navigator.clipboard.writeText(message);$('waStatus').textContent+=' Message copied to clipboard.'}catch(_){}
+      $('waModal').classList.add('open');
+    }
+    await refresh();
+    await openIncident(i.id);
+  }catch(e){alert(e.message||String(e));$('confirmResolve').disabled=false}};
+}
+function showReopenForm(i){
+  $('mBody').innerHTML='<h3>Reopen Incident</h3><p><b>'+esc(i.incident_id)+'</b> · '+esc(i.title)+'</p><label style="display:block;margin:12px 0 6px;font-weight:700">Reopen Notes *</label><textarea id="reopenNotes" style="width:100%;min-height:120px;padding:10px;border:1px solid #d6dde5;border-radius:8px" placeholder="Why does this incident need to be reopened?"></textarea><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button class="btn" id="cancelReopen">Cancel</button><button class="btn primary" id="confirmReopen">REOPEN INCIDENT</button></div>';
+  $('cancelReopen').onclick=()=>openIncident(i.id);
+  $('confirmReopen').onclick=async()=>{const notes=$('reopenNotes').value.trim();if(!notes){alert('Reopen notes are required.');return}$('confirmReopen').disabled=true;try{await api('reopen_incident','POST',{incident_id:i.id,notes});await refresh();await openIncident(i.id)}catch(e){alert(e.message||String(e));$('confirmReopen').disabled=false}};
+}$('mClose').onclick=()=>$('modal').classList.remove('open');
+$('waClose').onclick=()=>$('waModal').classList.remove('open');
+$('waCopy').onclick=async()=>{try{await navigator.clipboard.writeText($('waMessage').value);$('waStatus').textContent='Message copied to clipboard. Open WhatsApp and paste it into the group.'}catch(e){$('waMessage').focus();$('waMessage').select();$('waStatus').textContent='Clipboard permission blocked. Press Ctrl+C, then paste the message into WhatsApp.'}};
+$('waOpen').onclick=async()=>{
+  const d=currentWaDispatches[0];
+  if(!d?.url){$('waStatus').textContent='WhatsApp group URL is not configured for this recipient.';return}
+  const msg=$('waMessage').value||String(d.message||'');
+  try{await navigator.clipboard.writeText(msg);$('waStatus').textContent='Message copied. WhatsApp group is opening — paste with Ctrl+V, then press Send.'}catch(_){$('waStatus').textContent='WhatsApp group is opening. If needed, use Copy Message, then paste with Ctrl+V.'}
+  window.open(d.url,'_blank');
+};
+$('refresh').onclick=refresh;
+$('refreshHistory').onclick=refresh;
+window.addEventListener('hashchange',()=>{
+  syncSidebar();
+  if(location.hash)scrollToSection(location.hash.slice(1));
+});
+syncSidebar();
+if(location.hash)scrollToSection(location.hash.slice(1),'auto');
+initAuth();
+</script>
+</body></html>
