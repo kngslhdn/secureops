@@ -1,0 +1,22 @@
+project_id = "hmqgmusellcetakoalva"
+
+[functions.visitor-submit]
+verify_jwt = false
+
+[functions.admin-api]
+verify_jwt = false
+
+[functions.visitor-monitoring]
+verify_jwt = false
+
+[functions.visitor-detail]
+verify_jwt = false
+
+[functions.admin-console-api]
+verify_jwt = false
+
+[functions.package-distribution]
+verify_jwt = false
+
+[functions.emergency-api]
+verify_jwt = true
