@@ -68,20 +68,23 @@
   const style = document.createElement('style');
     style.id = 'hikj-card-layout-v3';
     style.textContent = `
-      .choices{grid-template-columns:repeat(6,170px);gap:8px;width:max-content;max-width:100%}
-      .choice,.choice:last-child{width:170px;height:166px;min-height:166px;padding:24px 14px 16px;justify-self:center;justify-content:flex-start}
-      .choice-icon{margin:0 auto 11px;flex:0 0 58px}
-      .choice strong{min-height:42px;width:100%;line-height:1.3;display:flex;align-items:center;justify-content:center}
+      .choices{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;width:100%;max-width:1200px}
+      .choice,.choice:last-child{width:100%;height:210px;min-height:210px;padding:28px 42px;justify-self:stretch;justify-content:flex-start}
+      .choice-icon{margin:0;flex:0 0 112px}
+      .choice strong{min-height:0;width:auto;line-height:1.2;display:flex;align-items:center;justify-content:flex-start;font-size:29px}
       @media(max-width:900px){
-        .choices{grid-template-columns:repeat(3,170px);width:526px;max-width:100%}
-        .choice,.choice:last-child{width:170px;height:166px;min-height:166px}
+        .choices{grid-template-columns:repeat(2,minmax(0,1fr));width:100%;max-width:100%;gap:16px}
+        .choice,.choice:last-child{width:100%;height:180px;min-height:180px;padding:24px 28px;gap:30px}
+        .choice-icon{width:92px;height:92px;min-width:92px;flex:0 0 92px}
+        .choice-icon svg{width:44px;height:44px}
+        .choice strong{font-size:23px}
       }
       @media(max-width:520px){
         .choices{grid-template-columns:1fr;width:100%;gap:11px}
-        .choice,.choice:last-child{width:100%;height:92px;min-height:92px;padding:12px 16px;flex-direction:row;align-items:center;justify-content:flex-start}
-        .choice-icon{width:54px;height:54px;min-width:54px;flex:0 0 54px;margin:0 16px 0 0}
-        .choice-icon svg{width:29px;height:29px}
-        .choice strong{width:auto;min-height:0;flex:1;justify-content:flex-start;font-size:.96rem;line-height:1.25}
+        .choice,.choice:last-child{width:100%;height:116px;min-height:116px;padding:14px 18px;flex-direction:row;align-items:center;justify-content:flex-start}
+        .choice-icon{width:58px;height:58px;min-width:58px;flex:0 0 58px;margin:0}
+        .choice-icon svg{width:31px;height:31px}
+        .choice strong{width:auto;min-height:0;flex:1;justify-content:flex-start;font-size:.98rem;line-height:1.3}
       }
     `;
     document.head.appendChild(style);
