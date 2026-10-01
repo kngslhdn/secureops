@@ -103,7 +103,7 @@ async function load(){const r=await api('settings_bootstrap');state=r;state.sett
 async function save(resource,data,notify=true){
   const r=await api('settings_mutation','POST',{resource,op:data.id?'update':'create',data});
   try{await load()}catch(refreshErr){console.error('Settings refresh failed after save:',refreshErr)}
-  if(notify) SecureOpsUI.success(data.id?'Updated':'Created',data.id?'The record was updated successfully.':'The record was created successfully.');
+  if(notify){const label=resource==='members'?'Members Updated':(data.id?'Updated':'Created');const message=resource==='members'?'Emergency group membership was updated successfully.':(data.id?'The record was updated successfully.':'The record was created successfully.');SecureOpsUI.success(label,message);}
   return r
 }
 function currentPage(){const p=new URLSearchParams(location.search).get('page');return ['types','templates','groups','contacts','smtp','channels','system','audit'].includes(p)?p:'types'}
