@@ -68,12 +68,12 @@
   const style = document.createElement('style');
     style.id = 'hikj-card-layout-v3';
     style.textContent = `
-      .choices{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;width:100%;max-width:1200px}
+      .choices{grid-template-columns:1fr;gap:24px;width:100%;max-width:1200px}
       .choice,.choice:last-child{width:100%;height:210px;min-height:210px;padding:28px 42px;justify-self:stretch;justify-content:flex-start}
       .choice-icon{margin:0;flex:0 0 112px}
       .choice strong{min-height:0;width:auto;line-height:1.2;display:flex;align-items:center;justify-content:flex-start;font-size:29px}
       @media(max-width:900px){
-        .choices{grid-template-columns:repeat(2,minmax(0,1fr));width:100%;max-width:100%;gap:16px}
+        .choices{grid-template-columns:1fr;width:100%;max-width:100%;gap:16px}
         .choice,.choice:last-child{width:100%;height:180px;min-height:180px;padding:24px 28px;gap:30px}
         .choice-icon{width:92px;height:92px;min-width:92px;flex:0 0 92px}
         .choice-icon svg{width:44px;height:44px}
