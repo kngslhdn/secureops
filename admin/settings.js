@@ -113,7 +113,7 @@ async function whatsapp(token){
  <div class="s-msg" id="waMsg"></div>
  <div class="s-note">Use international format without spaces. This number is used by public visitor, key and package forms</div>`,
  canEdit?'<button class="s-btn primary" id="waSave">Save Changes</button>':'<span class="s-note">ADMIN access is read-only for Operational Settings.</span>');
- $('waSave').onclick=async()=>{try{const p=String($('waPhone').value||'').replace(/[^0-9+]/g,'').replace(/^\+/,'');if(!/^62[0-9]{8,15}$/.test(p))throw Error('Use a valid Indonesian WhatsApp number, e.g. 6281234567890');await req('save_whatsapp','POST',{recipient_name:$('waName').value.trim(),phone_number:p});msg('waMsg','WhatsApp recipient updated');SecureOpsUI.success('WhatsApp Updated','The WhatsApp notification recipient was updated successfully.')}catch(e){msg('waMsg',e.message,true)}}
+ $('waSave').onclick=async()=>{try{const p=String($('waPhone').value||'').replace(/[^0-9+]/g,'').replace(/^\+/,'');if(!/^62[0-9]{8,15}$/.test(p))throw Error('Use a valid Indonesian WhatsApp number, e.g. 6281234567890');await req('save_whatsapp','POST',{recipient_name:$('waName').value.trim(),phone_number:p});msg('waMsg','WhatsApp recipient updated');SecureOpsUI.success('WhatsApp Updated','The WhatsApp notification recipient was updated successfully.')}catch(e){msg('waMsg',e.message,true);SecureOpsUI.error('WhatsApp Update Failed',e.message)}}
 }
 async function admins(token){
  const r=await req('admin_users');if(!current(token))return;const rows=r.data||[];
