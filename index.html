@@ -152,6 +152,20 @@
 .key-return-icon svg:first-child{position:absolute;left:27px;top:30px;width:48px !important;height:48px !important}
 .key-return-icon svg:last-child{position:absolute;right:15px;bottom:16px;width:35px !important;height:35px !important}
 .choice:hover .choice-icon{color:#f3d878 !important;border-color:#e6c765 !important}
+.key-return-icon{position:relative !important}
+.key-return-icon>svg{position:absolute !important;width:47px !important;height:47px !important;left:50% !important;top:50% !important;transform:translate(-50%,-50%) !important}
+.key-return-icon .icon-badge{position:absolute;right:8px;bottom:8px;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#061d35;border:2px solid #e6c765;color:#e6c765;box-sizing:border-box}
+.key-return-icon .icon-badge svg{width:17px !important;height:17px !important;stroke:currentColor !important;stroke-width:2 !important;fill:none !important}
+@media(max-width:700px){
+  .key-return-icon>svg{width:38px !important;height:38px !important}
+  .key-return-icon .icon-badge{width:24px;height:24px;right:7px;bottom:7px}
+  .key-return-icon .icon-badge svg{width:14px !important;height:14px !important}
+}
+@media(max-width:390px){
+  .key-return-icon>svg{width:33px !important;height:33px !important}
+  .key-return-icon .icon-badge{width:21px;height:21px;right:6px;bottom:6px}
+  .key-return-icon .icon-badge svg{width:12px !important;height:12px !important}
+}
 </style>
 </head>
 <body>
@@ -165,7 +179,7 @@
 <button type="button" class="choice" data-form="masuk" aria-pressed="false"><span class="choice-icon"><i data-lucide="log-in"></i></span><strong>Visitor Entry Registration</strong><span class="arrow">→</span></button>
 <button type="button" class="choice" data-form="keluar" aria-pressed="false"><span class="choice-icon"><i data-lucide="log-out"></i></span><strong>Visitor Exit Registration</strong><span class="arrow">→</span></button>
 <button type="button" class="choice" data-form="pinjamKunci" aria-pressed="false"><span class="choice-icon"><i data-lucide="key-round"></i></span><strong>Key Borrowing</strong><span class="arrow">→</span></button>
-<button type="button" class="choice" data-form="kembaliKunci" aria-pressed="false"><span class="choice-icon key-return-icon"><i data-lucide="key-round"></i><i data-lucide="undo-2"></i></span><strong>Key Return</strong><span class="arrow">→</span></button>
+<button type="button" class="choice" data-form="kembaliKunci" aria-pressed="false"><span class="choice-icon key-return-icon"><i data-lucide="key-round"></i><span class="icon-badge"><i data-lucide="check"></i></span></span><strong>Key Return</strong><span class="arrow">→</span></button>
 <button type="button" class="choice" data-form="paket" aria-pressed="false"><span class="choice-icon"><i data-lucide="package-plus"></i></span><strong>Package Registration</strong><span class="arrow">→</span></button>
 <button type="button" class="choice" data-form="paketDistribusi" aria-pressed="false"><span class="choice-icon"><i data-lucide="package-check"></i></span><strong>Package Distribution</strong><span class="arrow">→</span></button>
 </section>
