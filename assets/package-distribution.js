@@ -30,15 +30,16 @@
   const fmt = v => v ? new Date(v).toLocaleString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
 
   function card() {
-    const root = document.querySelector('#choices');
-    if (!root || document.querySelector('[data-distribution-card]')) return;
-    root.insertAdjacentHTML('beforeend', `<button type="button" class="choice" data-distribution-card aria-pressed="false">
-      <span class="choice-icon"><svg viewBox="0 0 48 48"><path d="M9 15l15-7 15 7-15 7zM9 15v18l15 8 15-8V15M24 22v19"/><path d="M31 30h9M35 26l5 4-5 4"/></svg></span>
-      <strong>${PDT('Package Distribution','Distribusi Paket')}</strong>
-    </button>`);
-    root.addEventListener('click', ev => {
-      const btn = ev.target.closest('[data-distribution-card]');
-      if (btn) { ev.stopImmediatePropagation(); openDistribution(); }
+    // V1 service cards are rendered statically by index.html.
+    // Bind the existing Package Distribution card instead of creating a duplicate.
+    const btn = document.querySelector('#choices [data-form="paketDistribusi"]');
+    if (!btn) return;
+    btn.setAttribute('data-distribution-card','true');
+    btn.setAttribute('aria-pressed','false');
+    btn.addEventListener('click', ev => {
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      openDistribution();
     }, true);
   }
 
