@@ -2,6 +2,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const ALLOWED_ORIGINS = new Set(['https://kngslhdn.github.io','http://localhost:3000','http://127.0.0.1:5500']);
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+const APP_VERSION='ks.v.001';
+const APP_TITLE='SECUREOPS | Security Operations';
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const sb = createClient(SUPABASE_URL, SERVICE_ROLE);
 
