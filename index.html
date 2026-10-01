@@ -65,7 +65,30 @@
   .choice-icon{inline-size:58px !important;block-size:58px !important;min-inline-size:58px !important;min-block-size:58px !important;width:58px !important;height:58px !important;flex:0 0 58px !important;margin:0 !important}
   .choice-icon svg{width:31px !important;height:31px !important}
 }
-</style></head>
+</style><style id="reference-lucide-icons">
+.choice-icon{
+  color:#e6c765 !important;
+  background:
+    radial-gradient(circle at 35% 30%,rgba(255,255,255,.055),rgba(255,255,255,.01) 65%),
+    rgba(3,24,44,.72) !important;
+  border:1.5px solid rgba(103,156,199,.68) !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.025),0 8px 20px rgba(0,0,0,.18) !important;
+}
+.choice-icon svg{
+  width:52px !important;
+  height:52px !important;
+  stroke:currentColor !important;
+  stroke-width:1.8 !important;
+  fill:none !important;
+  stroke-linecap:round !important;
+  stroke-linejoin:round !important;
+}
+.key-return-icon{position:relative !important}
+.key-return-icon svg:first-child{position:absolute;left:27px;top:30px;width:48px !important;height:48px !important}
+.key-return-icon svg:last-child{position:absolute;right:15px;bottom:16px;width:35px !important;height:35px !important}
+.choice:hover .choice-icon{color:#f3d878 !important;border-color:#e6c765 !important}
+</style>
+</head>
 <body>
 <main class="shell">
 <header class="brand">
@@ -74,18 +97,19 @@
   <div class="subtitle">Security Operations Platform • HIKJ Property</div>
 </header>
 <section id="choices" class="choices" aria-label="Security services">
-<button type="button" class="choice" data-form="masuk" aria-pressed="false"><span class="choice-icon"><svg viewBox="0 0 48 48"><path d="M25 8h15v32H25"/><path d="M5 24h25m-7-7 7 7-7 7"/><circle cx="13" cy="15" r="5"/><path d="M5 36c1-6 4-10 8-10 3 0 6 2 7 5"/></svg></span><strong>Visitor Entry Registration</strong><span class="arrow">→</span></button>
-<button type="button" class="choice" data-form="keluar" aria-pressed="false"><span class="choice-icon"><svg viewBox="0 0 48 48"><path d="M23 8H8v32h15"/><path d="M43 24H18m7-7-7 7 7 7"/><circle cx="35" cy="15" r="5"/><path d="M27 36c1-6 4-10 8-10 3 0 6 2 7 5"/></svg></span><strong>Visitor Exit Registration</strong><span class="arrow">→</span></button>
-<button type="button" class="choice" data-form="pinjamKunci" aria-pressed="false"><span class="choice-icon"><svg viewBox="0 0 48 48"><circle cx="13" cy="34" r="6"/><path d="M17 30 39 8m-8 8 5 5m-10-1 5 5"/></svg></span><strong>Key Borrowing</strong><span class="arrow">→</span></button>
-<button type="button" class="choice" data-form="kembaliKunci" aria-pressed="false"><span class="choice-icon"><svg viewBox="0 0 48 48"><circle cx="13" cy="16" r="6"/><path d="M17 20 39 8m-8 8 5 5m-10-1 5 5"/><path d="M7 32c2 7 8 10 16 10 8 0 14-5 16-12"/><path d="m39 27-1 7-7-1"/></svg></span><strong>Key Return</strong><span class="arrow">→</span></button>
-<button type="button" class="choice" data-form="paket" aria-pressed="false"><span class="choice-icon"><svg viewBox="0 0 48 48"><path d="m8 14 16-7 16 7-16 7zM8 14v19l16 8 16-8V14M24 21v20M16 10l16 7"/><circle cx="36" cy="35" r="8"/><path d="M36 31v8m-4-4h8"/></svg></span><strong>Package Registration</strong><span class="arrow">→</span></button>
-<button type="button" class="choice" data-form="paketDistribusi" aria-pressed="false"><span class="choice-icon"><svg viewBox="0 0 48 48"><path d="m8 14 16-7 16 7-16 7zM8 14v19l16 8 16-8V14M24 21v20M16 10l16 7"/><circle cx="36" cy="35" r="8"/><path d="m32.5 35 2.5 2.5 4.5-5"/></svg></span><strong>Package Distribution</strong><span class="arrow">→</span></button>
+<button type="button" class="choice" data-form="masuk" aria-pressed="false"><span class="choice-icon"><i data-lucide="log-in"></i></span><strong>Visitor Entry Registration</strong><span class="arrow">→</span></button>
+<button type="button" class="choice" data-form="keluar" aria-pressed="false"><span class="choice-icon"><i data-lucide="log-out"></i></span><strong>Visitor Exit Registration</strong><span class="arrow">→</span></button>
+<button type="button" class="choice" data-form="pinjamKunci" aria-pressed="false"><span class="choice-icon"><i data-lucide="key-round"></i></span><strong>Key Borrowing</strong><span class="arrow">→</span></button>
+<button type="button" class="choice" data-form="kembaliKunci" aria-pressed="false"><span class="choice-icon key-return-icon"><i data-lucide="key-round"></i><i data-lucide="undo-2"></i></span><strong>Key Return</strong><span class="arrow">→</span></button>
+<button type="button" class="choice" data-form="paket" aria-pressed="false"><span class="choice-icon"><i data-lucide="package-plus"></i></span><strong>Package Registration</strong><span class="arrow">→</span></button>
+<button type="button" class="choice" data-form="paketDistribusi" aria-pressed="false"><span class="choice-icon"><i data-lucide="package-check"></i></span><strong>Package Distribution</strong><span class="arrow">→</span></button>
 </section>
 <section id="panel" class="panel" aria-live="polite"></section>
 <a class="action home signin" href="admin/">ADMIN CONSOLE</a>
 <div class="footer">SECURE&nbsp;&nbsp;•&nbsp;&nbsp;SAFE&nbsp;&nbsp;•&nbsp;&nbsp;WELCOMING</div>
 <p class="privacy">SECUREOPS • <span data-app-version>ks.v.001</span></p>
 </main>
+<script src="https://unpkg.com/lucide@latest"></script>
 <script src="app-config.js"></script>
 <script src="assets/secureops-ui.js?v=1"></script>
 <script src="assets/secureops-config.js"></script>
@@ -263,5 +287,14 @@ if(key==='kembaliKunci'){
 let waWindow=null;try{waWindow=window.open('about:blank','_blank');const result=await submitToSupabase(form,data);showSuccess(key,data,result,waWindow)}catch(err){if(waWindow&&!waWindow.closed)waWindow.close();const message=err?.message||'The form could not be submitted. Please try again';notice.textContent=message;notice.classList.add('error');btn.disabled=false;if(key==='keluar'&&/Visitor not found/i.test(message)){SecureOpsUI.warning(DEVICE_LANG==='id'?'Visitor Tidak Ditemukan':'Visitor Not Found',message);}else{SecureOpsUI.error(DEVICE_LANG==='id'?'Submission Gagal':'Submission Failed',message);}}}
 </script>
 <script src="assets/package-distribution.js"></script>
+<script>
+(function initSecureOpsLucide(){
+  if(window.lucide?.createIcons){
+    window.lucide.createIcons({attrs:{'stroke-width':1.8}});
+  }else{
+    setTimeout(initSecureOpsLucide,50);
+  }
+})();
+</script>
 </body>
 </html>
