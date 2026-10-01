@@ -3,12 +3,12 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const cors = {'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type, idempotency-key','Access-Control-Allow-Methods':'POST, OPTIONS'};
 const supabase=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 const HIKJ_PROPERTY_ID='9ca8c398-c376-4d7a-8b74-91a8ffb771e7';
-const propertyQuery=(table:string)=>supabase.from(table);
+
 async function outstandingKey(key:string){
- const {data,error}=await supabase.from('key_borrowings').select('id,borrower_name,quantity').eq('key_number',key).order('borrowed_at',{ascending:false}).limit(20);
+ const {data,error}=await propertySelect('key_borrowings','id,borrower_name,quantity').eq('key_number',key).order('borrowed_at',{ascending:false}).limit(20);
  if(error)throw error;
  for(const b of data||[]){
-   const r=await supabase.from('key_returns').select('quantity').eq('borrowing_id',b.id);
+   const r=await propertySelect('key_returns','quantity').eq('borrowing_id',b.id);
    if(r.error)throw r.error;
    const returned=(r.data||[]).reduce((n:any,x:any)=>n+Number(x.quantity||0),0);
    const outstanding=Math.max(Number(b.quantity||0)-returned,0);
@@ -48,20 +48,20 @@ function timestamp(_v:unknown){
 
 async function visitorIdentity(name:string,mobile:string,company:string,category:string|null){
  const normalized=phone(mobile),nameKey=normText(name),companyKey=normText(company),categoryKey=normText(category);
- if(normalized){const {data,error}=await supabase.from('visitors').select('id,full_name,company_name,category').eq('phone_normalized',normalized).limit(50);if(error)throw error;const match=(data||[]).find(v=>normText(v.full_name)===nameKey&&normText(v.company_name)===companyKey&&normText(v.category)===categoryKey);if(match)return match.id;}
- else{const {data,error}=await supabase.from('visitors').select('id,full_name,company_name,category').limit(200);if(error)throw error;const match=(data||[]).find(v=>normText(v.full_name)===nameKey&&normText(v.company_name)===companyKey&&normText(v.category)===categoryKey);if(match)return match.id;}
+ if(normalized){const {data,error}=await propertySelect('visitors','id,full_name,company_name,category').eq('phone_normalized',normalized).limit(50);if(error)throw error;const match=(data||[]).find(v=>normText(v.full_name)===nameKey&&normText(v.company_name)===companyKey&&normText(v.category)===categoryKey);if(match)return match.id;}
+ else{const {data,error}=await propertySelect('visitors','id,full_name,company_name,category').limit(200);if(error)throw error;const match=(data||[]).find(v=>normText(v.full_name)===nameKey&&normText(v.company_name)===companyKey&&normText(v.category)===categoryKey);if(match)return match.id;}
  const {data,error}=await supabase.from('visitors').insert({property_id:HIKJ_PROPERTY_ID,full_name:name,phone:mobile||null,phone_normalized:normalized||null,company_name:company||null,category:category||null}).select('id').single();if(error)throw error;return data.id;
 }
 
 async function findExitEntry(pass:string){
  const passKey=normText(pass);
- const {data,error}=await supabase.from('visitor_entries').select('id,visitor_id,visitor_name,visitor_name_snapshot,pass_vest_number,entry_at').is('exit_id',null).order('entry_at',{ascending:false}).limit(5000);
+ const {data,error}=await propertySelect('visitor_entries','id,visitor_id,visitor_name,visitor_name_snapshot,pass_vest_number,entry_at').is('exit_id',null).order('entry_at',{ascending:false}).limit(5000);
  if(error)throw error;
  return (data||[]).find(e=>passKey&&normText(e.pass_vest_number)===passKey)||null;
 }
 
 async function publicSettings(){
- const {data,error}=await supabase.from('app_settings').select('setting_key,setting_value,active').in('setting_key',['whatsapp','whatsapp_recipients','operations']);
+ const {data,error}=await propertySelect('app_settings','setting_key,setting_value,active').in('setting_key',['whatsapp','whatsapp_recipients','operations']);
  if(error)throw error;
  const out=Object.fromEntries((data||[]).map((x:any)=>[x.setting_key,x.setting_value]));
  // The existing production schema uses whatsapp_recipients; normalize it to the public whatsapp shape.
@@ -90,13 +90,13 @@ Deno.serve(async req=>{
   if(type==='key_asset_lookup'){
    const key=clean(body.key_number||body.keyNumber);
    if(!key)return json({error:'Please enter Key Number.'},400);
-   const {data,error}=await supabase.from('key_assets').select('key_number,key_description,quantity,active').eq('key_number',key).maybeSingle();
+   const {data,error}=await propertySelect('key_assets','key_number,key_description,quantity,active').eq('key_number',key).maybeSingle();
    if(error)throw error;
    if(!data)return json({ok:false,error:`Key Number ${key} was not found in Key Assets.`},404);
    if(!data.active)return json({ok:false,error:`Key Number ${key} is inactive.`},409);
    return json({ok:true,key_asset:{key_number:data.key_number,description:data.key_description||'',quantity:Number(data.quantity||0)}});
   }
-  const idem=clean(req.headers.get('idempotency-key')||body.idempotency_key);if(idem){const {data}=await supabase.from('submissions').select('submission_id').eq('idempotency_key',idem).maybeSingle();if(data)return json({ok:true,duplicate:true,submission_id:data.submission_id});}
+  const idem=clean(req.headers.get('idempotency-key')||body.idempotency_key);if(idem){const {data}=await propertySelect('submissions','submission_id').eq('idempotency_key',idem).maybeSingle();if(data)return json({ok:true,duplicate:true,submission_id:data.submission_id});}
   const name=clean(val(body,'name','visitor_name','nama','returnName','borrowerName','namaPengantar')),mobile=clean(val(body,'phone','mobile_phone','telepon')),company=clean(val(body,'company_name','company','perusahaan'));let visitorId:string|null=null;let matchedExitEntry:any=null;
   if(type==='visitor_entry'){
    const pass=clean(val(body,'pass_vest_number','pass')),officer=clean(val(body,'security_officer_name','security')),category=clean(val(body,'category','kategori'));if(!name||!pass||!officer||!category)return json({error:'Required visitor fields are missing'},400);
@@ -124,7 +124,7 @@ Deno.serve(async req=>{
   if(type==='key_borrowing'){
    const key=clean(body.key_number||body.keyNumber);
    if(!key)return json({error:'Please enter Key Number.'},400);
-   const {data:keyAsset,error:keyAssetError}=await supabase.from('key_assets').select('key_number,key_description,quantity,active').eq('key_number',key).maybeSingle();
+   const {data:keyAsset,error:keyAssetError}=await propertySelect('key_assets','key_number,key_description,quantity,active').eq('key_number',key).maybeSingle();
    if(keyAssetError)throw keyAssetError;
    if(!keyAsset)return json({ok:false,error:`Key Number ${key} was not found in Key Assets.`},404);
    if(!keyAsset.active)return json({ok:false,error:`Key Number ${key} is inactive.`},409);
@@ -145,7 +145,7 @@ Deno.serve(async req=>{
   }else if(type==='key_borrowing'){
    const key=clean(body.key_number||body.keyNumber);
    if(!key)return json({error:'Please enter Key Number.'},400);
-   const {data:keyAsset,error:keyAssetError}=await supabase.from('key_assets').select('key_number,key_description,quantity,active').eq('key_number',key).maybeSingle();
+   const {data:keyAsset,error:keyAssetError}=await propertySelect('key_assets','key_number,key_description,quantity,active').eq('key_number',key).maybeSingle();
    if(keyAssetError)throw keyAssetError;
    if(!keyAsset)return json({ok:false,error:`Key Number ${key} was not found in Key Assets.`},404);
    if(!keyAsset.active)return json({ok:false,error:`Key Number ${key} is inactive.`},409);
