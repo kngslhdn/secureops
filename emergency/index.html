@@ -295,13 +295,13 @@ if(dispatches.length){
   dispatches.forEach((d,i)=>{const w=waWindows[i]||window.open('about:blank','_blank');if(!w)return;try{w.location.href=d.url}catch(_){w.close();window.open(d.url,'_blank')}});
   $('waModal').classList.add('open');
   $('sendNotice').classList.remove('err');
-  $('sendNotice').textContent='Incident created. WhatsApp group opened. Copy the prepared message and press Send in WhatsApp.';
+  $('sendNotice').textContent='Incident created. WhatsApp group opened. Copy the prepared message and press Send in WhatsApp.';SecureOpsUI.success('Incident Created','The emergency incident was created successfully.',`<div><b>Incident:</b> ${esc(r.incident?.incident_id||'—')}</div><div><b>Status:</b> ${esc(r.incident?.status||'ACTIVE')}</div>`);
 }else{
   waWindows.forEach(w=>{if(w)w.close()});
   $('sendNotice').classList.remove('err');
-  $('sendNotice').textContent=r.production_ready?'Notification queued and production channels are configured':'Incident created. No configured WhatsApp group was found for the selected recipient group.';
+  $('sendNotice').textContent=r.production_ready?'Notification queued and production channels are configured':'Incident created. No configured WhatsApp group was found for the selected recipient group.';SecureOpsUI.success('Incident Created','The emergency incident was created successfully.',`<div><b>Incident:</b> ${esc(r.incident?.incident_id||'—')}</div><div>${esc(r.production_ready?'Notification queued and production channels are configured.':'No configured WhatsApp group was found for the selected recipient group.')}</div>`);
 }
-await refresh();}catch(err){waWindows.forEach(w=>{if(w)w.close()});$('sendNotice').classList.add('err');$('sendNotice').textContent=err.message}finally{$('sendBtn').disabled=false}};
+await refresh();}catch(err){waWindows.forEach(w=>{if(w)w.close()});$('sendNotice').classList.add('err');$('sendNotice').textContent=err.message;SecureOpsUI.error('Incident Creation Failed',err.message)}finally{$('sendBtn').disabled=false}};
 let refreshTimer=null;
 async function refresh(){
   const r=await api('dashboard');
@@ -368,7 +368,7 @@ async function openIncident(id){
 function showResolveForm(i){
   $('mBody').innerHTML='<h3>Resolve Incident</h3><p><b>'+esc(i.incident_id)+'</b> · '+esc(i.title)+'</p><label style="display:block;margin:12px 0 6px;font-weight:700">Resolution Reason *</label><select id="resolutionReason" style="width:100%;padding:10px;border:1px solid #d6dde5;border-radius:8px"><option value="">Select reason</option><option value="FALSE_ALARM">False Alarm</option><option value="HANDLED">Incident Handled</option><option value="UNDER_CONTROL">Situation Under Control</option><option value="EVAC_COMPLETED">Evacuation Completed</option><option value="TECHNICAL_RESOLVED">Technical Issue Resolved</option><option value="OTHER">Other</option></select><label style="display:block;margin:12px 0 6px;font-weight:700">Resolution Notes *</label><textarea id="resolutionNotes" style="width:100%;min-height:120px;padding:10px;border:1px solid #d6dde5;border-radius:8px" placeholder="Describe what happened, action taken, and why the incident is considered resolved."></textarea><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button class="btn" id="cancelResolve">Cancel</button><button class="btn primary" id="confirmResolve">RESOLVE INCIDENT</button></div>';
   $('cancelResolve').onclick=()=>openIncident(i.id);
-  $('confirmResolve').onclick=async()=>{const reason=$('resolutionReason').value,notes=$('resolutionNotes').value.trim();if(!reason){alert('Resolution reason is required.');return}if(!notes){alert('Resolution notes are required.');return}$('confirmResolve').disabled=true;try{
+  $('confirmResolve').onclick=async()=>{const reason=$('resolutionReason').value,notes=$('resolutionNotes').value.trim();if(!reason){SecureOpsUI.error('Resolution Required','Resolution reason is required.');return}if(!notes){SecureOpsUI.error('Resolution Required','Resolution notes are required.');return}$('confirmResolve').disabled=true;try{
     const result=await api('resolve_incident','POST',{incident_id:i.id,reason,notes});
     const dispatches=Array.isArray(result.whatsapp?.dispatches)?result.whatsapp.dispatches:[];
     currentWaDispatches=dispatches;
@@ -383,12 +383,13 @@ function showResolveForm(i){
     }
     await refresh();
     await openIncident(i.id);
-  }catch(e){alert(e.message||String(e));$('confirmResolve').disabled=false}};
+    SecureOpsUI.success('Incident Resolved','The incident was resolved successfully.',`<div><b>Incident:</b> ${esc(i.incident_id||'—')}</div><div><b>Resolution:</b> ${esc(reason)}</div>`);
+  }catch(e){SecureOpsUI.error('Incident Resolution Failed',e.message||String(e));$('confirmResolve').disabled=false}};
 }
 function showReopenForm(i){
   $('mBody').innerHTML='<h3>Reopen Incident</h3><p><b>'+esc(i.incident_id)+'</b> · '+esc(i.title)+'</p><label style="display:block;margin:12px 0 6px;font-weight:700">Reopen Notes *</label><textarea id="reopenNotes" style="width:100%;min-height:120px;padding:10px;border:1px solid #d6dde5;border-radius:8px" placeholder="Why does this incident need to be reopened?"></textarea><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button class="btn" id="cancelReopen">Cancel</button><button class="btn primary" id="confirmReopen">REOPEN INCIDENT</button></div>';
   $('cancelReopen').onclick=()=>openIncident(i.id);
-  $('confirmReopen').onclick=async()=>{const notes=$('reopenNotes').value.trim();if(!notes){alert('Reopen notes are required.');return}$('confirmReopen').disabled=true;try{await api('reopen_incident','POST',{incident_id:i.id,notes});await refresh();await openIncident(i.id)}catch(e){alert(e.message||String(e));$('confirmReopen').disabled=false}};
+  $('confirmReopen').onclick=async()=>{const notes=$('reopenNotes').value.trim();if(!notes){SecureOpsUI.error('Reopen Required','Reopen notes are required.');return}$('confirmReopen').disabled=true;try{await api('reopen_incident','POST',{incident_id:i.id,notes});await refresh();await openIncident(i.id);SecureOpsUI.success('Incident Reopened','The incident was reopened successfully.',`<div><b>Incident:</b> ${esc(i.incident_id||'—')}</div>`)}catch(e){SecureOpsUI.error('Incident Reopen Failed',e.message||String(e));$('confirmReopen').disabled=false}};
 }$('mClose').onclick=()=>$('modal').classList.remove('open');
 $('waClose').onclick=()=>$('waModal').classList.remove('open');
 $('waCopy').onclick=async()=>{try{await navigator.clipboard.writeText($('waMessage').value);$('waStatus').textContent='Message copied to clipboard. Open WhatsApp and paste it into the group.'}catch(e){$('waMessage').focus();$('waMessage').select();$('waStatus').textContent='Clipboard permission blocked. Press Ctrl+C, then paste the message into WhatsApp.'}};
