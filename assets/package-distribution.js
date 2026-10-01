@@ -196,26 +196,7 @@
   }
 
   function showPDPopup(type,title,message,details='',actionText='OK') {
-    const existing=document.querySelector('#pdPopup');
-    if(existing) existing.remove();
-    const isSuccess=type==='success';
-    const popup=document.createElement('div');
-    popup.id='pdPopup';
-    popup.className='pd-popup-backdrop';
-    popup.innerHTML=`<div class="pd-popup" role="dialog" aria-modal="true" aria-labelledby="pdPopupTitle">
-      <button type="button" class="pd-popup-close" aria-label="Close">×</button>
-      <div class="pd-popup-icon ${isSuccess?'success':'error'}">${isSuccess?'✓':'!'}</div>
-      <h3 id="pdPopupTitle">${esc(title)}</h3>
-      <p class="pd-popup-message">${esc(message)}</p>
-      ${details?`<div class="pd-popup-details">${details}</div>`:''}
-      <button type="button" class="submit pd-popup-action">${esc(actionText)}</button>
-    </div>`;
-    document.body.appendChild(popup);
-    const close=()=>popup.remove();
-    popup.querySelector('.pd-popup-close').onclick=close;
-    popup.querySelector('.pd-popup-action').onclick=close;
-    popup.addEventListener('click',e=>{if(e.target===popup)close();});
-    popup.querySelector('.pd-popup-action').focus();
+    if(window.SecureOpsUI) return SecureOpsUI.show(type,title,message,details,actionText);
   }
 
   async function submitDistribution() {
