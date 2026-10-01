@@ -53,3 +53,15 @@ REVOKE ALL ON FUNCTION public.set_updated_at() FROM anon, authenticated;
 REVOKE ALL ON FUNCTION public.prevent_outstanding_key_borrowing_race() FROM anon, authenticated;
 REVOKE ALL ON FUNCTION public.set_key_expected_return_at() FROM anon, authenticated;
 REVOKE ALL ON FUNCTION public.validate_key_return_quantity() FROM anon, authenticated;
+
+
+-- Views are separate relations in PostgreSQL; remove anonymous direct access there too.
+DO $$
+DECLARE r record;
+BEGIN
+  FOR r IN SELECT table_name FROM information_schema.views WHERE table_schema='public' LOOP
+    EXECUTE format('REVOKE ALL ON TABLE public.%I FROM anon', r.table_name);
+    EXECUTE format('REVOKE ALL ON TABLE public.%I FROM authenticated', r.table_name);
+    EXECUTE format('GRANT SELECT ON TABLE public.%I TO authenticated', r.table_name);
+  END LOOP;
+END $$;
