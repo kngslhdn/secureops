@@ -29,7 +29,7 @@ async function authorize(req: Request) {
   if (error || !user) return false;
   const { data: profile } = await sb.from('admin_profiles').select('role,active,property_id').eq('user_id', user.id).maybeSingle();
   const role=String(profile?.role||'').toUpperCase();
-  if(!profile?.active || !['ADMIN','MANAGER','SUPERADMIN'].includes(role)) return false;
+  if(!profile?.active || !['VIEWER','ADMIN','MANAGER','SUPERADMIN'].includes(role)) return false;
   if(role!=='SUPERADMIN'&&!profile.property_id) return false;
   const db=createClient(SUPABASE_URL,Deno.env.get('SUPABASE_ANON_KEY')||Deno.env.get('SUPABASE_PUBLISHABLE_KEY')!,{global:{headers:{Authorization:`Bearer ${token}`}},auth:{persistSession:false,autoRefreshToken:false}});
   return {profile,db};
