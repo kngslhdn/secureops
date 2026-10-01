@@ -5,7 +5,7 @@
 <script src="../app-config.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SECUREOPS | Security Admin</title>
+<title>SECUREOPS | Security Admin | ks.v.001</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -35,15 +35,16 @@
 .actionbar{height:48px;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 2px 8px rgba(7,26,48,.035);display:flex;align-items:center;justify-content:flex-end;padding:0 24px;position:sticky;top:70px;z-index:999}.actionbar-inner{display:flex;justify-content:flex-end;align-items:center;gap:8px;width:100%;max-width:1400px}.actionbar a,.actionbar button{color:var(--navy);background:#fff;border:1px solid #d6dde5;border-radius:8px;padding:8px 12px;text-decoration:none;cursor:pointer;font:600 10px Poppins,Arial,sans-serif;transition:transform .14s ease,border-color .14s ease,box-shadow .14s ease}.actionbar a.emergency-link{background:var(--red);color:#fff;border-color:var(--red)}.actionbar a:hover,.actionbar button:hover{border-color:var(--gold);background:#fbfcfd;transform:translateY(-1px);box-shadow:0 4px 12px rgba(7,26,48,.08)}.actionbar a.emergency-link:hover{background:#991b1b;border-color:#991b1b;color:#fff}.actionbar a:focus-visible,.actionbar button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}#app:not(.hidden){min-height:100vh}.v2-loading{display:none!important}
 </style>
 <script>document.addEventListener('DOMContentLoaded',function(){document.querySelectorAll('[data-app-version]').forEach(function(el){el.textContent=window.SECUREOPS_APP_VERSION||'';});});</script>
+<script>if(window.SECUREOPS_APP_VERSION)document.title=window.SECUREOPS_APP_TITLE+' | Security Admin | '+window.SECUREOPS_APP_VERSION;</script>
 </head>
 <body>
 <section id="login" class="login hidden"><div class="login-card">
 <div class="logo-text" aria-label="SECUREOPS">SECUREOPS</div>
-<div class="brand">SECUREOPS<small>SECURITY ADMINISTRATION CONSOLE<br><span class="app-version">ks.v.001</span></small></div>
+<div class="brand">SECUREOPS<small>SECURITY ADMINISTRATION CONSOLE<br><span class="app-version" data-app-version>ks.v.001</span></small></div>
 <h1>SECUREOPS Admin Sign In</h1><p>Authorized SECUREOPS administrators only</p>
 <form id="loginForm"><div class="field"><label>Email</label><input id="email" type="email" autocomplete="username" required></div><div class="field"><label>Password</label><input id="password" type="password" autocomplete="current-password" required></div><button id="loginBtn" class="login-btn" type="submit">SIGN IN</button><a class="back-form" href="../">← Back to Form</a><div id="loginError" class="error"></div></form>
 </div></section>
-<section id="app" class="hidden"><header class="top"><div class="top-title">SECUREOPS<small>SECURITY ADMIN CONSOLE<br><span class="app-version">ks.v.001</span></small></div><div id="propertyBrand"><div class="top-logo-text" aria-label="SECUREOPS">SECUREOPS</div></div><div class="user"><div class="user-info"><b id="userName">Admin</b><small id="userRole">—</small></div></div></header><div class="actionbar"><div class="actionbar-inner"><a class="emergency-link" href="../emergency/">Emergency</a><button id="logout">Sign Out</button></div></div><div id="v2Boot" class="v2-loading">Loading Security Admin Console…</div></section>
+<section id="app" class="hidden"><header class="top"><div class="top-title">SECUREOPS<small>SECURITY ADMIN CONSOLE<br><span class="app-version" data-app-version>ks.v.001</span></small></div><div id="propertyBrand"><div class="top-logo-text" aria-label="SECUREOPS">SECUREOPS</div></div><div class="user"><div class="user-info"><b id="userName">Admin</b><small id="userRole">—</small></div></div></header><div class="actionbar"><div class="actionbar-inner"><a class="emergency-link" href="../emergency/">Emergency</a><button id="logout">Sign Out</button></div></div><div id="v2Boot" class="v2-loading">Loading Security Admin Console…</div></section>
 <script>
 const SUPABASE_URL=window.SECUREOPS_CONFIG.SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY=window.SECUREOPS_CONFIG.SUPABASE_PUBLISHABLE_KEY;
