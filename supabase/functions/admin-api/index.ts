@@ -1,8 +1,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const ALLOWED_ORIGINS=new Set(['https://kngslhdn.github.io','http://localhost:3000','http://127.0.0.1:5500']);
-const headers=(req:Request)=>{const origin=req.headers.get('Origin')||'';return {'Access-Control-Allow-Origin':ALLOWED_ORIGINS.has(origin)?origin:'https://kngslhdn.github.io','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type','Access-Control-Allow-Methods':'GET,OPTIONS','Vary':'Origin','Content-Type':'application/json'}};
+const headers=(req:Request)=>{const origin=req.headers.get('Origin')||'';return {'Access-Control-Allow-Origin':ALLOWED_ORIGINS.has(origin)?origin:'https://kngslhdn.github.io','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type','Access-Control-Allow-Methods':'GET,OPTIONS','Vary':'Origin','Content-Type':'application/json','Access-Control-Expose-Headers':'X-SECUREOPS-Version, X-SECUREOPS-Title','X-SECUREOPS-Version':APP_VERSION,'X-SECUREOPS-Title':APP_TITLE}};
 const json=(req:Request,b:unknown,s=200)=>new Response(JSON.stringify(b),{status:s,headers:headers(req)});
+const APP_VERSION='ks.v.001';
+const APP_TITLE='SECUREOPS | Security Operations';
 const sb=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 const limitOf=(v:string|null,d=100,m=5000)=>Math.max(1,Math.min(Number(v||d)||d,m));
 const like=(v:string)=>`%${v.replace(/[\\%_]/g,'\\$&')}%`;
