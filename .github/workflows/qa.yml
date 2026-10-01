@@ -38,7 +38,7 @@ jobs:
           test -d supabase/functions
           test -d supabase/migrations
           grep -q "window.SECUREOPS_APP_VERSION = 'ks.v.001';" app-config.js
-          grep -q "SECUREOPS_APP_VERSION" index.html
+          grep -q 'secureops-version" content="ks.v.001' index.html
           grep -q "SECUREOPS_APP_VERSION" admin/index.html
           grep -q "SECUREOPS_APP_VERSION" emergency/index.html
           grep -q "SECUREOPS_APP_VERSION" emergency/settings/index.html
