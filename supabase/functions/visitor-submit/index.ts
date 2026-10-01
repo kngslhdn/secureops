@@ -178,5 +178,14 @@ Deno.serve(async req=>{
    const path=await uploadPackagePhoto(clean(body.foto||body.photo_data_url));const {error}=await supabase.from('package_registrations').insert({property_id:HIKJ_PROPERTY_ID,submission_id:submission.id,courier_name:clean(val(body,'courier_name','namaPengantar')),phone:mobile||null,phone_normalized:phone(mobile)||null,company_name:company,item_type:clean(val(body,'item_type','jenisBarang')).toUpperCase(),item_count:Number(body.item_count||body.number_of_items||body.jumlah||1),recipient_type:clean(val(body,'recipient_type','tujuan')).toUpperCase(),recipient_name:clean(val(body,'recipient_name','namaTujuan')),security_officer_name:clean(val(body,'security_officer_name','security')),photo_storage_path:path});if(error)throw error;
   }
   await supabase.from('submissions').update({status:'completed'}).eq('id',submission.id);return json({ok:true,submission_id:submission.submission_id,whatsapp_number:settings.whatsapp?.phone_number||null,...(keyReturnResult?{key_return:keyReturnResult}:{})});
- }catch(e){console.error(e);return json({error:'Submission failed'},500)}
+ }catch(e){
+  console.error('visitor-submit error',e);
+  const raw=String(e?.message||'');
+  let message='Submission failed. Please try again.';
+  if(/Bucket not found|NoSuchBucket/i.test(raw)) message='Package photo storage is unavailable. Please try again later.';
+  else if(/duplicate|23505|already exists|unique constraint/i.test(raw)) message='This submission already exists or was already processed. Please wait and try again.';
+  else if(/foreign key|23503/i.test(raw)) message='A related record could not be found. Please refresh and try again.';
+  else if(/payload|too large|5 MB/i.test(raw)) message='The submitted file or request is too large.';
+  return json({error:message},500);
+ }
 });
