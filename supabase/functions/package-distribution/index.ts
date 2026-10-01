@@ -8,6 +8,8 @@ const corsHeaders = {
   "Content-Type": "application/json",
 };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: corsHeaders });
+const APP_VERSION = "ks.v.001";
+const APP_TITLE = "SECUREOPS | Security Operations";
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const sb = createClient(supabaseUrl, serviceRoleKey);
