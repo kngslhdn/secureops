@@ -82,8 +82,8 @@ async function properties(token){
        const preview=document.querySelectorAll('.s-brand-preview')[i];
        if(preview){preview.querySelector('.s-brand-title').textContent=payload.property_name;preview.querySelector('.s-brand-sub').textContent=p.property_code+' · '+payload.timezone;preview.querySelectorAll('.s-brand-swatch')[0].style.background=payload.primary_color;preview.querySelectorAll('.s-brand-swatch')[1].style.background=payload.secondary_color;const logo=preview.querySelector('.s-brand-logo');if(logo&&payload.logo_url){logo.src=payload.logo_url;logo.style.display='block'}const n=$('prop_logo_name_'+i);if(n&&payload.logo_url)n.textContent=payload.logo_url.split('/').pop()}
        document.querySelectorAll('#sToastWrap .s-toast').forEach(x=>x.remove());
-       toast('Property Saved','Property settings and logo were saved successfully.');
-     }catch(e){document.querySelectorAll('#sToastWrap .s-toast').forEach(x=>x.remove());toast('Save Failed',e.message||'Unable to save property.',true)}finally{btn.disabled=false}
+       SecureOpsUI.success('Property Saved','Property settings and logo were saved successfully.');
+     }catch(e){document.querySelectorAll('#sToastWrap .s-toast').forEach(x=>x.remove());SecureOpsUI.error('Property Save Failed',e.message||'Unable to save property.')}finally{btn.disabled=false}
    };
  });
 }
@@ -103,7 +103,7 @@ async function createProperty(token){
  const code=prompt('Property Code (e.g. HIKB)');if(code===null)return;
  const name=prompt('Property Name');if(name===null)return;
  const timezone=prompt('Timezone','Asia/Jakarta');if(timezone===null)return;
- try{await req('create_property','POST',{property_code:code.trim().toUpperCase(),property_name:name.trim(),timezone:timezone.trim()||'Asia/Jakarta'});toast('Property Created','The property was created successfully.');await properties(token)}catch(e){toast('Create Failed',e.message||'Unable to create property.',true)}
+ try{await req('create_property','POST',{property_code:code.trim().toUpperCase(),property_name:name.trim(),timezone:timezone.trim()||'Asia/Jakarta'});SecureOpsUI.success('Property Created','The property was created successfully.');await properties(token)}catch(e){SecureOpsUI.error('Create Failed',e.message||'Unable to create property.');}
 }
 
 async function whatsapp(token){
@@ -113,7 +113,7 @@ async function whatsapp(token){
  <div class="s-msg" id="waMsg"></div>
  <div class="s-note">Use international format without spaces. This number is used by public visitor, key and package forms</div>`,
  canEdit?'<button class="s-btn primary" id="waSave">Save Changes</button>':'<span class="s-note">ADMIN access is read-only for Operational Settings.</span>');
- $('waSave').onclick=async()=>{try{const p=String($('waPhone').value||'').replace(/[^0-9+]/g,'').replace(/^\+/,'');if(!/^62[0-9]{8,15}$/.test(p))throw Error('Use a valid Indonesian WhatsApp number, e.g. 6281234567890');await req('save_whatsapp','POST',{recipient_name:$('waName').value.trim(),phone_number:p});msg('waMsg','WhatsApp recipient updated')}catch(e){msg('waMsg',e.message,true)}}
+ $('waSave').onclick=async()=>{try{const p=String($('waPhone').value||'').replace(/[^0-9+]/g,'').replace(/^\+/,'');if(!/^62[0-9]{8,15}$/.test(p))throw Error('Use a valid Indonesian WhatsApp number, e.g. 6281234567890');await req('save_whatsapp','POST',{recipient_name:$('waName').value.trim(),phone_number:p});msg('waMsg','WhatsApp recipient updated');SecureOpsUI.success('WhatsApp Updated','The WhatsApp notification recipient was updated successfully.')}catch(e){msg('waMsg',e.message,true)}}
 }
 async function admins(token){
  const r=await req('admin_users');if(!current(token))return;const rows=r.data||[];
@@ -143,9 +143,10 @@ function adminDialog(row=null,token=null){
      await req(row?'update_admin':'create_admin','POST',body);
      if(!current(token)){d.close();return;}
      d.close();
+     SecureOpsUI.success(row?'Admin Updated':'Admin Created',row?'The administrator account was updated successfully.':'The administrator account was created successfully.');
      await admins(token);
    }catch(e){
-     message.textContent=e.message||'Request failed';message.classList.add('err');
+     message.textContent=e.message||'Request failed';message.classList.add('err');SecureOpsUI.error(row?'Admin Update Failed':'Admin Creation Failed',e.message||'Request failed');
      save.disabled=false;cancel.disabled=false;save.textContent='Save';
    }
  }
@@ -187,16 +188,17 @@ function keyDialog(row=null,token=null){
      await req(row?'update_key_asset':'create_key_asset','POST',body);
      if(!current(token)){d.close();return;}
      d.close();
+     SecureOpsUI.success(row?'Key Asset Updated':'Key Asset Created',row?'The key asset was updated successfully.':'The key asset was created successfully.');
      await keys(token);
    }catch(e){
-     message.textContent=e.message||'Request failed';message.classList.add('err');
+     message.textContent=e.message||'Request failed';message.classList.add('err');SecureOpsUI.error(row?'Key Asset Update Failed':'Key Asset Creation Failed',e.message||'Request failed');
      save.disabled=false;cancel.disabled=false;save.textContent='Save';
    }
  }
 }
 async function operations(token){
  const r=await req('settings');if(!current(token))return;const o=r.settings?.operations||{},role=String(window.HIKJAdminRole||'').toUpperCase(),canEdit=role==='SUPERADMIN'||role==='MANAGER';const fields=[['visitor_entry_enabled','Visitor Entry Registration'],['visitor_exit_enabled','Visitor Exit Registration'],['key_borrowing_enabled','Key Borrowing'],['key_return_enabled','Key Return'],['package_registration_enabled','Package Registration'],['package_distribution_enabled','Package Distribution']];
- $('sContent').innerHTML=card('System / Operations','Enable or disable operational modules',`<div style="display:grid;gap:8px">${fields.map(([k,l])=>`<div class="s-toggle"><label>${l}</label><input type="checkbox" data-op="${k}" ${o[k]!==false?'checked':''} ${canEdit?'':'disabled'}></div>`).join('')}</div><div class="s-msg" id="opMsg"></div>`, canEdit?'<button class="s-btn primary" id="opSave">Save Changes</button>':'<span class="s-note">ADMIN access is read-only for Operational Settings.</span>');$('opSave').onclick=async()=>{try{const value={...o};fields.forEach(([k])=>value[k]=document.querySelector('[data-op="'+k+'"]').checked);await req('save_operations','POST',{value});msg('opMsg','Operational settings updated')}catch(e){msg('opMsg',e.message,true)}}}
+ $('sContent').innerHTML=card('System / Operations','Enable or disable operational modules',`<div style="display:grid;gap:8px">${fields.map(([k,l])=>`<div class="s-toggle"><label>${l}</label><input type="checkbox" data-op="${k}" ${o[k]!==false?'checked':''} ${canEdit?'':'disabled'}></div>`).join('')}</div><div class="s-msg" id="opMsg"></div>`, canEdit?'<button class="s-btn primary" id="opSave">Save Changes</button>':'<span class="s-note">ADMIN access is read-only for Operational Settings.</span>');$('opSave').onclick=async()=>{try{const value={...o};fields.forEach(([k])=>value[k]=document.querySelector('[data-op="'+k+'"]').checked);await req('save_operations','POST',{value});msg('opMsg','Operational settings updated');SecureOpsUI.success('Operations Updated','Operational module settings were updated successfully.')}catch(e){msg('opMsg',e.message,true);SecureOpsUI.error('Operations Update Failed',e.message)} }}
 async function audit(token){const r=await req('audit_logs');if(!current(token))return;const rows=r.data||[];$('sContent').innerHTML=card('Audit Log','Administrative changes and security-sensitive actions',`<div class="s-table"><table><thead><tr><th>Date / Time</th><th>User</th><th>Action</th><th>Module</th><th>Target</th><th>Description</th></tr></thead><tbody>${rows.length?rows.map(x=>`<tr><td>${esc(new Date(x.created_at).toLocaleString('en-GB'))}</td><td>${esc(x.user_name||'—')}</td><td>${esc(x.action)}</td><td>${esc(x.module)}</td><td>${esc(x.target||'—')}</td><td>${esc(x.description||'—')}</td></tr>`).join(''):'<tr><td colspan="6">No audit entries found</td></tr>'}</tbody></table></div>`)}
 async function render(tab='whatsapp',token=null){if(!current(token))return;
  style();const role=String(window.HIKJAdminRole||'').toUpperCase(),tabs=role==='SUPERADMIN'?['property','whatsapp','admins','keys','operations','audit']:['property','whatsapp','operations'];
