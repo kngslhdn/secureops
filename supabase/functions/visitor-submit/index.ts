@@ -1,6 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const cors = {'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type, idempotency-key','Access-Control-Allow-Methods':'POST, OPTIONS'};
+const APP_VERSION='ks.v.001';
+const APP_TITLE='SECUREOPS | Security Operations';
+const cors = {'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type, idempotency-key','Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Expose-Headers':'X-SECUREOPS-Version, X-SECUREOPS-Title','X-SECUREOPS-Version':APP_VERSION,'X-SECUREOPS-Title':APP_TITLE};
 const supabase=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 const HIKJ_PROPERTY_ID='9ca8c398-c376-4d7a-8b74-91a8ffb771e7';
 const propertySelect=(table:string,columns:string)=>supabase.from(table).select(columns).eq('property_id',HIKJ_PROPERTY_ID);
