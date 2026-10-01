@@ -25,7 +25,7 @@ jobs:
           test ! -e admin/dashboard-v2.css
           test ! -e admin/admin-package-distribution.js
 
-      - name: Validate required SECUREOPS files
+      - name: Validate required SECUREOPS files and V1 release identity
         shell: bash
         run: |
           set -euo pipefail
@@ -34,10 +34,16 @@ jobs:
           test -f admin/admin-console-v2.js
           test -f admin/settings.js
           test -f assets/secureops-config.js
+          test -f app-config.js
           test -d supabase/functions
           test -d supabase/migrations
+          grep -q "window.SECUREOPS_APP_VERSION = 'ks.v.001';" app-config.js
+          grep -q "SECUREOPS_APP_VERSION" index.html
+          grep -q "SECUREOPS_APP_VERSION" admin/index.html
+          grep -q "SECUREOPS_APP_VERSION" emergency/index.html
+          grep -q "SECUREOPS_APP_VERSION" emergency/settings/index.html
 
-      - name: Validate JavaScript syntax
+      - name: Validate JavaScript and release hygiene
         shell: bash
         run: |
           set -euo pipefail
@@ -45,6 +51,11 @@ jobs:
             while IFS= read -r -d '' f; do
               node --check "$f"
             done
+          ! grep -R "hmqgmusellcetakoalva" --exclude-dir=.git .
+          ! grep -R "sb-hmqgmusellcetakoalva-auth-token" --exclude-dir=.git .
+          ! grep -R "hikj-visitormgmt" --exclude-dir=.git .
+          ! grep -R "ks.v.002" --exclude-dir=.git .
+          ! grep -R -E "^[[:space:]]*alert\\(" index.html admin emergency assets
 
       - name: Validate migration SQL filenames
         shell: bash
