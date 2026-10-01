@@ -44,7 +44,27 @@
 
   function tuneCards() {
     document.querySelectorAll('.choice .arrow').forEach(el => el.remove());
-    const style = document.createElement('style');
+    const popupStyle = document.createElement('style');
+  popupStyle.id='pd-popup-style';
+  popupStyle.textContent=`
+    .pd-popup-backdrop{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,8,18,.78);backdrop-filter:blur(5px);animation:pdFadeIn .18s ease}
+    .pd-popup{position:relative;width:min(460px,calc(100vw - 40px));padding:28px 28px 24px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,#071d31,#041525);box-shadow:0 24px 70px rgba(0,0,0,.5);text-align:center;color:#fff;animation:pdPopIn .2s ease}
+    .pd-popup-close{position:absolute;top:10px;right:13px;width:34px;height:34px;border:0;background:transparent;color:#9fb0c0;font-size:27px;line-height:1;cursor:pointer}
+    .pd-popup-close:hover{color:#fff}
+    .pd-popup-icon{width:62px;height:62px;margin:0 auto 14px;border-radius:50%;display:grid;place-items:center;font-size:32px;font-weight:800}
+    .pd-popup-icon.success{color:#071b12;background:#bff4d5;border:2px solid #7ee2a9}
+    .pd-popup-icon.error{color:#3a0b0b;background:#ffd0d0;border:2px solid #ff8f8f}
+    .pd-popup h3{margin:0 0 8px;font-size:1.15rem}
+    .pd-popup-message{margin:0 auto 15px;line-height:1.5;font-size:.84rem;opacity:.88}
+    .pd-popup-details{display:grid;gap:7px;text-align:left;padding:13px 15px;margin:0 0 18px;border:1px solid var(--line);border-radius:11px;background:rgba(255,255,255,.035);font-size:.72rem;line-height:1.4}
+    .pd-popup-details b{font-weight:700}
+    .pd-popup-action{width:100%;margin-top:2px}
+    @keyframes pdFadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes pdPopIn{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}
+  `;
+  document.head.appendChild(popupStyle);
+
+  const style = document.createElement('style');
     style.id = 'hikj-card-layout-v3';
     style.textContent = `
       .choices{grid-template-columns:repeat(6,170px);gap:8px;width:max-content;max-width:100%}
@@ -175,6 +195,29 @@
     target.querySelector('#pdSubmit').onclick = submitDistribution;
   }
 
+  function showPDPopup(type,title,message,details='',actionText='OK') {
+    const existing=document.querySelector('#pdPopup');
+    if(existing) existing.remove();
+    const isSuccess=type==='success';
+    const popup=document.createElement('div');
+    popup.id='pdPopup';
+    popup.className='pd-popup-backdrop';
+    popup.innerHTML=`<div class="pd-popup" role="dialog" aria-modal="true" aria-labelledby="pdPopupTitle">
+      <button type="button" class="pd-popup-close" aria-label="Close">×</button>
+      <div class="pd-popup-icon ${isSuccess?'success':'error'}">${isSuccess?'✓':'!'}</div>
+      <h3 id="pdPopupTitle">${esc(title)}</h3>
+      <p class="pd-popup-message">${esc(message)}</p>
+      ${details?`<div class="pd-popup-details">${details}</div>`:''}
+      <button type="button" class="submit pd-popup-action">${esc(actionText)}</button>
+    </div>`;
+    document.body.appendChild(popup);
+    const close=()=>popup.remove();
+    popup.querySelector('.pd-popup-close').onclick=close;
+    popup.querySelector('.pd-popup-action').onclick=close;
+    popup.addEventListener('click',e=>{if(e.target===popup)close();});
+    popup.querySelector('.pd-popup-action').focus();
+  }
+
   async function submitDistribution() {
     const security = document.querySelector('#pdSecurity')?.value.trim();
     const recipient = document.querySelector('#pdRecipient')?.value.trim();
@@ -187,10 +230,31 @@
     try {
       const data = await callApi('', { method:'POST', body: JSON.stringify({ package_registration_id: selected.id, recipient_name: recipient, security_hand_over: security, note }) });
       notice.textContent = '';
-      document.querySelector('#pdSelected').innerHTML = `<div class="pd-success"><h3>${PDT('Package successfully distributed','Paket berhasil didistribusikan')}</h3><p><b>${PDT('Distribution ID:','ID Distribusi:')}</b> ${esc(data.distribution.distribution_number||'—')}</p><p><b>${PDT('Package ID:','ID Paket:')}</b> ${esc(data.distribution.package_number)}</p><p><b>${PDT('Recipient:','Penerima:')}</b> ${esc(data.distribution.recipient_name)}</p><p><b>${PDT('Note:','Catatan:')}</b> ${esc(data.distribution.note || '—')}</p><p><b>${PDT('Security Hand Over:','Serah Terima Security:')}</b> ${esc(data.distribution.security_hand_over)}</p><p><b>${PDT('Distribution Date &amp; Time:','Tanggal &amp; Waktu Distribusi:')}</b> ${fmt(data.distribution.distributed_at)}</p><button class="submit" id="pdBack">${PDT('SEARCH ANOTHER PACKAGE','CARI PAKET LAIN')}</button></div>`;
+      const d=data.distribution||{};
+      const detail=`<div><b>${esc(PDT('Distribution ID:','ID Distribusi:'))}</b> ${esc(d.distribution_number||'—')}</div>
+        <div><b>${esc(PDT('Package ID:','ID Paket:'))}</b> ${esc(d.package_number||'—')}</div>
+        <div><b>${esc(PDT('Recipient:','Penerima:'))}</b> ${esc(d.recipient_name||'—')}</div>
+        <div><b>${esc(PDT('Security Hand Over:','Serah Terima Security:'))}</b> ${esc(d.security_hand_over||'—')}</div>
+        <div><b>${esc(PDT('Distribution Date &amp; Time:','Tanggal &amp; Waktu Distribusi:'))}</b> ${esc(fmt(d.distributed_at))}</div>`;
+      showPDPopup(
+        'success',
+        PDT('Distribution Successful','Distribusi Berhasil'),
+        PDT('The package has been successfully distributed.','Paket berhasil didistribusikan.'),
+        detail,
+        PDT('DONE','SELESAI')
+      );
+      document.querySelector('#pdSelected').innerHTML = `<div class="pd-success"><h3>${PDT('Package successfully distributed','Paket berhasil didistribusikan')}</h3><p><b>${PDT('Distribution ID:','ID Distribusi:')}</b> ${esc(d.distribution_number||'—')}</p><p><b>${PDT('Package ID:','ID Paket:')}</b> ${esc(d.package_number||'—')}</p><button class="submit" id="pdBack">${PDT('SEARCH ANOTHER PACKAGE','CARI PAKET LAIN')}</button></div>`;
       document.querySelector('#pdBack').onclick = () => { selected = null; renderAuth(); };
     } catch (e) {
-      notice.textContent = e.message || PDT('Unable to complete package distribution. Please try again','Distribusi paket gagal. Silakan coba lagi');
+      const message=e.message || PDT('Unable to complete package distribution. Please try again','Distribusi paket gagal. Silakan coba lagi');
+      notice.textContent='';
+      showPDPopup(
+        'error',
+        PDT('Distribution Failed','Distribusi Gagal'),
+        message,
+        `<div>${esc(PDT('No distribution record was created by this request.','Tidak ada catatan distribusi yang dibuat oleh permintaan ini.'))}</div>`,
+        PDT('TRY AGAIN','COBA LAGI')
+      );
       btn.disabled = false;
     }
   }
