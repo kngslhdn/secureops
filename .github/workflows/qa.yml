@@ -57,6 +57,15 @@ jobs:
           ! grep -R "ks.v.002" --exclude-dir=.git .
           ! grep -R -E "^[[:space:]]*alert\\(" index.html admin emergency assets
 
+      - name: Validate security hardening invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -R -Fq "REVOKE ALL ON TABLE" supabase/migrations || { echo "MISSING_ANON_TABLE_REVOKE"; exit 1; }
+          grep -R -Fq "REVOKE ALL ON ALL FUNCTIONS IN SCHEMA public FROM anon" supabase/migrations || { echo "MISSING_ANON_FUNCTION_REVOKE"; exit 1; }
+          grep -R -Fq "createSignedUrl" supabase/functions
+          ! grep -R -Fq "SUPABASE_SERVICE_ROLE_KEY" index.html admin emergency assets
+
       - name: Validate migration SQL filenames
         shell: bash
         run: |
