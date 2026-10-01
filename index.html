@@ -169,7 +169,24 @@ const escapeHtml=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').rep
 function futureDateTimeValue(){const d=new Date(Date.now()+2*60*60*1000),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes())}
 function inputMarkup([name,label,type='text',options=[]]){if(type==='textarea')return `<div class="field"><label for="${name}">${label}</label><textarea id="${name}" name="${name}" required></textarea></div>`;if(type==='select')return `<div class="field"><label for="${name}">${label}</label><select id="${name}" name="${name}" required><option value="">${L.select}</option>${options.map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(DEVICE_LANG==='id'?(OPT_I18N[x]||x):x)}</option>`).join('')}</select></div>`;if(type==='datetime')return `<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" readonly value="${dateText()}"></div>`;if(type==='future-datetime')return `<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" type="datetime-local" min="${futureDateTimeValue()}" value="${futureDateTimeValue()}" required></div>`;if(type==='expected-datetime')return `<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" readonly value="${new Date(Date.now()+24*60*60*1000).toLocaleDateString('en-GB')+' '+new Date(Date.now()+24*60*60*1000).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}"></div>`;if(type==='file')return `<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" type="file" accept="image/jpeg,image/png,image/webp" required></div>`;return `<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" type="${type}" min="1" required></div>`}
 // Service cards are rendered statically in #choices for reliable V1 rendering.
-choiceRoot.addEventListener('click',e=>{const b=e.target.closest('[data-form]');if(b)showForm(b.dataset.form)});
+function bindServiceCards(){
+  if(!choiceRoot)return;
+  choiceRoot.querySelectorAll('[data-form]').forEach(card=>{
+    const key=card.dataset.form;
+    card.addEventListener('click',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      if(typeof showForm==='function' && forms[key]) showForm(key);
+    });
+    card.addEventListener('keydown',e=>{
+      if((e.key==='Enter'||e.key===' ') && !e.defaultPrevented){
+        e.preventDefault();
+        if(typeof showForm==='function' && forms[key]) showForm(key);
+      }
+    });
+  });
+}
+bindServiceCards();
 function formatMessage(title,data){const lines=['SECUREOPS VISITOR MANAGEMENT','',`NEW ${title.toUpperCase()}`,''];for(const [key,value] of data.entries()){if(key==='foto')continue;const field=document.querySelector(`[name="${CSS.escape(key)}"]`);lines.push(`${field?.closest('.field')?.querySelector('label')?.textContent||key}: ${value}`)}if(lastSubmission?.submissionId)lines.push('',`Submission ID: ${lastSubmission.submissionId}`);return lines.join('\n')}
 async function readFile(file){if(!file)return '';return await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)})}
 async function submitToSupabase(form,data){const payload=Object.fromEntries(data.entries());payload.type=form.type;payload.submission_source='public-web';payload.idempotency_key=generateUUID();if(form.upload){const file=data.get('foto');payload.foto=await readFile(file)}const r=await fetch(SUPABASE_FUNCTION_URL,{method:'POST',headers:{'Content-Type':'application/json','idempotency-key':payload.idempotency_key},body:JSON.stringify(payload)});let result=null;try{result=await r.json()}catch{}if(!r.ok||!result?.ok)throw Error(result?.error||`HTTP ${r.status}`);return result}
