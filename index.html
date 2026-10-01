@@ -258,6 +258,59 @@
     min-height:12px !important;
   }
 }
+/* Final Key Return: same key size as Key Borrowing + direct check like Package Distribution */
+.choice-icon.key-return-icon{
+  position:relative !important;
+  overflow:hidden !important;
+}
+.choice-icon.key-return-icon > svg:first-child{
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:47px !important;
+  height:47px !important;
+  margin:0 !important;
+  transform:translate(-50%,-50%) !important;
+}
+.choice-icon.key-return-icon > svg:last-child{
+  position:absolute !important;
+  left:auto !important;
+  top:auto !important;
+  right:10px !important;
+  bottom:10px !important;
+  width:27px !important;
+  height:27px !important;
+  margin:0 !important;
+  transform:none !important;
+  stroke:currentColor !important;
+  stroke-width:1.8 !important;
+  fill:none !important;
+}
+.choice-icon.key-return-icon .icon-badge{display:none !important}
+@media(max-width:700px){
+  .choice-icon.key-return-icon > svg:first-child{
+    width:38px !important;
+    height:38px !important;
+  }
+  .choice-icon.key-return-icon > svg:last-child{
+    right:9px !important;
+    bottom:9px !important;
+    width:22px !important;
+    height:22px !important;
+  }
+}
+@media(max-width:390px){
+  .choice-icon.key-return-icon > svg:first-child{
+    width:33px !important;
+    height:33px !important;
+  }
+  .choice-icon.key-return-icon > svg:last-child{
+    right:8px !important;
+    bottom:8px !important;
+    width:19px !important;
+    height:19px !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -271,7 +324,7 @@
 <button type="button" class="choice" data-form="masuk" aria-pressed="false"><span class="choice-icon"><i data-lucide="log-in"></i></span><strong>Visitor Entry Registration</strong><span class="arrow">→</span></button>
 <button type="button" class="choice" data-form="keluar" aria-pressed="false"><span class="choice-icon"><i data-lucide="log-out"></i></span><strong>Visitor Exit Registration</strong><span class="arrow">→</span></button>
 <button type="button" class="choice" data-form="pinjamKunci" aria-pressed="false"><span class="choice-icon"><i data-lucide="key-round"></i></span><strong>Key Borrowing</strong><span class="arrow">→</span></button>
-<button type="button" class="choice" data-form="kembaliKunci" aria-pressed="false"><span class="choice-icon key-return-icon"><i data-lucide="key-round"></i><span class="icon-badge"><i data-lucide="check"></i></span></span><strong>Key Return</strong><span class="arrow">→</span></button>
+<button type="button" class="choice" data-form="kembaliKunci" aria-pressed="false"><span class="choice-icon key-return-icon"><i data-lucide="key-round"></i><i data-lucide="check"></i></span><strong>Key Return</strong><span class="arrow">→</span></button>
 <button type="button" class="choice" data-form="paket" aria-pressed="false"><span class="choice-icon"><i data-lucide="package-plus"></i></span><strong>Package Registration</strong><span class="arrow">→</span></button>
 <button type="button" class="choice" data-form="paketDistribusi" aria-pressed="false"><span class="choice-icon"><i data-lucide="package-check"></i></span><strong>Package Distribution</strong><span class="arrow">→</span></button>
 </section>
