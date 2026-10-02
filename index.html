@@ -503,7 +503,7 @@ async function lookupKeyAsset(keyNumber,form,notice){
   if(requestId!==keyAssetLookupSeq)return;
   if(!r.ok||!result?.ok)throw Error(result?.error||DEVICE_LANG==='id'?'Nomor Kunci tidak dapat diverifikasi':'Key Number could not be verified');
   const asset=result.key_asset||{};
-  if(description)description.value=asset.description||'';
+  if(description)description.value=asset.description??asset.key_description??'';
   if(qty)qty.value=asset.quantity??'';
   if(form)form.dataset.keyAssetValid='true';
   if(notice){notice.textContent=DEVICE_LANG==='id'?'Aset kunci terverifikasi. Deskripsi dan jumlah dimuat dari Key Assets':'Key Asset verified. Description and Quantity are loaded from Key Assets';notice.classList.remove('error')}
