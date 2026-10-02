@@ -216,7 +216,7 @@ async function sendEmail(recipients: string[], incident: any, cfg: any) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsFor(req) });
 
   try {
     const { user, profile, db } = await auth(req);
