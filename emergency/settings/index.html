@@ -157,14 +157,38 @@ function showSettingsError(e){
 }
 async function initAuth(){
   let sessionData=null;
-  for(let i=0;i<3;i++){
+  for(let i=0;i<5;i++){
     const {data,error}=await sb.auth.getSession();
     if(!error&&data.session){sessionData=data.session;break}
-    await sleep(300);
+    await sleep(250);
+  }
+  if(!sessionData){
+    const refreshed=await sb.auth.refreshSession().catch(()=>({data:{session:null}}));
+    sessionData=refreshed?.data?.session||null;
   }
   if(!sessionData){location.href='../../admin/';return}
   session=sessionData;
-  try{await load();initialized=true}catch(e){showSettingsError(e)}
+  try{
+    await load();
+    initialized=true;
+  }catch(e){
+    // A fresh tab can briefly hold an expired access token while the
+    // persisted Admin Console session is still valid. Refresh once before
+    // treating Emergency Settings as unavailable.
+    const refreshed=await sb.auth.refreshSession().catch(()=>({data:{session:null}}));
+    if(refreshed?.data?.session){
+      session=refreshed.data.session;
+      try{
+        await load();
+        initialized=true;
+        return;
+      }catch(retryError){
+        showSettingsError(retryError);
+        return;
+      }
+    }
+    showSettingsError(e);
+  }
 }
 $('logout').onclick=async()=>{await sb.auth.signOut();location.href='../../admin/'};
 sb.auth.onAuthStateChange((event,s)=>{
