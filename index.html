@@ -357,7 +357,7 @@ body.app-booting .shell{visibility:hidden}
 <header class="brand">
   <div id="propertyBrandLogo" class="brand-logo-text" aria-label="SECUREOPS">SECUREOPS</div>
   <h1 class="title">SECUREOPS</h1>
-  <div class="subtitle">Security Operations Platform • HIKJ Property</div>
+  <div id="propertySubtitle" class="subtitle">Security Operations Platform</div>
 </header>
 <section id="choices" class="choices" aria-label="Security services">
 <button type="button" class="choice" data-form="masuk" aria-pressed="false"><span class="choice-icon"><i class="fi fi-tr-entrance"></i></span><strong>Visitor Entry Registration</strong><span class="arrow">→</span></button>
@@ -382,7 +382,8 @@ async function loadPropertyBranding(){
   const base=window.SECUREOPS_CONFIG?.SUPABASE_FUNCTIONS_URL||'';
   const r=await fetch(base+'/visitor-submit',{headers:{apikey:window.SECUREOPS_CONFIG?.SUPABASE_PUBLISHABLE_KEY||''}});
   const j=await r.json();
-  const b=j.branding,url=String(b?.logo_url||'').trim(),el=document.getElementById('propertyBrandLogo');
+  const b=j.branding,url=String(b?.logo_url||'').trim(),propertyName=String(b?.property_name||'').trim(),el=document.getElementById('propertyBrandLogo'),subtitle=document.getElementById('propertySubtitle');
+  if(subtitle&&propertyName) subtitle.textContent='Security Operations Platform • '+propertyName;
   if(!el)return;
   if(url){
    const img=document.createElement('img');img.className='brand-logo';img.alt=b?.property_name||'Property Logo';img.src=url;
