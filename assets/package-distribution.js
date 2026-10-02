@@ -142,13 +142,16 @@
         <button class="submit" id="pdLogin">${PDT('SIGN IN TO DISTRIBUTE','MASUK UNTUK DISTRIBUSI')}</button></div>`;
       document.querySelector('#pdLogin').onclick = async () => {
         const notice = document.querySelector('#pdNotice');
+        const loginBtn=document.querySelector('#pdLogin');
+        if(loginBtn?.disabled)return;
+        if(loginBtn)loginBtn.disabled=true;
         try {
           notice.textContent = PDT('Signing in…','Memproses login…');
           const { data, error } = await client.auth.signInWithPassword({ email: document.querySelector('#pdEmail').value.trim(), password: document.querySelector('#pdPassword').value });
           if (error) throw error;
           authSession = data.session;
           renderAuth();
-        } catch (e) { notice.textContent = e.message || PDT('Unable to sign in','Gagal masuk.'); }
+        } catch (e) { notice.textContent = e.message || PDT('Unable to sign in','Gagal masuk.'); if(loginBtn)loginBtn.disabled=false; }
       };
       return;
     }
