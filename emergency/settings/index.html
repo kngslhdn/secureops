@@ -110,7 +110,7 @@ function canEdit(){return ['ADMIN','MANAGER','SUPERADMIN'].includes(state.profil
 function superAdmin(){return state.profile?.role==='SUPERADMIN'}
 async function load(){
   if(loadInFlight)return loadInFlight;
-  loadInFlight=(async()=>{const r=await api('settings_bootstrap');state=r;state.settings=r.settings||[];state.types=r.types||[];state.templates=r.templates||[];state.groups=r.groups||[];state.contacts=r.contacts||[];state.members=r.members||[];state.audit=r.audit||[];state.smtp=r.smtp||{};$('userName').textContent=r.profile.full_name||'Admin';$('userRole').textContent=r.profile.role||'—';renderAll()}
+  loadInFlight=(async()=>{const r=await api('settings_bootstrap');state=r;state.settings=r.settings||[];state.types=r.types||[];state.templates=r.templates||[];state.groups=r.groups||[];state.contacts=r.contacts||[];state.members=r.members||[];state.audit=r.audit||[];state.smtp=r.smtp||{};$('userName').textContent=r.profile.full_name||'Admin';$('userRole').textContent=r.profile.role||'—';if($('settingsRole'))$('settingsRole').textContent=r.profile.role||'—';renderAll()}
   })();
   try{return await loadInFlight}finally{loadInFlight=null}
 }
