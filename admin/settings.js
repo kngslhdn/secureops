@@ -126,10 +126,11 @@ async function admins(token){
 function adminDialog(row=null,token=null){
  const d=document.createElement('dialog');
  d.style.cssText='border:0;border-radius:14px;padding:0;width:min(520px,calc(100% - 24px));box-shadow:0 25px 80px #0005';
- d.innerHTML=`<form method="dialog" class="s-body"><h2 style="margin:0 0 14px;color:#071a30;font-size:16px">${row?'Edit Admin':'Add Admin'}</h2><div class="s-grid"><div class="s-field"><label>Full Name</label><input class="adName" required value="${esc(row?.full_name||'')}"></div><div class="s-field"><label>Email</label><input class="adEmail" type="email" required value="${esc(row?.email||'')}" ${row?'readonly':''}></div><div class="s-field"><label>Role</label><select class="adRole"><option>VIEWER</option><option>ADMIN</option><option>MANAGER</option><option>SUPERADMIN</option></select></div><div class="s-field"><label>${row?'New Password (optional)':'Temporary Password'}</label><input class="adPass" type="password" ${row?'':'required'} minlength="8"></div></div><div class="s-actions"><button type="button" class="s-btn adCancel">Cancel</button><button type="button" class="s-btn primary adSave">Save</button></div><div class="s-msg adMsg"></div></form>`;
+ d.innerHTML=`<form method="dialog" class="s-body"><h2 style="margin:0 0 14px;color:#071a30;font-size:16px">${row?'Edit Admin':'Add Admin'}</h2><div class="s-grid"><div class="s-field"><label>Full Name</label><input class="adName" required value="${esc(row?.full_name||'')}"></div><div class="s-field"><label>Email</label><input class="adEmail" type="email" required value="${esc(row?.email||'')}" ${row?'readonly':''}></div><div class="s-field"><label>Role</label><select class="adRole"><option>VIEWER</option><option>ADMIN</option><option>MANAGER</option><option>SUPERADMIN</option></select></div><div class="s-field"><label>${row?'New Password (optional)':'Temporary Password'}</label><input class="adPass" type="password" ${row?'':'required'} minlength="8"></div><div class="s-field"><label>Status</label><select class="adActive"><option value="true">ACTIVE</option><option value="false">INACTIVE</option></select></div></div><div class="s-actions"><button type="button" class="s-btn adCancel">Cancel</button><button type="button" class="s-btn primary adSave">Save</button></div><div class="s-msg adMsg"></div></form>`;
  document.body.appendChild(d);
- const name=d.querySelector('.adName'),email=d.querySelector('.adEmail'),role=d.querySelector('.adRole'),pass=d.querySelector('.adPass'),cancel=d.querySelector('.adCancel'),save=d.querySelector('.adSave'),message=d.querySelector('.adMsg');
+ const name=d.querySelector('.adName'),email=d.querySelector('.adEmail'),role=d.querySelector('.adRole'),pass=d.querySelector('.adPass'),active=d.querySelector('.adActive'),cancel=d.querySelector('.adCancel'),save=d.querySelector('.adSave'),message=d.querySelector('.adMsg');
  role.value=row?.role||'VIEWER';
+ active.value=String(row?.active!==false);
  const cleanup=()=>d.remove();
  d.addEventListener('close',cleanup,{once:true});
  d.showModal();
@@ -137,7 +138,7 @@ function adminDialog(row=null,token=null){
  save.onclick=async()=>{
    save.disabled=true;cancel.disabled=true;save.textContent='Saving...';
    try{
-     const body={user_id:row?.user_id,full_name:name.value.trim(),email:email.value.trim(),role:role.value,password:pass.value};
+     const body={user_id:row?.user_id,full_name:name.value.trim(),email:email.value.trim(),role:role.value,password:pass.value,active:active.value==='true'};
      if(!body.full_name||!body.email)throw Error('Name and email are required');
      if(!row&&!body.password)throw Error('Temporary password is required');
      await req(row?'update_admin':'create_admin','POST',body);
