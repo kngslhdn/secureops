@@ -1,15 +1,17 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+const ALLOWED_ORIGINS = new Set(["https://kngslhdn.github.io","https://visitor.myhikj.com","http://visitor.myhikj.com","http://localhost:3000","http://127.0.0.1:5500"]);
+const corsHeadersFor = (req: Request) => { const origin=req.headers.get("Origin")||""; return {
+  "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin) ? origin : "https://kngslhdn.github.io",
+  "Vary": "Origin",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
   "Content-Type": "application/json",
   "Cache-Control": "no-store",
   "X-Content-Type-Options": "nosniff",
-};
-const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: corsHeaders });
+}; };
+const json = (body: unknown, status = 200, req?: Request) => new Response(JSON.stringify(body), { status, headers: corsHeadersFor(req || new Request("https://localhost")) });
 const APP_VERSION = "ks.v.001";
 const APP_TITLE = "SECUREOPS | Security Operations";
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -33,7 +35,7 @@ async function requireAdmin(req: Request) {
 function isUuid(value: string) { return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value); }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeadersFor(req) });
   try {
     const { db } = await requireAdmin(req);
 
@@ -88,12 +90,17 @@ Deno.serve(async (req) => {
     }
 
     if (req.method === "POST") {
+      const contentType=(req.headers.get("content-type")||"").toLowerCase();
+      if(!contentType.startsWith("application/json")) return json({error:"Content-Type must be application/json."},415,req);
+      const contentLength=Number(req.headers.get("content-length")||0);
+      if(contentLength>256*1024) return json({error:"Request payload is too large."},413,req);
       const body = await req.json();
       const packageRegistrationId = String(body.package_registration_id || "").trim();
       const securityHandOver = String(body.security_hand_over || "").trim();
       const recipientName = String(body.recipient_name || "").trim();
       const noteValue = body.note == null ? "" : String(body.note).trim();
       const note = noteValue || null;
+      if(packageRegistrationId.length>80 || securityHandOver.length>120 || recipientName.length>160 || noteValue.length>1000) return json({error:"One or more fields exceed the allowed length."},400,req);
       if (!packageRegistrationId) return json({ error: "Package not found." }, 404);
       if (!securityHandOver) return json({ error: "Please enter Security Hand Over." }, 400);
       if (!recipientName) return json({ error: "Please enter Recipient / Representative Name." }, 400);
