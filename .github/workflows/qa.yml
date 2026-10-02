@@ -65,6 +65,11 @@ jobs:
           grep -R -Fq "REVOKE ALL ON ALL FUNCTIONS IN SCHEMA public FROM anon" supabase/migrations || { echo "MISSING_ANON_FUNCTION_REVOKE"; exit 1; }
           grep -R -Fq "createSignedUrl" supabase/functions
           ! grep -R -Fq "SUPABASE_SERVICE_ROLE_KEY" index.html admin emergency assets
+          grep -A1 -F "[functions.admin-api]" supabase/config.toml | grep -q "verify_jwt = true"
+          grep -A1 -F "[functions.admin-console-api]" supabase/config.toml | grep -q "verify_jwt = true"
+          grep -A1 -F "[functions.package-distribution]" supabase/config.toml | grep -q "verify_jwt = true"
+          grep -A1 -F "[functions.visitor-monitoring]" supabase/config.toml | grep -q "verify_jwt = true"
+          grep -A1 -F "[functions.visitor-detail]" supabase/config.toml | grep -q "verify_jwt = true"
 
       - name: Validate migration SQL filenames
         shell: bash
