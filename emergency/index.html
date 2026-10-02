@@ -374,8 +374,10 @@ if(dispatches.length){
   $('sendNotice').textContent=r.production_ready?'Notification queued and production channels are configured':'Incident created. No configured WhatsApp group was found for the selected recipient group.';SecureOpsUI.success('Incident Created','The emergency incident was created successfully.',`<div><b>Incident:</b> ${esc(r.incident?.incident_id||'—')}</div><div>${esc(r.production_ready?'Notification queued and production channels are configured.':'No configured WhatsApp group was found for the selected recipient group.')}</div>`);
 }
 await refresh();}catch(err){waWindows.forEach(w=>{if(w)w.close()});$('sendNotice').classList.add('err');$('sendNotice').textContent=err.message;SecureOpsUI.error('Incident Creation Failed',err.message)}finally{$('sendBtn').disabled=false}};
-let refreshTimer=null;
+let refreshTimer=null,refreshInFlight=null;
 async function refresh(){
+  if(refreshInFlight)return refreshInFlight;
+  refreshInFlight=(async()=>{
   const r=await api('dashboard');
   const all=r.incidents||[];
   const active=all.filter(x=>['ACTIVE','MONITORING'].includes(x.status));
@@ -399,6 +401,8 @@ async function refresh(){
   if(refreshTimer)clearInterval(refreshTimer);
   const seconds=Math.max(5,Number(systemSettings.auto_refresh_seconds||30));
   refreshTimer=setInterval(()=>refresh().catch(()=>{}),seconds*1000);
+  })();
+  try{return await refreshInFlight}finally{refreshInFlight=null}
 }
 function syncSidebar(){
   const hash=location.hash;
