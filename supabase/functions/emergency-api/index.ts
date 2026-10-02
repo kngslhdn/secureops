@@ -536,10 +536,12 @@ Deno.serve(async (req) => {
       });
       if (timeline.error) throw timeline.error;
       // Resolution notifications use the same configured WhatsApp groups as the original incident.
-      const resolutionGroups = await db.from("emergency_contact_groups")
+      let resolutionGroupQuery = db.from("emergency_contact_groups")
         .select("id,name,whatsapp_group_url")
         .eq("active", true)
         .not("whatsapp_group_url", "is", null);
+      if (!isSuperAdmin(profile)) resolutionGroupQuery = resolutionGroupQuery.eq("property_id", profile.property_id);
+      const resolutionGroups = await resolutionGroupQuery;
       if (resolutionGroups.error) throw resolutionGroups.error;
       const resolutionDispatches = (resolutionGroups.data || [])
         .filter((g:any) => String(g.whatsapp_group_url || "").trim())
