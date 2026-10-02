@@ -23,6 +23,8 @@ main{max-width:1700px;width:100%;padding:28px 30px 34px;margin:0 auto;overflow:a
 .login{display:none!important;min-height:100vh;display:none;place-items:center;padding:20px;background:radial-gradient(circle at 50% 0,#173c64,#071a30 68%);position:fixed;inset:0;z-index:100}.login.open{display:grid}.login-card{width:min(430px,100%);background:#fff;border-radius:18px;padding:30px;box-shadow:0 25px 80px #0007}.secureops-logo{width:120px;height:76px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:var(--navy);font-weight:700;font-size:24px;letter-spacing:3px}.login-logo{width:120px;height:76px;object-fit:contain;display:block;margin:0 auto 12px}.login-brand{text-align:center;color:var(--navy);font-weight:700;font-size:20px}.login-brand small{display:block;color:var(--muted);font-weight:400;font-size:10px;margin-top:5px;letter-spacing:1px}.login-card h1{font-size:22px;margin:28px 0 6px}.login-card p{color:var(--muted);font-size:12px;margin:0 0 22px}.login-card .field{margin:15px 0}.login-card .field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}.login-card .field input{width:100%;padding:12px;border:1px solid var(--line);border-radius:9px;outline:none}.login-btn{width:100%;padding:13px;border:1px solid var(--navy);border-radius:9px;background:var(--navy);color:#fff;font-weight:700;cursor:pointer;transition:transform .14s ease,background .14s ease,border-color .14s ease,box-shadow .14s ease;box-shadow:0 2px 5px rgba(7,26,48,.12)}.login-btn:hover{background:var(--navy2);border-color:var(--gold);transform:translateY(-1px);box-shadow:0 5px 14px rgba(7,26,48,.16)}.login-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}.login-error{color:var(--red);font-size:12px;min-height:18px;margin-top:10px}.top-logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:46px;width:auto;object-fit:contain}.top-logo:focus{outline:2px solid var(--gold);outline-offset:4px}.mobileMenu{display:none;border:1px solid #ffffff30;background:#ffffff12;color:#fff;border-radius:8px;padding:7px 9px}.page-section{display:none!important}.page-section.current{display:block!important;visibility:visible!important}
 
 @media(max-width:900px){.user{flex:0 1 38%;min-width:0;max-width:38%;gap:0;margin-left:auto;justify-content:flex-end}.user-info{width:100%;max-width:100%;font-size:10px;line-height:1.15;overflow:hidden;text-align:right}.user-info b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.user-info small{display:block;margin-top:1px;font-size:8px;line-height:1.05;opacity:.72;letter-spacing:.25px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+
+.audit-tools{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}.audit-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}.audit-metric{background:#fff;border:1px solid var(--line);border-radius:10px;padding:13px 14px}.audit-metric b{display:block;font-size:20px;color:var(--navy);line-height:1.1}.audit-metric span{display:block;margin-top:4px;color:var(--muted);font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:.35px}.audit-filter{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.audit-filter input,.audit-filter select{height:36px;border:1px solid #d6dee7;border-radius:8px;background:#fff;padding:0 10px;font:500 10px Poppins,Arial,sans-serif;color:var(--text);min-width:150px}.audit-filter input{min-width:250px}.audit-empty{text-align:center;padding:42px 18px!important;color:var(--muted)}.audit-empty strong{display:block;color:var(--navy);font-size:13px;margin-bottom:4px}.audit-empty span{font-size:9px}.audit-table td:first-child{white-space:nowrap}.audit-action{font-size:8px;font-weight:700;padding:4px 7px;border-radius:999px;background:#eef2f7;color:var(--navy);display:inline-block}.audit-action.create{background:#dcfce7;color:#166534}.audit-action.update{background:#eff6ff;color:#1d4ed8}.audit-action.delete{background:#fee2e2;color:#991b1b}.audit-description{max-width:520px;line-height:1.5;color:#475569}.audit-admin{font-weight:700;color:var(--navy)}@media(max-width:900px){.audit-metrics{grid-template-columns:1fr 1fr}.audit-filter{width:100%}.audit-filter input{min-width:0;width:100%;flex:1}.audit-filter select{flex:1;min-width:130px}.audit-table{min-width:760px}}
 </style>
 <!-- sidebar menu icons intentionally removed --><script>document.addEventListener('DOMContentLoaded',function(){document.querySelectorAll('[data-app-version]').forEach(function(el){el.textContent=window.SECUREOPS_APP_VERSION||'';});});</script>
 <script>if(window.SECUREOPS_APP_VERSION)document.title=window.SECUREOPS_APP_TITLE+' | SECUREOPS | '+window.SECUREOPS_APP_VERSION;</script>
@@ -89,7 +91,28 @@ main{max-width:1700px;width:100%;padding:28px 30px 34px;margin:0 auto;overflow:a
 
 </div><div id="systemNotice" class="notice"></div></div></section>
 
-<section class="panel page-section" id="audit"><div class="panelhead"><div><h2>Audit Log</h2><p>Configuration and emergency activity changes. Secrets are never logged</p></div></div><div class="body"><div class="table"><table><thead><tr><th>Time</th><th>Admin</th><th>Action</th><th>Target</th><th>Description</th></tr></thead><tbody id="auditRows"></tbody></table></div></div></section>
+<section class="panel page-section" id="audit">
+  <div class="panelhead">
+    <div><h2>Audit Log</h2><p>Configuration and emergency activity changes. Secrets are never logged.</p></div>
+    <button class="btn" type="button" data-action="refresh-audit">Refresh</button>
+  </div>
+  <div class="body">
+    <div class="audit-metrics">
+      <div class="audit-metric"><b id="auditTotal">0</b><span>Total Entries</span></div>
+      <div class="audit-metric"><b id="auditToday">0</b><span>Today</span></div>
+      <div class="audit-metric"><b id="auditConfig">0</b><span>Configuration</span></div>
+      <div class="audit-metric"><b id="auditIncident">0</b><span>Incident Activity</span></div>
+    </div>
+    <div class="audit-tools">
+      <div class="audit-filter">
+        <input id="auditSearch" type="search" placeholder="Search admin, action, target or description…">
+        <select id="auditActionFilter"><option value="">All actions</option></select>
+      </div>
+      <span class="hint" id="auditResultCount">0 entries</span>
+    </div>
+    <div class="table audit-table"><table><thead><tr><th>Time</th><th>Admin</th><th>Action</th><th>Target</th><th>Description</th></tr></thead><tbody id="auditRows"></tbody></table></div>
+  </div>
+</section>
 </main></div>
 
 <div class="modal" id="editor"><div class="modalbox"><div class="modalhead"><h2 id="editorTitle">Edit</h2><button class="btn" type="button" data-action="close-editor">Close</button></div><div id="editorBody"></div><div id="editorNotice" class="notice"></div></div></div>
@@ -134,7 +157,35 @@ function renderContacts(){ $('contactRows').innerHTML=state.contacts.map(x=>'<tr
 function renderChannels(){const wa=state.groups.some(x=>x.active&&x.whatsapp_group_url);const smtp=!!state.smtp.configured;$('channelRows').innerHTML='<tr><td><b>EMAIL</b></td><td><span class="badge '+(smtp?'ok':'warn')+'">'+(smtp?'CONFIGURED':'NOT CONFIGURED')+'</span></td><td>Supabase Edge Function</td><td>SMTP password is protected server-side</td></tr><tr><td><b>WHATSAPP</b></td><td><span class="badge '+(wa?'ok':'warn')+'">'+(wa?'CONFIGURED':'NOT CONFIGURED')+'</span></td><td>Emergency Contact Groups</td><td>Manual dispatch via configured group URL</td></tr><tr><td><b>SMS</b></td><td><span class="badge off">NOT CONFIGURED</span></td><td>Provider</td><td>Provider is not configured</td></tr><tr><td><b>PUSH</b></td><td><span class="badge off">NOT CONFIGURED</span></td><td>Provider</td><td>Provider is not configured</td></tr>'}
 function renderSystem(){const set=(id,fn)=>{const el=$(id);if(el)fn(el)};set('default_severity',el=>el.value=setting('default_severity','URGENT'));set('default_incident_type_code',el=>{el.innerHTML=state.types.filter(x=>x.active).map(x=>'<option value="'+esc(x.code)+'">'+esc(x.name)+'</option>').join('');el.value=setting('default_incident_type_code','FIRE')});set('default_location',el=>el.value=setting('default_location','Ground Floor'));set('timezone',el=>el.value=setting('timezone','Asia/Jakarta'));set('incident_id_prefix',el=>el.value=setting('incident_id_prefix','HIKJ-INC'));set('auto_refresh_seconds',el=>el.value=setting('auto_refresh_seconds',30));set('production_enabled',el=>el.checked=setting('production_enabled',true)!==false);set('require_production_confirmation',el=>el.checked=setting('require_production_confirmation',true)!==false);set('require_recipient_selection',el=>el.checked=setting('require_recipient_selection',true)!==false)}
 function fillSmtp(){$('smtp_host').value=state.smtp.host||'smtp.gmail.com';$('smtp_port').value=state.smtp.port||465;$('smtp_secure').value=String(!!state.smtp.secure||!state.smtp.port);$('smtp_username').value=state.smtp.username||'';$('smtp_password').value='';$('smtp_from').value=state.smtp.from||'';$('smtp_from_name').value=state.smtp.from_name||'SECUREOPS Emergency Response';$('smtp_reply_to').value=state.smtp.reply_to||'';const ok=!!state.smtp.configured;$('smtpStatus').textContent=ok?'CONFIGURED':'NOT CONFIGURED';$('smtpStatus').className='badge '+(ok?'ok':'warn')}
-function renderAudit(){$('auditRows').innerHTML=state.audit.map(x=>'<tr><td>'+new Date(x.created_at).toLocaleString('en-GB')+'</td><td>'+esc(x.user_name||'-')+'</td><td>'+esc(x.action)+'</td><td>'+esc(x.target||'-')+'</td><td>'+esc(x.description||'-')+'</td></tr>').join('')||'<tr><td colspan="5">No audit entries</td></tr>'}
+function renderAudit(){
+  const rows=[...state.audit].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  const todayKey=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta'}).format(new Date());
+  const today=rows.filter(x=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta'}).format(new Date(x.created_at))===todayKey);
+  const configActions=new Set(['CREATE','UPDATE','DELETE','CONFIGURE','SETTINGS_UPDATE']);
+  const config=rows.filter(x=>configActions.has(String(x.action||'').toUpperCase())&&String(x.target||'').toLowerCase().indexOf('incident')<0);
+  const incident=rows.filter(x=>!config.includes(x));
+  $('auditTotal').textContent=rows.length;
+  $('auditToday').textContent=today.length;
+  $('auditConfig').textContent=config.length;
+  $('auditIncident').textContent=incident.length;
+  const actions=[...new Set(rows.map(x=>String(x.action||'').trim()).filter(Boolean))].sort();
+  const filter=$('auditActionFilter');
+  const current=filter.value;
+  filter.innerHTML='<option value="">All actions</option>'+actions.map(a=>'<option value="'+esc(a)+'">'+esc(a)+'</option>').join('');
+  filter.value=actions.includes(current)?current:'';
+  const query=String($('auditSearch')?.value||'').trim().toLowerCase();
+  const action=String(filter.value||'').toLowerCase();
+  const filtered=rows.filter(x=>{
+    const hay=[x.user_name,x.action,x.target,x.description].map(v=>String(v||'').toLowerCase()).join(' ');
+    return (!query||hay.includes(query))&&(!action||String(x.action||'').toLowerCase()===action);
+  });
+  $('auditResultCount').textContent=filtered.length+' entr'+(filtered.length===1?'y':'ies');
+  $('auditRows').innerHTML=filtered.map(x=>{
+    const a=String(x.action||'-').toUpperCase();
+    const cls=a==='CREATE'?'create':a==='UPDATE'?'update':a==='DELETE'?'delete':'';
+    return '<tr><td>'+esc(new Date(x.created_at).toLocaleString('en-GB',{timeZone:'Asia/Jakarta'}))+'</td><td class="audit-admin">'+esc(x.user_name||'System')+'</td><td><span class="audit-action '+cls+'">'+esc(a)+'</span></td><td>'+esc(x.target||'-')+'</td><td class="audit-description">'+esc(x.description||'-')+'</td></tr>';
+  }).join('')||'<tr><td colspan="5" class="audit-empty"><strong>'+((query||action)?'No matching audit entries':'No audit activity yet')+'</strong><span>'+((query||action)?'Try another search or action filter.':'Emergency configuration and incident activity will appear here automatically.')+'</span></td></tr>';
+}
 function openEditor(title,body){$('editorTitle').textContent=title;$('editorBody').innerHTML=body;$('editorNotice').textContent='';$('editor').classList.add('open');requestAnimationFrame(()=>{const box=$('editor').querySelector('.modalbox');if(box)box.scrollTop=0;const first=$('editorBody').querySelector('input,select,textarea');if(first)first.focus()})}
 function closeEditor(){$('editor').classList.remove('open')}
 function openType(id){const x=state.types.find(x=>x.id===id)||{code:'',name:'',description:'',default_severity:'URGENT',priority:100,active:true};openEditor(id?'Edit Incident Type':'Add Incident Type','<form id="editForm"><div class="grid"><div class="field"><label>Code</label><input id="f_code" value="'+esc(x.code)+'" required></div><div class="field"><label>Name</label><input id="f_name" value="'+esc(x.name)+'" required></div><div class="field"><label>Default Severity</label><select id="f_sev"><option>URGENT</option><option>HIGH</option><option>NORMAL</option><option>INFORMATION</option></select></div><div class="field"><label>Priority</label><input id="f_priority" type="number" value="'+esc(x.priority??100)+'"></div><div class="field full"><label>Description</label><textarea id="f_desc">'+esc(x.description||'')+'</textarea></div><label class="check"><input id="f_active" type="checkbox" '+(x.active!==false?'checked':'')+'> Active</label></div><div class="actions" style="margin-top:14px"><button class="btn primary" type="submit">Save</button></div></form>');$('f_sev').value=x.default_severity||'URGENT';$('editForm').dataset.resource='incident_type';$('editForm').dataset.recordId=id||'';$('editForm').onsubmit=async e=>{e.preventDefault();try{await save('incident_type',{id,code:$('f_code').value,name:$('f_name').value,description:$('f_desc').value,default_severity:$('f_sev').value,priority:Number($('f_priority').value||100),active:$('f_active').checked});closeEditor()}catch(err){$('editorNotice').textContent=err.message;SecureOpsUI.error('Save Failed',err.message)}}}
@@ -302,12 +353,14 @@ document.addEventListener('click',async e=>{
     else if(action==='save-smtp')await saveSmtp();
     else if(action==='test-smtp')await testSmtp();
     else if(action==='save-system')await saveSystem();
+    else if(action==='refresh-audit'){await load();setPage()}
   }catch(err){
     console.error('Emergency Settings action failed:',err);
     const n=$('editorNotice')||$('systemNotice')||$('smtpNotice');
     if(n){n.classList.add('err');n.textContent=err?.message||String(err)}
   }
 });
+document.getElementById('auditSearch')?.addEventListener('input',renderAudit);document.getElementById('auditActionFilter')?.addEventListener('change',renderAudit);
 setPage();
 initAuth();
 </script>
