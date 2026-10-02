@@ -431,9 +431,12 @@ kembaliKunci:{security:{en:'Received By Security Officer',id:'Diterima Oleh Petu
 paket:{perusahaan:{en:'Expedition Company',id:'Perusahaan Ekspedisi'},security:{en:'Security Officer Name',id:'Nama Petugas Keamanan'}}
 };
 Object.keys(forms).forEach(k=>{
- forms[k].title=FORM_I18N[k].title[DEVICE_LANG];
- forms[k].description=FORM_I18N[k].description[DEVICE_LANG];
- forms[k].fields=forms[k].fields.map(f=>[f[0],FORM_FIELD_I18N[k]?.[f[0]]?.[DEVICE_LANG]||FIELD_I18N[f[0]]?.[DEVICE_LANG]||f[1],f[2],f[3]]);
+ const i18n=FORM_I18N[k];
+ if(i18n){
+   forms[k].title=i18n.title?.[DEVICE_LANG]||forms[k].title;
+   forms[k].description=i18n.description?.[DEVICE_LANG]||forms[k].description;
+ }
+ forms[k].fields=(forms[k].fields||[]).map(f=>[f[0],FORM_FIELD_I18N[k]?.[f[0]]?.[DEVICE_LANG]||FIELD_I18N[f[0]]?.[DEVICE_LANG]||f[1],f[2],f[3]]);
 });const choiceRoot=document.querySelector('#choices'),panel=document.querySelector('#panel');
 let lastSubmission=null;
 let keyAssetLookupTimer=null;
