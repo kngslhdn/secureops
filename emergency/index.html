@@ -1,7 +1,10 @@
 <!doctype html>
 <html lang="en">
 <head>
-<script src="../assets/secureops-ui.js?v=1"></script>
+<script src="../assets/secureops-ui.js?v=1"></script>\n<script>
+// Keep the Emergency Operations URL canonical: no cache/version query in the address bar.
+if(location.search && /^\\?v=/i.test(location.search)) history.replaceState(null,document.title,location.pathname+location.hash);
+</script>
 <script src="../app-config.js"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="preload" as="image" href="https://bosfcjwacdrwtwgpmaex.supabase.co/storage/v1/object/public/property-assets/HIKJ/32d10d47-b483-494f-bb39-e477858addf2.png"><title>SECUREOPS Emergency Response</title>
