@@ -21,7 +21,7 @@ async function outstandingKey(key:string){
  }
  return null;
 }
-const json=(body:unknown,status=200,req?:Request)=>new Response(JSON.stringify(body),{status,headers:{...corsFor(req||new Request('https://localhost')),'Content-Type':'application/json'}});
+const json=(req:Request,body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...corsFor(req),'Content-Type':'application/json'}});
 const clean=(v:unknown)=>String(v??'').trim().replace(/[<>]/g,'');
 const phone=(v:unknown)=>clean(v).replace(/[^0-9+]/g,'').replace(/^0+/,'');
 const normText=(v:unknown)=>clean(v).toLowerCase().replace(/\s+/g,' ');
@@ -85,59 +85,59 @@ Deno.serve(async req=>{
  if(req.method==='OPTIONS')return new Response(null,{status:204,headers:corsFor(req)});
  if(req.method==='GET'){
    const {data,error}=await supabase.from('properties').select('property_code,property_name,logo_url,primary_color,secondary_color').eq('id',HIKJ_PROPERTY_ID).eq('is_active',true).maybeSingle();
-   if(error)return json({error:'Unable to load property branding'},500);
-   return json({ok:true,branding:data||null});
+   if(error)return json(req, {error:'Unable to load property branding'},500);
+   return json(req, {ok:true,branding:data||null});
  }
- if(req.method!=='POST')return json({error:'Method not allowed'},405);const contentType=(req.headers.get('content-type')||'').toLowerCase();if(!contentType.startsWith('application/json'))return json({error:'Content-Type must be application/json.'},415);const limit=rateLimit(req);if(!limit.allowed)return new Response(JSON.stringify({error:'Too many requests. Please wait and try again.'}),{status:429,headers:{...corsFor(req),'Content-Type':'application/json','Retry-After':String(limit.retryAfter)}});
+ if(req.method!=='POST')return json(req, {error:'Method not allowed'},405);const contentType=(req.headers.get('content-type')||'').toLowerCase();if(!contentType.startsWith('application/json'))return json(req, {error:'Content-Type must be application/json.'},415);const limit=rateLimit(req);if(!limit.allowed)return new Response(JSON.stringify({error:'Too many requests. Please wait and try again.'}),{status:429,headers:{...corsFor(req),'Content-Type':'application/json','Retry-After':String(limit.retryAfter)}});
  try{
-  const contentLength=Number(req.headers.get('content-length')||0);if(contentLength>8*1024*1024)return json({error:'Request payload is too large.'},413);
-  const body=await req.json();if(!body||typeof body!=='object'||Array.isArray(body))return json({error:'Invalid JSON request body.'},400);const rawType=clean(body.type||body.form_type),type=types[rawType]||rawType;if(!['visitor_entry','visitor_exit','key_borrowing','key_return','package_registration','key_asset_lookup'].includes(type))return json({error:'Invalid submission type'},400);const settings=await publicSettings();const ops=settings.operations||{};const enabledByType:Record<string,string>={visitor_entry:'visitor_entry_enabled',visitor_exit:'visitor_exit_enabled',key_borrowing:'key_borrowing_enabled',key_return:'key_return_enabled',package_registration:'package_registration_enabled'};if(enabledByType[type]&&ops[enabledByType[type]]===false)return json({error:'This service is currently disabled by Security Administration.'},403);
+  const contentLength=Number(req.headers.get('content-length')||0);if(contentLength>8*1024*1024)return json(req, {error:'Request payload is too large.'},413);
+  const body=await req.json();if(!body||typeof body!=='object'||Array.isArray(body))return json(req, {error:'Invalid JSON request body.'},400);const rawType=clean(body.type||body.form_type),type=types[rawType]||rawType;if(!['visitor_entry','visitor_exit','key_borrowing','key_return','package_registration','key_asset_lookup'].includes(type))return json(req, {error:'Invalid submission type'},400);const settings=await publicSettings();const ops=settings.operations||{};const enabledByType:Record<string,string>={visitor_entry:'visitor_entry_enabled',visitor_exit:'visitor_exit_enabled',key_borrowing:'key_borrowing_enabled',key_return:'key_return_enabled',package_registration:'package_registration_enabled'};if(enabledByType[type]&&ops[enabledByType[type]]===false)return json(req, {error:'This service is currently disabled by Security Administration.'},403);
   if(type==='key_asset_lookup'){
    const key=clean(body.key_number||body.keyNumber);
-   if(!key)return json({error:'Please enter Key Number.'},400);
+   if(!key)return json(req, {error:'Please enter Key Number.'},400);
    const {data,error}=await propertySelect('key_assets','key_number,key_description,quantity,active').eq('key_number',key).maybeSingle();
    if(error)throw error;
-   if(!data)return json({ok:false,error:`Key Number ${key} was not found in Key Assets.`},404);
-   if(!data.active)return json({ok:false,error:`Key Number ${key} is inactive.`},409);
-   return json({ok:true,key_asset:{key_number:data.key_number,description:data.key_description||'',quantity:Number(data.quantity||0)}});
+   if(!data)return json(req, {ok:false,error:`Key Number ${key} was not found in Key Assets.`},404);
+   if(!data.active)return json(req, {ok:false,error:`Key Number ${key} is inactive.`},409);
+   return json(req, {ok:true,key_asset:{key_number:data.key_number,description:data.key_description||'',quantity:Number(data.quantity||0)}});
   }
-  const idem=clean(req.headers.get('idempotency-key')||body.idempotency_key);if(idem){const {data}=await propertySelect('submissions','submission_id').eq('idempotency_key',idem).maybeSingle();if(data)return json({ok:true,duplicate:true,submission_id:data.submission_id});}
-  const name=clean(val(body,'name','visitor_name','nama','returnName','borrowerName','namaPengantar')),mobile=clean(val(body,'phone','mobile_phone','telepon')),company=clean(val(body,'company_name','company','perusahaan'));if(name.length>120||mobile.length>40||company.length>160)return json({error:'One or more fields exceed the allowed length.'},400);let visitorId:string|null=null;let matchedExitEntry:any=null;
+  const idem=clean(req.headers.get('idempotency-key')||body.idempotency_key);if(idem){const {data}=await propertySelect('submissions','submission_id').eq('idempotency_key',idem).maybeSingle();if(data)return json(req, {ok:true,duplicate:true,submission_id:data.submission_id});}
+  const name=clean(val(body,'name','visitor_name','nama','returnName','borrowerName','namaPengantar')),mobile=clean(val(body,'phone','mobile_phone','telepon')),company=clean(val(body,'company_name','company','perusahaan'));if(name.length>120||mobile.length>40||company.length>160)return json(req, {error:'One or more fields exceed the allowed length.'},400);let visitorId:string|null=null;let matchedExitEntry:any=null;
   if(type==='visitor_entry'){
-   const pass=clean(val(body,'pass_vest_number','pass')),officer=clean(val(body,'security_officer_name','security')),category=clean(val(body,'category','kategori'));if(!name||!pass||!officer||!category)return json({error:'Required visitor fields are missing'},400);
+   const pass=clean(val(body,'pass_vest_number','pass')),officer=clean(val(body,'security_officer_name','security')),category=clean(val(body,'category','kategori'));if(!name||!pass||!officer||!category)return json(req, {error:'Required visitor fields are missing'},400);
    visitorId=await visitorIdentity(name,mobile,company,category);
   }else if(type==='visitor_exit'){
    const pass=clean(val(body,'pass_vest_number','pass')),officer=clean(val(body,'security_officer_name','security'));
-   if(!pass||!officer)return json({error:'Pass / Vest Number and Security Officer Name are required.'},400);
+   if(!pass||!officer)return json(req, {error:'Pass / Vest Number and Security Officer Name are required.'},400);
    matchedExitEntry=await findExitEntry(pass);
-   if(!matchedExitEntry)return json({ok:false,error:'Visitor not found: Pass / Vest Number does not match any visitor currently inside the hotel.'},404);
+   if(!matchedExitEntry)return json(req, {ok:false,error:'Visitor not found: Pass / Vest Number does not match any visitor currently inside the hotel.'},404);
    visitorId=matchedExitEntry.visitor_id;
   }
 
   let returnBorrowing:any=null;
   if(type==='key_return'){
    const key=clean(body.key_number||body.keyNumber);const quantity=Number(body.quantity||body.qty||1);
-   if(!key)return json({error:'Please enter Key Number.'},400);
-   if(!Number.isInteger(quantity)||quantity<1)return json({error:'Quantity of Keys must be a whole number greater than 0.'},400);
+   if(!key)return json(req, {error:'Please enter Key Number.'},400);
+   if(!Number.isInteger(quantity)||quantity<1)return json(req, {error:'Quantity of Keys must be a whole number greater than 0.'},400);
    const {data,error}=await Promise.resolve({data:await outstandingKey(key),error:null});
    if(error)throw error;
    returnBorrowing=data||null;
-   if(!returnBorrowing)return json({ok:false,error:`Key ${key} is not currently outstanding. Return rejected.`},409);
-   if(quantity>Number(returnBorrowing.outstanding_quantity))return json({ok:false,error:`Return quantity (${quantity}) exceeds outstanding quantity (${returnBorrowing.outstanding_quantity}) for Key ${key}.`,outstanding_quantity:returnBorrowing.outstanding_quantity},409);
+   if(!returnBorrowing)return json(req, {ok:false,error:`Key ${key} is not currently outstanding. Return rejected.`},409);
+   if(quantity>Number(returnBorrowing.outstanding_quantity))return json(req, {ok:false,error:`Return quantity (${quantity}) exceeds outstanding quantity (${returnBorrowing.outstanding_quantity}) for Key ${key}.`,outstanding_quantity:returnBorrowing.outstanding_quantity},409);
   }
 
   if(type==='key_borrowing'){
    const key=clean(body.key_number||body.keyNumber);
-   if(!key)return json({error:'Please enter Key Number.'},400);
+   if(!key)return json(req, {error:'Please enter Key Number.'},400);
    const {data:keyAsset,error:keyAssetError}=await propertySelect('key_assets','key_number,key_description,quantity,active').eq('key_number',key).maybeSingle();
    if(keyAssetError)throw keyAssetError;
-   if(!keyAsset)return json({ok:false,error:`Key Number ${key} was not found in Key Assets.`},404);
-   if(!keyAsset.active)return json({ok:false,error:`Key Number ${key} is inactive.`},409);
+   if(!keyAsset)return json(req, {ok:false,error:`Key Number ${key} was not found in Key Assets.`},404);
+   if(!keyAsset.active)return json(req, {ok:false,error:`Key Number ${key} is inactive.`},409);
    const quantity=Number(keyAsset.quantity);
-   if(!Number.isInteger(quantity)||quantity<1)return json({ok:false,error:`Key Number ${key} has an invalid quantity configured in Key Assets.`},409);
+   if(!Number.isInteger(quantity)||quantity<1)return json(req, {ok:false,error:`Key Number ${key} has an invalid quantity configured in Key Assets.`},409);
    const {data,error}=await Promise.resolve({data:await outstandingKey(key),error:null});
    if(error)throw error;
-   if(data)return json({ok:false,error:`Key ${key} is currently outstanding to ${data.borrower_name} with ${data.outstanding_quantity} key(s) outstanding. Please return the outstanding key(s) before a new borrowing.`},409);
+   if(data)return json(req, {ok:false,error:`Key ${key} is currently outstanding to ${data.borrower_name} with ${data.outstanding_quantity} key(s) outstanding. Please return the outstanding key(s) before a new borrowing.`},409);
   }
 
   const {data:submission,error:se}=await supabase.from('submissions').insert({property_id:HIKJ_PROPERTY_ID,submission_id:null,submission_type:type,visitor_id:visitorId,status:'submitted',idempotency_key:idem||null,metadata:{source_form:rawType}}).select('id,submission_id').single();if(se)throw se;
@@ -149,21 +149,21 @@ Deno.serve(async req=>{
    const {data:ex,error}=await supabase.from('visitor_exits').insert({property_id:HIKJ_PROPERTY_ID,submission_id:submission.id,visitor_id:visitorId,entry_id:entry.id,visitor_name:exitName,pass_vest_number:pass,security_officer_name:clean(val(body,'security_officer_name','security')),exit_at:new Date().toISOString()}).select('id').single();if(error)throw error;if(entry.id)await supabase.from('visitor_entries').update({exit_id:ex.id}).eq('id',entry.id);
   }else if(type==='key_borrowing'){
    const key=clean(body.key_number||body.keyNumber);
-   if(!key)return json({error:'Please enter Key Number.'},400);
+   if(!key)return json(req, {error:'Please enter Key Number.'},400);
    const {data:keyAsset,error:keyAssetError}=await propertySelect('key_assets','key_number,key_description,quantity,active').eq('key_number',key).maybeSingle();
    if(keyAssetError)throw keyAssetError;
-   if(!keyAsset)return json({ok:false,error:`Key Number ${key} was not found in Key Assets.`},404);
-   if(!keyAsset.active)return json({ok:false,error:`Key Number ${key} is inactive.`},409);
+   if(!keyAsset)return json(req, {ok:false,error:`Key Number ${key} was not found in Key Assets.`},404);
+   if(!keyAsset.active)return json(req, {ok:false,error:`Key Number ${key} is inactive.`},409);
    const quantity=Number(keyAsset.quantity);
-   if(!Number.isInteger(quantity)||quantity<1)return json({ok:false,error:`Key Number ${key} has an invalid quantity configured in Key Assets.`},409);
+   if(!Number.isInteger(quantity)||quantity<1)return json(req, {ok:false,error:`Key Number ${key} has an invalid quantity configured in Key Assets.`},409);
    const {data,error}=await Promise.resolve({data:await outstandingKey(key),error:null});
    if(error)throw error;
-   if(data)return json({ok:false,error:`Key ${key} is currently outstanding to ${data.borrower_name} with ${data.outstanding_quantity} key(s) outstanding. Please return the outstanding key(s) before a new borrowing.`},409);
+   if(data)return json(req, {ok:false,error:`Key ${key} is currently outstanding to ${data.borrower_name} with ${data.outstanding_quantity} key(s) outstanding. Please return the outstanding key(s) before a new borrowing.`},409);
    const borrowerName=clean(val(body,'borrower_name','borrowerName'));
    const department=clean(body.department);
    const description=clean(keyAsset.key_description||'');
    const officer=clean(val(body,'security_officer_name','security'));
-   if(!borrowerName||!officer)return json({error:'Borrower Name and Issued By Security Officer are required.'},400);
+   if(!borrowerName||!officer)return json(req, {error:'Borrower Name and Issued By Security Officer are required.'},400);
    const borrowedAt=timestamp(body.borrowed_at||body.datetime);
    const expectedReturnAt=new Date(new Date(borrowedAt).getTime()+24*60*60*1000).toISOString();
    const borrowingPayload={property_id:HIKJ_PROPERTY_ID,submission_id:submission.id,borrower_name:borrowerName,department,key_number:key,key_description:description,quantity,security_officer_name:officer,borrowed_at:borrowedAt,expected_return_at:expectedReturnAt} as Record<string,unknown>;
@@ -171,7 +171,7 @@ Deno.serve(async req=>{
    if(ie)throw ie;
   }else if(type==='key_return'){
    const quantity=Number(body.quantity||body.qty||1),borrowing=returnBorrowing,returnedBy=clean(val(body,'return_name','returnName','returned_by','returnedBy')),officer=clean(val(body,'security_officer_name','security')),department=clean(body.department)||borrowing.department;
-   if(!returnedBy||!officer)return json({error:'Returned By and Received By Security are required.'},400);
+   if(!returnedBy||!officer)return json(req, {error:'Returned By and Received By Security are required.'},400);
    const originalBorrowed=Number(borrowing.borrowed_quantity),previouslyReturned=Number(borrowing.returned_quantity),newTotal=previouslyReturned+quantity;
    const discrepancy=false;
    const {error}=await supabase.from('key_returns').insert({property_id:HIKJ_PROPERTY_ID,submission_id:submission.id,borrowing_id:borrowing.borrowing_id,return_name:returnedBy,returned_by:returnedBy,department,key_number:borrowing.key_number,quantity,borrowed_quantity:originalBorrowed,discrepancy_qty:discrepancy,security_officer_name:officer,returned_at:timestamp(body.returned_at||body.datetime)});
@@ -181,7 +181,7 @@ Deno.serve(async req=>{
   }else{
    const path=await uploadPackagePhoto(clean(body.foto||body.photo_data_url));const {error}=await supabase.from('package_registrations').insert({property_id:HIKJ_PROPERTY_ID,submission_id:submission.id,courier_name:clean(val(body,'courier_name','namaPengantar')),phone:mobile||null,phone_normalized:phone(mobile)||null,company_name:company,item_type:clean(val(body,'item_type','jenisBarang')).toUpperCase(),item_count:Number(body.item_count||body.number_of_items||body.jumlah||1),recipient_type:clean(val(body,'recipient_type','tujuan')).toUpperCase(),recipient_name:clean(val(body,'recipient_name','namaTujuan')),security_officer_name:clean(val(body,'security_officer_name','security')),photo_storage_path:path});if(error)throw error;
   }
-  await supabase.from('submissions').update({status:'completed'}).eq('id',submission.id);return json({ok:true,submission_id:submission.submission_id,whatsapp_number:settings.whatsapp?.phone_number||null,...(keyReturnResult?{key_return:keyReturnResult}:{})});
+  await supabase.from('submissions').update({status:'completed'}).eq('id',submission.id);return json(req, {ok:true,submission_id:submission.submission_id,whatsapp_number:settings.whatsapp?.phone_number||null,...(keyReturnResult?{key_return:keyReturnResult}:{})});
  }catch(e){
   console.error('visitor-submit error',e);
   const raw=String(e?.message||'');
@@ -190,6 +190,6 @@ Deno.serve(async req=>{
   else if(/duplicate|23505|already exists|unique constraint/i.test(raw)) message='This submission already exists or was already processed. Please wait and try again.';
   else if(/foreign key|23503/i.test(raw)) message='A related record could not be found. Please refresh and try again.';
   else if(/payload|too large|5 MB/i.test(raw)) message='The submitted file or request is too large.';
-  return json({error:message},500);
+  return json(req, {error:message},500);
  }
 });
