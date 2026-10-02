@@ -93,7 +93,7 @@ main{max-width:1700px;width:100%;padding:28px 30px 34px;margin:0 auto;overflow:a
 
 <script>
 const U=window.SECUREOPS_CONFIG.SUPABASE_URL,K=window.SECUREOPS_CONFIG.SUPABASE_PUBLISHABLE_KEY;
-const sb=window.supabase.createClient(U,K,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'secureops-emergency-auth-token'}}),API=U+'/functions/v1/emergency-api';
+const sb=window.supabase.createClient(U,K,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'secureops-auth-token'}}),API=U+'/functions/v1/emergency-api';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 let session=null,state={types:[],templates:[],groups:[],contacts:[],members:[],settings:[],audit:[],smtp:{},profile:{}};
 async function api(action,method='GET',body=null){const r=await fetch(API+'?action='+encodeURIComponent(action),{method,headers:{apikey:K,Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Request failed');return j}
