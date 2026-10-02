@@ -160,6 +160,7 @@ const U=window.SECUREOPS_CONFIG.SUPABASE_URL,K=window.SECUREOPS_CONFIG.SUPABASE_
 const sb=window.SECUREOPS_AUTH.getClient(),API=U+'/functions/v1/emergency-api';
 const $=id=>document.getElementById(id), esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 let session=null, types=[], templates=[], contacts=[], groups=[], systemSettings={}, currentWaDispatches=[];
+let authBooting=true, enterInFlight=null;
 async function api(action,method='GET',body=null,query=null){const qs=new URLSearchParams({action,...(query||{})});const r=await fetch(API+'?'+qs.toString(),{method,headers:{apikey:K,Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Request failed');return j}
 async function loadPropertyBranding(){
   const wrap=$('propertyBrandLogo');
@@ -174,7 +175,9 @@ async function loadPropertyBranding(){
   }catch(e){console.warn('Property branding refresh unavailable:',e)}
 }
 async function enter(s){
+ if(enterInFlight)return enterInFlight;
  if(!s?.access_token)throw Error('No authenticated SECUREOPS session');
+ enterInFlight=(async()=>{
  session=s;
  try{
   const me=await api('me');
@@ -213,6 +216,8 @@ async function enter(s){
   if(desc)desc.textContent=e?.message||'Unable to load Emergency Operations. Return to Admin Console and try again.';
   // Do not sign out or redirect a valid Admin Console session.
  }
+ })();
+ try{return await enterInFlight}finally{enterInFlight=null}
 }
 async function initAuth(){
   // The Admin Console and Emergency Operations share the same persisted
@@ -252,12 +257,14 @@ async function initAuth(){
     const desc=$('sessionGate').querySelector('p');
     if(title)title.textContent='Emergency Operations unavailable';
     if(desc)desc.textContent=e?.message||'Unable to load Emergency Operations.';
+  }finally{
+    authBooting=false;
   }
 }
 $('logout').onclick=async()=>{await sb.auth.signOut();location.href='../admin/'};
 sb.auth.onAuthStateChange((event,s)=>{
   if(event==='SIGNED_OUT'){location.href='../admin/'}
-  else if(event==='SIGNED_IN'&&s){setTimeout(()=>enter(s),0)}
+  else if(event==='SIGNED_IN'&&s&&!authBooting){enter(s).catch(e=>console.error('Emergency auth state refresh failed:',e))}
 });
 
 async function boot(){const r=await api('bootstrap');types=r.types||[];templates=r.templates||[];contacts=r.contacts||[];groups=r.groups||[];systemSettings=Object.fromEntries((r.settings||[]).map(x=>[x.setting_key,x.setting_value]));renderTypes();renderTemplates();renderRecipients();renderGroups();applyDefaults();await refresh();syncSidebar();if(location.hash){const el=$(location.hash.slice(1));if(el)setTimeout(()=>el.scrollIntoView({block:'start'}),50)}}
