@@ -525,8 +525,11 @@ Deno.serve(async (req) => {
         resolution_reason: reason,
         resolution_notes: notes,
         updated_at: now,
-      }).eq("id", b.incident_id).select().single();
-      if (upd.error) throw upd.error;
+      }).eq("id", b.incident_id).in("status", ["ACTIVE","MONITORING"]).select().single();
+      if (upd.error) {
+        if (upd.error.code === "PGRST116") throw new Error("Incident was already resolved or changed by another user.");
+        throw upd.error;
+      }
       const timeline = await db.from("emergency_incident_updates").insert({
         incident_id: b.incident_id,
         status: "RESOLVED",
@@ -600,8 +603,11 @@ Deno.serve(async (req) => {
         resolution_reason: null,
         resolution_notes: null,
         updated_at: now,
-      }).eq("id", b.incident_id).select().single();
-      if (upd.error) throw upd.error;
+      }).eq("id", b.incident_id).in("status", ["RESOLVED","CLOSED","FALSE_ALARM"]).select().single();
+      if (upd.error) {
+        if (upd.error.code === "PGRST116") throw new Error("Incident was already reopened or changed by another user.");
+        throw upd.error;
+      }
       const timeline = await db.from("emergency_incident_updates").insert({
         incident_id: b.incident_id,
         status: "ACTIVE",
