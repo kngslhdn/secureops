@@ -140,7 +140,17 @@ Deno.serve(async req=>{
    if(data)return json(req, {ok:false,error:`Key ${key} is currently outstanding to ${data.borrower_name} with ${data.outstanding_quantity} key(s) outstanding. Please return the outstanding key(s) before a new borrowing.`},409);
   }
 
-  const {data:submission,error:se}=await supabase.from('submissions').insert({property_id:HIKJ_PROPERTY_ID,submission_id:null,submission_type:type,visitor_id:visitorId,status:'submitted',idempotency_key:idem||null,metadata:{source_form:rawType}}).select('id,submission_id').single();if(se)throw se;
+  let submission:any=null;
+  const {data:createdSubmission,error:se}=await supabase.from('submissions').insert({property_id:HIKJ_PROPERTY_ID,submission_id:null,submission_type:type,visitor_id:visitorId,status:'submitted',idempotency_key:idem||null,metadata:{source_form:rawType}}).select('id,submission_id').single();
+  if(se){
+    if(idem&&se.code==='23505'){
+      const existing=await supabase.from('submissions').select('id,submission_id').eq('idempotency_key',idem).maybeSingle();
+      if(existing.error||!existing.data)throw se;
+      return json(req,{ok:true,duplicate:true,submission_id:existing.data.submission_id});
+    }
+    throw se;
+  }
+  submission=createdSubmission;
   let keyReturnResult:any=null;
   if(type==='visitor_entry'){
    const category=clean(val(body,'category','kategori'));const {error}=await supabase.from('visitor_entries').insert({property_id:HIKJ_PROPERTY_ID,submission_id:submission.id,visitor_id:visitorId,visitor_name:name,visitor_phone:mobile||null,visitor_company_name:company||null,visitor_category:category,visitor_name_snapshot:name,phone_snapshot:mobile||null,company_name_snapshot:company||null,category_snapshot:category,work_location:clean(val(body,'work_location','lokasi')),purpose:clean(val(body,'purpose','tujuan')),security_officer_name:clean(val(body,'security_officer_name','security')),pass_vest_number:clean(val(body,'pass_vest_number','pass')),entry_at:timestamp(body.entry_at||body.datetime)});if(error)throw error;
