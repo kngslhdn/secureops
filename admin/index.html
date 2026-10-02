@@ -71,12 +71,38 @@ async function loadPublicBranding(){
 function escBrand(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
 loadPublicBranding();
 function showLogin(message=''){document.getElementById('app').classList.add('hidden');document.getElementById('login').classList.remove('hidden');document.getElementById('loginError').textContent=message}
-async function enter(session){await profile(session);document.getElementById('login').classList.add('hidden');document.getElementById('app').classList.remove('hidden');window.dispatchEvent(new CustomEvent('hikj-admin-ready',{detail:{session}}));if(window.HIKJAdminV2Build)window.HIKJAdminV2Build()}
-async function initAuth(){const {data,error}=await sb.auth.getSession();if(error||!data.session){showLogin(error?.message||'Please sign in to continue');return}try{await enter(data.session)}catch(e){console.error('Admin bootstrap failed:',e);await sb.auth.signOut();showLogin(e.message||'This account is not authorized for SECUREOPS Admin Console. Please use a registered account.')}}
+let adminEnteredSessionId='';
+let adminEnterPromise=null;
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+async function getStableSession(fallback){
+  for(let i=0;i<6;i++){
+    const {data,error}=await sb.auth.getSession();
+    if(!error&&data.session?.access_token)return data.session;
+    await sleep(150);
+  }
+  return fallback||null;
+}
+async function enter(session){
+  if(!session?.access_token)throw Error('No authenticated session returned');
+  if(adminEnterPromise)return adminEnterPromise;
+  if(adminEnteredSessionId===session.user?.id){return}
+  adminEnterPromise=(async()=>{
+    const stable=await getStableSession(session);
+    if(!stable?.access_token)throw Error('Authentication session is not ready. Please sign in again.');
+    await profile(stable);
+    adminEnteredSessionId=stable.user?.id||'';
+    document.getElementById('login').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    window.dispatchEvent(new CustomEvent('hikj-admin-ready',{detail:{session:stable}}));
+    if(window.HIKJAdminV2Build)await window.HIKJAdminV2Build();
+  })();
+  try{return await adminEnterPromise}finally{adminEnterPromise=null}
+}
+async function initAuth(){const {data,error}=await sb.auth.getSession();if(error||!data.session){showLogin(error?.message||'Please sign in to continue');return}try{await enter(data.session)}catch(e){console.error('Admin bootstrap failed:',e);await sb.auth.signOut();adminEnteredSessionId='';showLogin(e.message||'This account is not authorized for SECUREOPS Admin Console. Please use a registered account.')}}
 document.getElementById('loginForm').addEventListener('submit',async ev=>{ev.preventDefault();const b=document.getElementById('loginBtn'),err=document.getElementById('loginError');b.disabled=true;b.textContent='SIGNING IN…';err.textContent='';try{const {data,error}=await sb.auth.signInWithPassword({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value});if(error)throw error;if(!data.session)throw Error('No authenticated session returned');await enter(data.session)}catch(e){showLogin(e.message||String(e))}finally{b.disabled=false;b.textContent='SIGN IN'}});
 document.getElementById('googleLoginBtn').addEventListener('click',async()=>{const b=document.getElementById('googleLoginBtn'),err=document.getElementById('loginError');b.disabled=true;b.querySelector('span').textContent='REDIRECTING TO GOOGLE…';err.textContent='';try{const redirectTo=window.location.origin+window.location.pathname;const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo,queryParams:{access_type:'offline',prompt:'select_account'}}});if(error)throw error}catch(e){err.textContent=e.message||'Google sign-in could not be started';b.disabled=false;b.querySelector('span').textContent='Sign in with Google'}});
-document.getElementById('logout').onclick=async()=>{await sb.auth.signOut();showLogin('Signed out successfully')};
-sb.auth.onAuthStateChange((event,s)=>{if(event==='SIGNED_OUT')showLogin('Your session has ended. Please sign in again');else if(event==='SIGNED_IN'&&s)setTimeout(()=>enter(s).catch(async e=>{await sb.auth.signOut();showLogin(e.message||'This Google account is not registered for SECUREOPS Admin Console.')}),0)});
+document.getElementById('logout').onclick=async()=>{adminEnteredSessionId='';adminEnterPromise=null;await sb.auth.signOut();showLogin('Signed out successfully')};
+sb.auth.onAuthStateChange((event,s)=>{if(event==='SIGNED_OUT'){adminEnteredSessionId='';adminEnterPromise=null;showLogin('Your session has ended. Please sign in again')}else if(event==='SIGNED_IN'&&s){setTimeout(()=>{enter(s).catch(async e=>{console.error('Auth state bootstrap failed:',e);await sb.auth.signOut();adminEnteredSessionId='';showLogin(e.message||'This Google account is not registered for SECUREOPS Admin Console.')})},250)}});
 initAuth();
 </script>
 <script src="admin-console-v2.js?v=28"></script>
