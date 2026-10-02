@@ -2,7 +2,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const APP_VERSION='ks.v.001';
 const APP_TITLE='SECUREOPS | Security Operations';
-const cors = {'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type, idempotency-key','Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Expose-Headers':'X-SECUREOPS-Version, X-SECUREOPS-Title','X-SECUREOPS-Version':APP_VERSION,'X-SECUREOPS-Title':APP_TITLE};
+const ALLOWED_ORIGINS=new Set(['https://kngslhdn.github.io','https://visitor.myhikj.com','http://visitor.myhikj.com','http://localhost:3000','http://127.0.0.1:5500']);
+const corsFor=(req:Request)=>{const origin=req.headers.get('Origin')||'';return {'Access-Control-Allow-Origin':ALLOWED_ORIGINS.has(origin)?origin:'https://kngslhdn.github.io','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type, idempotency-key','Access-Control-Allow-Methods':'GET,POST, OPTIONS','Access-Control-Expose-Headers':'X-SECUREOPS-Version, X-SECUREOPS-Title','X-SECUREOPS-Version':APP_VERSION,'X-SECUREOPS-Title':APP_TITLE,'Vary':'Origin','X-Content-Type-Options':'nosniff'};};
+
 const supabase=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 const HIKJ_PROPERTY_ID='9ca8c398-c376-4d7a-8b74-91a8ffb771e7';
 const propertySelect=(table:string,columns:string)=>supabase.from(table).select(columns).eq('property_id',HIKJ_PROPERTY_ID);
@@ -19,7 +21,7 @@ async function outstandingKey(key:string){
  }
  return null;
 }
-const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json'}});
+const json=(body:unknown,status=200,req?:Request)=>new Response(JSON.stringify(body),{status,headers:{...corsFor(req||new Request('https://localhost')),'Content-Type':'application/json'}});
 const clean=(v:unknown)=>String(v??'').trim().replace(/[<>]/g,'');
 const phone=(v:unknown)=>clean(v).replace(/[^0-9+]/g,'').replace(/^0+/,'');
 const normText=(v:unknown)=>clean(v).toLowerCase().replace(/\s+/g,' ');
@@ -80,13 +82,13 @@ async function uploadPackagePhoto(dataUrl:string){
 }
 
 Deno.serve(async req=>{
- if(req.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
+ if(req.method==='OPTIONS')return new Response(null,{status:204,headers:corsFor(req)});
  if(req.method==='GET'){
    const {data,error}=await supabase.from('properties').select('property_code,property_name,logo_url,primary_color,secondary_color').eq('id',HIKJ_PROPERTY_ID).eq('is_active',true).maybeSingle();
    if(error)return json({error:'Unable to load property branding'},500);
    return json({ok:true,branding:data||null});
  }
- if(req.method!=='POST')return json({error:'Method not allowed'},405);const contentType=(req.headers.get('content-type')||'').toLowerCase();if(!contentType.startsWith('application/json'))return json({error:'Content-Type must be application/json.'},415);const limit=rateLimit(req);if(!limit.allowed)return new Response(JSON.stringify({error:'Too many requests. Please wait and try again.'}),{status:429,headers:{...cors,'Content-Type':'application/json','Retry-After':String(limit.retryAfter)}});
+ if(req.method!=='POST')return json({error:'Method not allowed'},405);const contentType=(req.headers.get('content-type')||'').toLowerCase();if(!contentType.startsWith('application/json'))return json({error:'Content-Type must be application/json.'},415);const limit=rateLimit(req);if(!limit.allowed)return new Response(JSON.stringify({error:'Too many requests. Please wait and try again.'}),{status:429,headers:{...corsFor(req),'Content-Type':'application/json','Retry-After':String(limit.retryAfter)}});
  try{
   const contentLength=Number(req.headers.get('content-length')||0);if(contentLength>8*1024*1024)return json({error:'Request payload is too large.'},413);
   const body=await req.json();if(!body||typeof body!=='object'||Array.isArray(body))return json({error:'Invalid JSON request body.'},400);const rawType=clean(body.type||body.form_type),type=types[rawType]||rawType;if(!['visitor_entry','visitor_exit','key_borrowing','key_return','package_registration','key_asset_lookup'].includes(type))return json({error:'Invalid submission type'},400);const settings=await publicSettings();const ops=settings.operations||{};const enabledByType:Record<string,string>={visitor_entry:'visitor_entry_enabled',visitor_exit:'visitor_exit_enabled',key_borrowing:'key_borrowing_enabled',key_return:'key_return_enabled',package_registration:'package_registration_enabled'};if(enabledByType[type]&&ops[enabledByType[type]]===false)return json({error:'This service is currently disabled by Security Administration.'},403);
