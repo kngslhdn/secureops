@@ -663,6 +663,12 @@ Deno.serve(async (req) => {
 
     if (action === "create_incident" && req.method === "POST") {
       const b = await req.json();
+      const idempotencyKey = String(b.idempotency_key || "").trim().slice(0,128);
+      if (idempotencyKey) {
+        const existing = await db.from("emergency_incidents").select("*").eq("idempotency_key", idempotencyKey).maybeSingle();
+        if (existing.error) throw existing.error;
+        if (existing.data) return json(req, { ok: true, duplicate: true, incident: existing.data, whatsapp: { manual: true, dispatches: [] }, production_ready: false });
+      }
       const groupIds: string[] = Array.isArray(b.group_ids) ? b.group_ids : [];
       const directContactIds: string[] = Array.isArray(b.contact_ids) ? b.contact_ids : [];
       if (!b.title || !b.description || (!groupIds.length && !directContactIds.length)) {
@@ -692,8 +698,16 @@ Deno.serve(async (req) => {
         status: "ACTIVE",
         test_mode: b.test_mode !== false,
         created_by: user.id,
+        idempotency_key: idempotencyKey || null,
       }).select().single();
-      if (error) throw error;
+      if (error) {
+        if (idempotencyKey && error.code === "23505") {
+          const existing = await db.from("emergency_incidents").select("*").eq("idempotency_key", idempotencyKey).maybeSingle();
+          if (existing.error || !existing.data) throw error;
+          return json(req, { ok: true, duplicate: true, incident: existing.data, whatsapp: { manual: true, dispatches: [] }, production_ready: false });
+        }
+        throw error;
+      }
 
       const recipientRows: any[] = [];
       for (const contact of contacts) {
