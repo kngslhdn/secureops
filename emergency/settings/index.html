@@ -97,12 +97,17 @@ main{max-width:1700px;width:100%;padding:28px 30px 34px;margin:0 auto;overflow:a
 const U=window.SECUREOPS_CONFIG.SUPABASE_URL,K=window.SECUREOPS_CONFIG.SUPABASE_PUBLISHABLE_KEY;
 const sb=window.SECUREOPS_AUTH.getClient(),API=U+'/functions/v1/emergency-api';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-let session=null,initialized=false,state={types:[],templates:[],groups:[],contacts:[],members:[],settings:[],audit:[],smtp:{},profile:{}};
+let session=null,initialized=false,authBooting=true,loadInFlight=null,state={types:[],templates:[],groups:[],contacts:[],members:[],settings:[],audit:[],smtp:{},profile:{}};
 async function api(action,method='GET',body=null){const r=await fetch(API+'?action='+encodeURIComponent(action),{method,headers:{apikey:K,Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Request failed');return j}
 function setting(k,d){const x=state.settings.find(x=>x.setting_key===k);return x?x.setting_value:d}
 function canEdit(){return ['ADMIN','MANAGER','SUPERADMIN'].includes(state.profile?.role)}
 function superAdmin(){return state.profile?.role==='SUPERADMIN'}
-async function load(){const r=await api('settings_bootstrap');state=r;state.settings=r.settings||[];state.types=r.types||[];state.templates=r.templates||[];state.groups=r.groups||[];state.contacts=r.contacts||[];state.members=r.members||[];state.audit=r.audit||[];state.smtp=r.smtp||{};$('userName').textContent=r.profile.full_name||'Admin';$('userRole').textContent=r.profile.role||'—';renderAll()}
+async function load(){
+  if(loadInFlight)return loadInFlight;
+  loadInFlight=(async()=>{const r=await api('settings_bootstrap');state=r;state.settings=r.settings||[];state.types=r.types||[];state.templates=r.templates||[];state.groups=r.groups||[];state.contacts=r.contacts||[];state.members=r.members||[];state.audit=r.audit||[];state.smtp=r.smtp||{};$('userName').textContent=r.profile.full_name||'Admin';$('userRole').textContent=r.profile.role||'—';renderAll()}
+  })();
+  try{return await loadInFlight}finally{loadInFlight=null}
+}
 async function save(resource,data,notify=true){
   const r=await api('settings_mutation','POST',{resource,op:data.id?'update':'create',data});
   try{await load()}catch(refreshErr){console.error('Settings refresh failed after save:',refreshErr)}
@@ -188,12 +193,14 @@ async function initAuth(){
       }
     }
     showSettingsError(e);
+  }finally{
+    authBooting=false;
   }
 }
 $('logout').onclick=async()=>{await sb.auth.signOut();location.href='../../admin/'};
 sb.auth.onAuthStateChange((event,s)=>{
   if(event==='SIGNED_OUT'){location.href='../../admin/'}
-  else if(s&&event==='SIGNED_IN'&&!initialized){setTimeout(()=>{session=s;load().then(()=>{initialized=true}).catch(showSettingsError)},150)}
+  else if(s&&event==='SIGNED_IN'&&!authBooting&&!initialized){session=s;load().then(()=>{initialized=true}).catch(showSettingsError)}
 });
 document.querySelectorAll('a[data-nav]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();const p=a.dataset.nav;if(!p)return;history.pushState({page:p},'',`?page=${encodeURIComponent(p)}`);setPage();$('layout').classList.remove('open')}));
 window.addEventListener('popstate',()=>setPage());$('mobileMenu').onclick=()=>$('layout').classList.toggle('open');$('editor').addEventListener('click',e=>{if(e.target===$('editor'))closeEditor()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('editor').classList.contains('open'))closeEditor()});document.addEventListener('submit',async e=>{
