@@ -150,16 +150,31 @@ async function loadPropertyBranding(){
 loadPropertyBranding();
 function showLogin(message=''){location.href='../../admin/'}
 function hideLogin(){}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function showSettingsError(e){
+  console.error('Emergency Settings bootstrap failed:',e);
+  const d=$('pageDescription');
+  if(d){
+    d.textContent='Emergency Settings could not load. Please refresh and try again.';
+    d.style.color='#b91c1c';
+  }
+  if(window.SecureOpsUI?.error)SecureOpsUI.error('Emergency Settings Load Failed',e?.message||String(e));
+}
 async function initAuth(){
-  const {data,error}=await sb.auth.getSession();
-  if(error||!data.session){location.href='../../admin/';return}
-  session=data.session;
-  try{await load()}catch(e){console.error('Emergency Settings bootstrap failed:',e);location.href='../../admin/'}
+  let sessionData=null;
+  for(let i=0;i<3;i++){
+    const {data,error}=await sb.auth.getSession();
+    if(!error&&data.session){sessionData=data.session;break}
+    await sleep(300);
+  }
+  if(!sessionData){location.href='../../admin/';return}
+  session=sessionData;
+  try{await load()}catch(e){showSettingsError(e)}
 }
 $('logout').onclick=async()=>{await sb.auth.signOut();location.href='../../admin/'};
 sb.auth.onAuthStateChange((event,s)=>{
   if(event==='SIGNED_OUT'){location.href='../../admin/'}
-  else if(s&&event==='SIGNED_IN'){setTimeout(()=>{session=s;load().catch(e=>{console.error(e);location.href='../../admin/'})},0)}
+  else if(s&&event==='SIGNED_IN'){setTimeout(()=>{session=s;load().catch(showSettingsError)},150)}
 });
 document.querySelectorAll('a[data-nav]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();const p=a.dataset.nav;if(!p)return;history.pushState({page:p},'',`?page=${encodeURIComponent(p)}`);setPage();$('layout').classList.remove('open')}));
 window.addEventListener('popstate',()=>setPage());$('mobileMenu').onclick=()=>$('layout').classList.toggle('open');$('editor').addEventListener('click',e=>{if(e.target===$('editor'))closeEditor()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('editor').classList.contains('open'))closeEditor()});document.addEventListener('submit',async e=>{
