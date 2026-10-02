@@ -128,12 +128,9 @@ async function audit(db: any, user: any, profile: any, action: string, target: s
  
 async function selectedGroups(db: any, groupIds: string[], propertyId: string | null, superAdmin = false) {
   if (!groupIds.length) return [];
-  const { data, error } = await admin
-    .from("emergency_contact_groups")
-    .select("*")
-    .in("id", groupIds)
-    .eq("active", true);
+  let q = admin.from("emergency_contact_groups").select("*").in("id", groupIds).eq("active", true);
   if (!superAdmin) q = q.eq("property_id", propertyId);
+  const { data, error } = await q;
   if (error) throw error;
   if ((data || []).length !== groupIds.length) {
     throw new Error("One or more selected recipient groups are inactive or unavailable.");
@@ -664,7 +661,7 @@ Deno.serve(async (req) => {
         throw new Error("Title, message and at least one recipient group/contact are required.");
       }
 
-      const { groups, contacts, memberships } = await resolveRecipients(db, groupIds, directContactIds);
+      const { groups, contacts, memberships } = await resolveRecipients(db, groupIds, directContactIds, profile);
       const whatsappGroups = groups.filter((g: any) => g.whatsapp_group_url);
       const smtp = await smtpSettings(db);
       const systemSettings = await settingsMap(db);
