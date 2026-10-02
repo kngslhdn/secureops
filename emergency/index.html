@@ -159,7 +159,7 @@ main{max-width:1700px;margin:0 auto;padding:28px 30px 34px}.hero{display:flex;ju
 const U=window.SECUREOPS_CONFIG.SUPABASE_URL,K=window.SECUREOPS_CONFIG.SUPABASE_PUBLISHABLE_KEY;
 const sb=window.SECUREOPS_AUTH.getClient(),API=U+'/functions/v1/emergency-api';
 const $=id=>document.getElementById(id), esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-let session=null, types=[], templates=[], contacts=[], groups=[], systemSettings={}, currentWaDispatches=[];
+let session=null, types=[], templates=[], contacts=[], groups=[], systemSettings={}, currentWaDispatches=[],createRequestId=null;
 let authBooting=true, enterInFlight=null;
 async function api(action,method='GET',body=null,query=null){const qs=new URLSearchParams({action,...(query||{})});const r=await fetch(API+'?'+qs.toString(),{method,headers:{apikey:K,Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Request failed');return j}
 async function loadPropertyBranding(){
@@ -317,19 +317,23 @@ $('template').onchange=()=>{
   applyTemplate(t,{force:true});
 };
 $('location').oninput=()=>{
+  createRequestId=null;
   const t=templates.find(x=>x.id===$('template').value);
   if(t)applyTemplate(t);
 };
 $('title').oninput=()=>{
+  createRequestId=null;
   if($('template').value)templateBase.generatedTitle='';
 };
 $('message').oninput=()=>{
+  createRequestId=null;
   if($('template').value)templateBase.generatedMessage='';
 };
 $('clearBtn').onclick=()=>{
   $('incidentForm').reset();
   $('message').value='';
   templateBase={title:'',message:'',generatedTitle:'',generatedMessage:''};
+  createRequestId=null;
   document.querySelectorAll('#recipients input,#groups input').forEach(x=>x.checked=false);
   applyDefaults();
 };
@@ -340,7 +344,7 @@ $('incidentForm').onsubmit=async e=>{e.preventDefault();const ids=[...document.q
 const waWindows=groupIds.map(()=>window.open('about:blank','_blank'));
 waWindows.forEach(w=>{if(w)w.document.title='SECUREOPS Emergency — preparing WhatsApp…'});
 
-$('sendBtn').disabled=true;try{const sev=document.querySelector('input[name=severity]:checked').value;const r=await api('create_incident','POST',{incident_type_id:$('type').value||null,severity:sev,title:$('title').value.trim(),location:$('location').value.trim(),description:$('message').value.trim(),test_mode:!production,contact_ids:ids,group_ids:groupIds});
+$('sendBtn').disabled=true;createRequestId=createRequestId||crypto.randomUUID();try{const sev=document.querySelector('input[name=severity]:checked').value;const r=await api('create_incident','POST',{incident_type_id:$('type').value||null,severity:sev,title:$('title').value.trim(),location:$('location').value.trim(),description:$('message').value.trim(),test_mode:!production,contact_ids:ids,group_ids:groupIds,idempotency_key:createRequestId});
 
 // Open each configured WhatsApp group with the generated emergency message.
 const dispatches=Array.isArray(r.whatsapp?.dispatches)?r.whatsapp.dispatches:[];
@@ -373,7 +377,7 @@ if(dispatches.length){
   $('sendNotice').classList.remove('err');
   $('sendNotice').textContent=r.production_ready?'Notification queued and production channels are configured':'Incident created. No configured WhatsApp group was found for the selected recipient group.';SecureOpsUI.success('Incident Created','The emergency incident was created successfully.',`<div><b>Incident:</b> ${esc(r.incident?.incident_id||'—')}</div><div>${esc(r.production_ready?'Notification queued and production channels are configured.':'No configured WhatsApp group was found for the selected recipient group.')}</div>`);
 }
-await refresh();}catch(err){waWindows.forEach(w=>{if(w)w.close()});$('sendNotice').classList.add('err');$('sendNotice').textContent=err.message;SecureOpsUI.error('Incident Creation Failed',err.message)}finally{$('sendBtn').disabled=false}};
+await refresh();createRequestId=null;}catch(err){waWindows.forEach(w=>{if(w)w.close()});$('sendNotice').classList.add('err');$('sendNotice').textContent=err.message;SecureOpsUI.error('Incident Creation Failed',err.message)}finally{$('sendBtn').disabled=false}};
 let refreshTimer=null,refreshInFlight=null;
 async function refresh(){
   if(refreshInFlight)return refreshInFlight;
