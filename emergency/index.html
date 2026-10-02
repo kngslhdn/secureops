@@ -122,7 +122,7 @@ main{max-width:1700px;margin:0 auto;padding:28px 30px 34px}.hero{display:flex;ju
 <a data-section="history" href="#history">Incident History</a>
 </nav>
 <div class="side-title">EMERGENCY SETTINGS</div><nav class="side-nav">
-<a class="settings-link" data-section="settings" href="#settings">Emergency Settings</a>
+<a class="settings-link" href="./settings/">Emergency Settings</a>
 </nav>
 </aside><main>
 <div class="hero"><div><div class="security-label">SECUREOPS</div><h1>Emergency Operations</h1><p>Create, notify, track and close hotel safety incidents</p></div><div class="mode" id="modeBadge">TEST / DRILL MODE</div></div>
@@ -154,13 +154,9 @@ main{max-width:1700px;margin:0 auto;padding:28px 30px 34px}.hero{display:flex;ju
 <div class="head"><h2>Incident History</h2><button class="btn" id="refreshHistory">Refresh</button></div>
 <div class="body"><div class="table"><table><thead><tr><th>Incident</th><th>Severity</th><th>Status</th><th>Location</th><th>Time</th></tr></thead>
 <tbody id="historyRows"></tbody></table></div></div></section>
-<section class="es-anchor" id="settings">
-  <div id="emergencySettingsPanel"></div>
-</section>
 </main></div></section>
 <div class="modal" id="modal"><div class="modalbox"><div class="head" style="padding:0 0 12px;border:0"><h2 id="mTitle">Incident</h2><button class="btn" id="mClose">Close</button></div><div id="mBody"></div></div></div>
 <div class="modal" id="waModal"><div class="modalbox"><div class="head" style="padding:0 0 12px;border:0"><h2>WhatsApp Dispatch</h2><button class="btn" id="waClose">Close</button></div><p id="waStatus" style="margin:0 0 10px;color:#166534"></p><textarea id="waMessage" style="width:100%;min-height:230px;border:1px solid #d6dde5;border-radius:10px;padding:12px;font:12px Arial;box-sizing:border-box" readonly></textarea><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px"><button class="btn" id="waCopy">Copy Message</button><button class="btn" id="waOpen">Open WhatsApp Group</button></div></div></div>
-<script src="./settings-panel.js?v=1"></script>
 <script>
 const U=window.SECUREOPS_CONFIG.SUPABASE_URL,K=window.SECUREOPS_CONFIG.SUPABASE_PUBLISHABLE_KEY;
 const sb=window.SECUREOPS_AUTH.getClient(),API=U+'/functions/v1/emergency-api';
@@ -273,7 +269,7 @@ sb.auth.onAuthStateChange((event,s)=>{
   else if(event==='SIGNED_IN'&&s&&!authBooting){enter(s).catch(e=>console.error('Emergency auth state refresh failed:',e))}
 });
 
-async function boot(){const r=await api('bootstrap');types=r.types||[];templates=r.templates||[];contacts=r.contacts||[];groups=r.groups||[];systemSettings=Object.fromEntries((r.settings||[]).map(x=>[x.setting_key,x.setting_value]));renderTypes();renderTemplates();renderRecipients();renderGroups();applyDefaults();await refresh();if(window.SECUREOPS_EMERGENCY_SETTINGS)await window.SECUREOPS_EMERGENCY_SETTINGS.init();syncSidebar();if(location.hash){const target=location.hash.slice(1);if(target==='settings'){window.SECUREOPS_EMERGENCY_SETTINGS?.show('overview');}const el=$(target);if(el)setTimeout(()=>el.scrollIntoView({block:'start'}),50)}}
+async function boot(){const r=await api('bootstrap');types=r.types||[];templates=r.templates||[];contacts=r.contacts||[];groups=r.groups||[];systemSettings=Object.fromEntries((r.settings||[]).map(x=>[x.setting_key,x.setting_value]));renderTypes();renderTemplates();renderRecipients();renderGroups();applyDefaults();await refresh();syncSidebar();if(location.hash){const target=location.hash.slice(1);const el=$(target);if(el)setTimeout(()=>el.scrollIntoView({block:'start'}),50)}}
 function renderTypes(){$('type').innerHTML='<option value="">Select</option>'+types.map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join('');$('type').onchange=()=>{createRequestId=null;const t=types.find(x=>x.id===$('type').value);if(t){const r=document.querySelector('input[name=severity][value="'+(t.default_severity||'URGENT')+'"]');if(r)r.checked=true}}}
 function renderTemplates(){$('template').innerHTML='<option value="">Custom message</option>'+templates.map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join('')}
 function renderRecipients(){$('recipients').innerHTML=(contacts.length?contacts.map(x=>'<label class="recip"><input type="checkbox" value="'+x.id+'"><span><b>'+esc(x.full_name)+'</b><small>'+esc(x.position||x.department||'')+' · '+esc(x.whatsapp_number||x.phone_number||x.email||'No channel')+'</small></span></label>').join(''):'No active emergency contacts configured yet')}
@@ -417,7 +413,7 @@ async function refresh(){
 }
 function syncSidebar(){
   const hash=location.hash;
-  const section=hash==='#active'?'active':hash==='#history'?'history':hash==='#settings'?'settings':'operations';
+  const section=hash==='#active'?'active':hash==='#history'?'history':'operations';
   document.querySelectorAll('.side-nav a[data-section]').forEach(a=>a.classList.toggle('active',a.dataset.section===section));
 }
 function scrollToSection(id,behavior='smooth'){
@@ -433,7 +429,6 @@ document.querySelectorAll('.side-nav a[data-section]').forEach(a=>{
     e.preventDefault();
     history.pushState(null,'',href);
     syncSidebar();
-    if(href==='#settings')window.SECUREOPS_EMERGENCY_SETTINGS?.show('overview');
     scrollToSection(href.slice(1));
   });
 });
@@ -492,8 +487,7 @@ $('refresh').onclick=refresh;
 $('refreshHistory').onclick=refresh;
 window.addEventListener('hashchange',()=>{
   syncSidebar();
-  if(location.hash==='#settings')window.SECUREOPS_EMERGENCY_SETTINGS?.show('overview');
-  if(location.hash)scrollToSection(location.hash.slice(1));
+    if(location.hash)scrollToSection(location.hash.slice(1));
 });
 syncSidebar();
 if(location.hash)scrollToSection(location.hash.slice(1),'auto');
