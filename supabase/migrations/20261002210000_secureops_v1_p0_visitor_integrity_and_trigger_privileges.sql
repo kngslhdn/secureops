@@ -11,4 +11,4 @@ create unique index if not exists visitor_entries_active_pass_unique
     and pass_vest_number is not null
     and btrim(pass_vest_number) <> '';
 
-revoke all on function public.set_emergency_incident_id() from anon, authenticated;
+revoke all on function public.set_emergency_incident_id() from public, anon, authenticated;
