@@ -70,6 +70,9 @@ jobs:
           grep -A1 -F "[functions.package-distribution]" supabase/config.toml | grep -q "verify_jwt = true"
           grep -A1 -F "[functions.visitor-monitoring]" supabase/config.toml | grep -q "verify_jwt = true"
           grep -A1 -F "[functions.visitor-detail]" supabase/config.toml | grep -q "verify_jwt = true"
+          grep -Fq 'ALLOWED_ORIGINS = new Set(["https://kngslhdn.github.io","https://visitor.myhikj.com","http://visitor.myhikj.com","http://localhost:3000","http://127.0.0.1:5500"])' supabase/functions/package-distribution/index.ts
+          ! grep -Fq 'Access-Control-Allow-Origin": "*"' supabase/functions/package-distribution/index.ts
+          grep -Fq 'content-type must be application/json' supabase/functions/package-distribution/index.ts || grep -Fq 'Content-Type must be application/json' supabase/functions/package-distribution/index.ts
 
       - name: Validate migration SQL filenames
         shell: bash
