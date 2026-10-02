@@ -9,6 +9,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+/* Prevent first-paint flash of legacy/default markup while V1 runtime initializes. */
+body.app-booting .shell{visibility:hidden}
 :root{--navy:#071a30;--gold:#d9a441;--gold2:#f0c66b;--white:#fff;--line:rgba(185,213,238,.25);--glass:rgba(12,39,67,.72);--danger:#ff9d9d}*{box-sizing:border-box;font-family:Poppins,Arial,sans-serif}html{scroll-behavior:smooth}body{margin:0;min-height:100vh;color:var(--white);background:radial-gradient(circle at 50% 8%,#163d66 0,#0a2747 34%,#06192e 70%,#031120 100%);overflow-x:hidden}body:before{content:"";position:fixed;inset:0;pointer-events:none;background:linear-gradient(115deg,rgba(255,255,255,.025),transparent 35%,rgba(217,164,65,.035) 70%,transparent);box-shadow:inset 0 0 180px rgba(0,0,0,.3)}.shell{width:min(1180px,calc(100% - 36px));margin:auto;padding:28px 0 42px}.brand{text-align:center;margin-bottom:18px}.subtitle{margin-top:6px;font-size:.88rem;font-weight:500;letter-spacing:.4px;color:rgba(255,255,255,.78)}.brand-logo-text{display:flex;align-items:center;justify-content:center;width:120px;height:74px;margin:0 auto 14px;color:#f0c66b;font-size:28px;font-weight:700;letter-spacing:4px;text-shadow:0 2px 12px rgba(0,0,0,.28)}.brand-logo{display:block;width:120px;height:auto;max-height:120px;object-fit:contain;margin:0 auto 14px;opacity:.98}.brand-line{width:70px;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:0 auto 17px}.title{text-align:center;margin:0;font-size:28px;font-weight:700;letter-spacing:-1px}.security{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:7px;color:var(--gold2);font-size:.82rem;font-weight:600;letter-spacing:7px}.security:before,.security:after{content:"";height:1px;width:92px;background:linear-gradient(90deg,transparent,var(--gold))}.security:after{background:linear-gradient(90deg,var(--gold),transparent)}.choices{display:grid;grid-template-columns:1fr;gap:24px;width:100%;max-width:1200px;margin:34px auto 0}
 .choice{width:100%;min-height:210px;height:210px;justify-self:stretch;display:flex;flex-direction:row;align-items:center;gap:46px;border:1px solid rgba(104,161,207,.45);border-radius:26px;background:linear-gradient(135deg,rgba(17,57,91,.92),rgba(5,29,52,.94));color:#fff;padding:28px 42px;text-align:left;cursor:pointer;transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease,background .22s ease;box-shadow:inset 0 1px rgba(255,255,255,.035),0 12px 30px rgba(0,0,0,.14)}
 .choice:hover,.choice[aria-pressed="true"]{transform:translateY(-3px);border-color:rgba(230,199,101,.85);background:linear-gradient(135deg,rgba(20,65,101,.98),rgba(6,31,54,.98));box-shadow:inset 0 1px rgba(255,255,255,.04),0 16px 38px rgba(0,0,0,.22)}
@@ -350,7 +352,7 @@
 @media (max-width:520px){.choice-icon .fi{font-size:31px}}
 </style>
 </head>
-<body>
+<body class="app-booting">
 <main class="shell">
 <header class="brand">
   <div id="propertyBrandLogo" class="brand-logo-text" aria-label="SECUREOPS">SECUREOPS</div>
@@ -389,7 +391,7 @@ async function loadPropertyBranding(){
   }
  }catch(e){/* fallback SECUREOPS */}
 }
-loadPropertyBranding();
+window.__SECUREOPS_BRANDING_READY__=loadPropertyBranding();
 </script>
 <script>
 const SUPABASE_FUNCTION_URL=(window.SECUREOPS_CONFIG?.SUPABASE_FUNCTIONS_URL||window.location.origin+'/functions/v1')+'/visitor-submit';
@@ -552,12 +554,15 @@ let waWindow=null;try{waWindow=window.open('about:blank','_blank');const result=
 </script>
 <script src="assets/package-distribution.js"></script>
 <script>
-(function initSecureOpsLucide(){
-  if(window.lucide?.createIcons){
-    window.lucide.createIcons({attrs:{'stroke-width':1.6}});
-  }else{
-    setTimeout(initSecureOpsLucide,50);
-  }
+(function finalizeSecureOpsV1(){
+  const reveal=()=>{
+    if(window.lucide?.createIcons) window.lucide.createIcons({attrs:{'stroke-width':1.6}});
+    requestAnimationFrame(()=>requestAnimationFrame(()=>document.body.classList.remove('app-booting')));
+  };
+  const branding=window.__SECUREOPS_BRANDING_READY__||Promise.resolve();
+  const ready=()=>Promise.resolve(branding).catch(()=>{}).then(reveal);
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',ready,{once:true});
+  else ready();
 })();
 </script>
 </body>
