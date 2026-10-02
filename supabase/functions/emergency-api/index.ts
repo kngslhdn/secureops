@@ -2,15 +2,21 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { SmtpClient, createMessage } from "jsr:@dreamer/email@1.1.0";
 
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization,apikey,content-type",
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+const ALLOWED_ORIGINS = new Set(["https://kngslhdn.github.io","https://visitor.myhikj.com","http://visitor.myhikj.com","http://localhost:3000","http://127.0.0.1:5500"]);
+const corsFor = (req: Request) => {
+  const origin = req.headers.get("Origin") || "";
+  return {
+    "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin) ? origin : "https://kngslhdn.github.io",
+    "Access-Control-Allow-Headers": "authorization,apikey,content-type",
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    "Vary": "Origin",
+    "X-Content-Type-Options": "nosniff",
+  };
 };
 const json = (x: unknown, status = 200) =>
   new Response(JSON.stringify(x), {
     status,
-    headers: { ...cors, "Content-Type": "application/json" },
+    headers: { ...corsFor(req), "Content-Type": "application/json" },
   });
 
 const url = Deno.env.get("SUPABASE_URL")!;
@@ -120,13 +126,14 @@ async function audit(db: any, user: any, profile: any, action: string, target: s
   }
 }
  
-async function selectedGroups(db: any, groupIds: string[]) {
+async function selectedGroups(db: any, groupIds: string[], propertyId: string | null, superAdmin = false) {
   if (!groupIds.length) return [];
   const { data, error } = await admin
     .from("emergency_contact_groups")
     .select("*")
     .in("id", groupIds)
     .eq("active", true);
+  if (!superAdmin) q = q.eq("property_id", propertyId);
   if (error) throw error;
   if ((data || []).length !== groupIds.length) {
     throw new Error("One or more selected recipient groups are inactive or unavailable.");
@@ -134,8 +141,8 @@ async function selectedGroups(db: any, groupIds: string[]) {
   return data || [];
 }
 
-async function resolveRecipients(db: any, groupIds: string[], contactIds: string[]) {
-  const groups = await selectedGroups(db, groupIds);
+async function resolveRecipients(db: any, groupIds: string[], contactIds: string[], profile: any) {
+  const groups = await selectedGroups(db, groupIds, profile?.property_id || null, isSuperAdmin(profile));
   const ids = new Set(contactIds);
   let memberships: Array<{group_id:string;contact_id:string}> = [];
 
@@ -152,11 +159,13 @@ async function resolveRecipients(db: any, groupIds: string[], contactIds: string
   const allIds = [...ids];
   if (!allIds.length) return { groups, contacts: [], memberships };
 
-  const { data: contacts, error } = await admin
+  let q = admin
     .from("emergency_contacts")
     .select("*")
     .in("id", allIds)
     .eq("active", true);
+  if (!isSuperAdmin(profile)) q = q.eq("property_id", profile.property_id);
+  const { data: contacts, error } = await q;
   if (error) throw error;
   if ((contacts || []).length !== allIds.length) {
     throw new Error("One or more selected emergency contacts are inactive or unavailable.");
