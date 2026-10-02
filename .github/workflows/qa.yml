@@ -72,6 +72,10 @@ jobs:
           grep -A1 -F "[functions.visitor-detail]" supabase/config.toml | grep -q "verify_jwt = true"
           grep -Fq 'ALLOWED_ORIGINS = new Set(["https://kngslhdn.github.io","https://visitor.myhikj.com","http://visitor.myhikj.com","http://localhost:3000","http://127.0.0.1:5500"])' supabase/functions/package-distribution/index.ts
           ! grep -Fq 'Access-Control-Allow-Origin": "*"' supabase/functions/package-distribution/index.ts
+          ! grep -Fq '"Access-Control-Allow-Origin": "*"' supabase/functions/emergency-api/index.ts
+          ! grep -Fq "'Access-Control-Allow-Origin':'*'" supabase/functions/visitor-submit/index.ts
+          grep -Fq 'eq("property_id", propertyId)' supabase/functions/emergency-api/index.ts
+          grep -Fq 'resolveRecipients(db, groupIds, directContactIds, profile)' supabase/functions/emergency-api/index.ts
           grep -Fq 'content-type must be application/json' supabase/functions/package-distribution/index.ts || grep -Fq 'Content-Type must be application/json' supabase/functions/package-distribution/index.ts
 
       - name: Validate migration SQL filenames
