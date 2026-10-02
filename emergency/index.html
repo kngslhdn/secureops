@@ -178,6 +178,7 @@ async function loadPropertyBranding(){
   }catch(e){console.warn('Property branding refresh unavailable:',e)}
 }
 async function enter(s){
+ if(!s?.access_token)throw Error('No authenticated SECUREOPS session');
  session=s;
  try{
   const me=await api('me');
@@ -187,11 +188,34 @@ async function enter(s){
   $('sessionGate').classList.add('hidden');
   $('app').classList.remove('hidden');
   await boot();
-
  }catch(e){
   console.error('Emergency bootstrap failed:',e);
-  await sb.auth.signOut();
-  location.href='../admin/'
+  // Keep the Admin Console session intact. A stale access token can occur
+  // while moving from the Admin Console to Emergency on a fresh tab.
+  const refreshed=await sb.auth.refreshSession().catch(()=>({data:{session:null}}));
+  if(refreshed?.data?.session){
+    session=refreshed.data.session;
+    try{
+      const me=await api('me');
+      $('userName').textContent=me.profile?.full_name||session.user.email;
+      $('userRole').textContent=me.profile?.role||'ADMIN';
+      await loadPropertyBranding();
+      $('sessionGate').classList.add('hidden');
+      $('app').classList.remove('hidden');
+      await boot();
+      return;
+    }catch(retryError){
+      console.error('Emergency bootstrap retry failed:',retryError);
+      e=retryError;
+    }
+  }
+  $('sessionGate').classList.remove('hidden');
+  $('sessionGate').setAttribute('aria-hidden','false');
+  const title=$('sessionGate').querySelector('h1');
+  const desc=$('sessionGate').querySelector('p');
+  if(title)title.textContent='Emergency Operations unavailable';
+  if(desc)desc.textContent=e?.message||'Unable to load Emergency Operations. Return to Admin Console and try again.';
+  // Do not sign out or redirect a valid Admin Console session.
  }
 }
 async function initAuth(){
