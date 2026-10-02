@@ -94,16 +94,25 @@
     await loadSupabase();
     const key = getPublishableKey();
     if (!key) throw new Error(PDT('Supabase publishable key is not available','Supabase publishable key tidak tersedia'));
-    client = window.supabase.createClient(SUPABASE_URL, key);
+    client = window.supabase.createClient(SUPABASE_URL, key, {auth:{persistSession:true,autoRefreshToken:true,storageKey:'secureops-auth-token'}});
     const { data } = await client.auth.getSession();
     authSession = data?.session || null;
     client.auth.onAuthStateChange((_event, session) => { authSession = session; });
   }
 
   async function callApi(path, options = {}) {
+    const current = await client.auth.getSession();
+    authSession = current.data?.session || authSession;
     if (!authSession?.access_token) throw new Error(PDT('Please sign in as an authorized Security Admin first','Silakan masuk sebagai Admin Security yang berwenang terlebih dahulu'));
     const headers = { 'apikey': getPublishableKey(), 'Authorization': `Bearer ${authSession.access_token}`, 'Content-Type': 'application/json' };
-    const r = await fetch(`${FUNCTION_URL}${path}`, { ...options, headers: { ...headers, ...(options.headers || {}) } });
+    let r = await fetch(`${FUNCTION_URL}${path}`, { ...options, headers: { ...headers, ...(options.headers || {}) } });
+    if (r.status === 401) {
+      const refreshed = await client.auth.getSession();
+      authSession = refreshed.data?.session || null;
+      if (authSession?.access_token) {
+        r = await fetch(`${FUNCTION_URL}${path}`, { ...options, headers: { ...headers, 'Authorization': `Bearer ${authSession.access_token}`, ...(options.headers || {}) } });
+      }
+    }
     const body = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(body.error || PDT('Unable to complete package distribution. Please try again','Distribusi paket gagal. Silakan coba lagi'));
     return body;
