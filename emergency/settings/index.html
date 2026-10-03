@@ -39,6 +39,15 @@ body{font-family:Poppins,Arial,sans-serif;font-size:14px}
 /* SECUREOPS Typography V1 — weight/style normalization */
 body,*{font-style:normal}
 b,strong{font-weight:700}
+/* SECUREOPS V1 — unified mobile header identity */
+#userBox{width:105px;min-width:105px;max-width:105px;line-height:1.2;font-size:10px!important;overflow:hidden;text-align:right}
+#userBox b{display:block;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#userBox span{font-size:9px;font-weight:600;opacity:.8}
+@media(max-width:900px){
+  #userBox{width:96px;min-width:96px;max-width:96px;font-size:10px!important}
+  #userBox b{font-size:10px}
+  #userBox span{font-size:8px}
+}
 </style>
 <!-- sidebar menu icons intentionally removed --><script>document.addEventListener('DOMContentLoaded',function(){document.querySelectorAll('[data-app-version]').forEach(function(el){el.textContent=window.SECUREOPS_APP_VERSION||'';});});</script>
 <script>if(window.SECUREOPS_APP_VERSION)document.title=window.SECUREOPS_APP_TITLE+' | SECUREOPS | '+window.SECUREOPS_APP_VERSION;</script>
