@@ -145,8 +145,9 @@ initAuth();
     justify-content:flex-end;
   }
   .user-info{
-    width:100%;
-    max-width:100%;
+    width:105px;
+    max-width:105px;
+    min-width:105px;
     font-size:10px;
     line-height:1.15;
     overflow:hidden;
@@ -157,8 +158,19 @@ initAuth();
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
+    font-size:10px;
+    font-weight:700;
   }
-  .user-info small{display:none}
+  .user-info small{
+    display:block;
+    margin-top:3px;
+    font-size:8px;
+    line-height:1.1;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    opacity:.65;
+  }
   .actionbar{height:46px;padding:0 12px;top:72px}
   .actionbar a,.actionbar button{padding:7px 9px;font-size:9px}
 }
@@ -180,7 +192,9 @@ initAuth();
     font-size:6.5px;
   }
   .user-info{
-    max-width:58px;
+    width:96px;
+    min-width:96px;
+    max-width:96px;
   }
   .logout{
     padding:7px 8px;
