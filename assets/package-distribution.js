@@ -33,7 +33,7 @@
     const root = document.querySelector('#choices');
     if (!root || document.querySelector('[data-distribution-card]')) return;
     root.insertAdjacentHTML('beforeend', `<button type="button" class="choice" data-distribution-card aria-pressed="false">
-      <span class="choice-icon"><svg viewBox="0 0 48 48"><path d="M9 15l15-7 15 7-15 7zM9 15v18l15 8 15-8V15M24 22v19"/><path d="M31 30h9M35 26l5 4-5 4"/></svg></span>
+      <span class="choice-icon"><i class="fi fi-tr-box-circle-check" aria-hidden="true"></i></span>
       <strong>${PDT('Package Distribution','Distribusi Paket')}</strong>
     </button>`);
     root.addEventListener('click', ev => {
@@ -79,7 +79,7 @@
         .choices{grid-template-columns:1fr;width:100%;gap:11px}
         .choice,.choice:last-child{width:100%;height:92px;min-height:92px;padding:12px 16px;flex-direction:row;align-items:center;justify-content:flex-start}
         .choice-icon{width:54px;height:54px;min-width:54px;flex:0 0 54px;margin:0 16px 0 0}
-        .choice-icon svg{width:29px;height:29px}
+        .choice-icon i{font-size:29px;line-height:1}.choice-icon svg{width:29px;height:29px}
         .choice strong{width:auto;min-height:0;flex:1;justify-content:flex-start;font-size:.96rem;line-height:1.25}
       }
     `;
