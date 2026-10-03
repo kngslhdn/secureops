@@ -201,5 +201,17 @@ initAuth();
     font-size:8px;
   }
 }
+/* SECUREOPS V1 — unified mobile header identity */
+.user{flex:0 0 105px;min-width:105px;justify-content:flex-end}
+.user-info{width:105px;min-width:105px;max-width:105px;line-height:1.2}
+.user-info b{display:block;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-info small{display:block;font-size:9px;font-weight:600;opacity:.8;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:760px){
+  .top{padding:0 16px;gap:8px}
+  .user{flex:0 0 96px;min-width:96px}
+  .user-info{width:96px;min-width:96px;max-width:96px}
+  .user-info b{font-size:10px}
+  .user-info small{font-size:8px}
+}
 </style>
 </body></html>
