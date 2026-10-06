@@ -603,6 +603,7 @@ Deno.serve(async (req) => {
       if (!["RESOLVED","CLOSED","FALSE_ALARM"].includes(current.data.status)) throw new Error("Only resolved/closed incidents can be reopened.");
       const now = new Date().toISOString();
       const upd = await db.from("emergency_incidents").update({
+        property_id: propertyId,
         status: "ACTIVE",
         resolved_at: null,
         resolved_by: null,
@@ -675,6 +676,12 @@ Deno.serve(async (req) => {
       }
 
       const { groups, contacts, memberships } = await resolveRecipients(db, groupIds, directContactIds, propertyId);
+      if (b.incident_type_id) {
+        const typeCheck = await db.from("emergency_incident_types").select("id").eq("id", b.incident_type_id).eq("property_id", propertyId).eq("active", true).maybeSingle();
+        if (typeCheck.error) throw typeCheck.error;
+        if (!typeCheck.data) throw new Error("Selected incident type is inactive or unavailable.");
+      }
+
       const whatsappGroups = groups.filter((g: any) => g.whatsapp_group_url);
       const smtp = await smtpSettings(db, propertyId);
       const systemSettings = await settingsMap(db, propertyId);
