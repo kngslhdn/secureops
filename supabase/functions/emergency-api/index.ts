@@ -53,7 +53,8 @@ async function auth(req: Request) {
 }
 
 function propertyId(profile: any) {
-  const id = String(profile?.property_id || "").trim();\n  if (!id) throw new Error("Property assignment required");
+  const id = String(profile?.property_id || "").trim();
+  if (!id) throw new Error("Property assignment required");
   return id;
 }
 
