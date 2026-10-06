@@ -47,12 +47,6 @@ async function auth(req: Request) {
   return { user, profile, db, propertyId: profile.property_id };
 }
 
-function propertyId(profile: any) {
-  const id = String(profile?.property_id || "").trim();
-  if (!id) throw new Error("Property assignment required");
-  return id;
-}
-
 function canConfigure(profile: any) {
   return ["ADMIN", "MANAGER", "SUPERADMIN"].includes(profile?.role);
 }
