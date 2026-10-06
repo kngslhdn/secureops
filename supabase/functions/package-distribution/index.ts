@@ -95,15 +95,16 @@ Deno.serve(async (req) => {
       if (!securityHandOver) return json({ error: "Please enter Security Hand Over." }, 400);
       if (!recipientName) return json({ error: "Please enter Recipient / Representative Name." }, 400);
 
-      const { data: pkg, error: pkgError } = await db.from("package_registrations").select("id,submission_id,recipient_name").eq("id", packageRegistrationId).maybeSingle();
+      const { data: pkg, error: pkgError } = await db.from("package_registrations").select("id,submission_id,recipient_name,property_id").eq("id", packageRegistrationId).maybeSingle();
       if (pkgError || !pkg) return json({ error: "Package not found." }, 404);
       const { data: existing } = await db.from("package_distributions").select("id").eq("package_registration_id", packageRegistrationId).maybeSingle();
       if (existing) return json({ error: "Package has already been distributed." }, 409);
 
       const { data: pkgSubmission, error: pkgSubmissionError } = await db.from("submissions").select("submission_id").eq("id", pkg.submission_id).maybeSingle();
       if (pkgSubmissionError || !pkgSubmission) return json({ error: "Package submission record not found." }, 500);
-      const { data: distribution, error: insertError } = await db.from("package_distributions").insert({
+      const { data: distribution, error: insertError } = await sb.from("package_distributions").insert({
         package_registration_id: pkg.id,
+        property_id: pkg.property_id,
         package_number: pkgSubmission.submission_id,
         registered_recipient_name: pkg.recipient_name,
         recipient_name: recipientName,
