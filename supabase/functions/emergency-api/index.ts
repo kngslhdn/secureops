@@ -526,6 +526,7 @@ Deno.serve(async (req) => {
       if (!["ACTIVE","MONITORING"].includes(current.data.status)) throw new Error("Only ACTIVE or MONITORING incidents can be resolved.");
       const now = new Date().toISOString();
       const upd = await db.from("emergency_incidents").update({
+        property_id: propertyId,
         status: "RESOLVED",
         resolved_at: now,
         resolved_by: user.id,
@@ -536,6 +537,7 @@ Deno.serve(async (req) => {
       if (upd.error) throw upd.error;
       const timeline = await db.from("emergency_incident_updates").insert({
         incident_id: b.incident_id,
+        property_id: propertyId,
         status: "RESOLVED",
         title: "Incident Resolved",
         message: `Reason: ${reason}\n\nResolution Notes: ${notes}`,
@@ -545,6 +547,7 @@ Deno.serve(async (req) => {
       // Resolution notifications use the same configured WhatsApp groups as the original incident.
       const resolutionGroups = await db.from("emergency_contact_groups")
         .select("id,name,whatsapp_group_url")
+        .eq("property_id", propertyId)
         .eq("active", true)
         .not("whatsapp_group_url", "is", null);
       if (resolutionGroups.error) throw resolutionGroups.error;
@@ -573,6 +576,7 @@ Deno.serve(async (req) => {
       for (const g of resolutionDispatches) {
         await db.from("emergency_notifications").insert({
           incident_id: b.incident_id,
+          property_id: propertyId,
           group_id: g.group_id,
           channel: "WHATSAPP",
           status: "PENDING",
@@ -609,6 +613,7 @@ Deno.serve(async (req) => {
       if (upd.error) throw upd.error;
       const timeline = await db.from("emergency_incident_updates").insert({
         incident_id: b.incident_id,
+        property_id: propertyId,
         status: "ACTIVE",
         title: "Incident Reopened",
         message: notes,
@@ -661,6 +666,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "create_incident" && req.method === "POST") {
+      if (!canConfigure(profile)) throw new Error("Emergency incident creation requires ADMIN, MANAGER or SUPERADMIN.");
       const b = await req.json();
       const groupIds: string[] = Array.isArray(b.group_ids) ? b.group_ids : [];
       const directContactIds: string[] = Array.isArray(b.contact_ids) ? b.contact_ids : [];
@@ -709,6 +715,7 @@ Deno.serve(async (req) => {
 
       await db.from("emergency_incident_updates").insert({
         incident_id: incident.id,
+        property_id: propertyId,
         status: "ACTIVE",
         title: "Incident Created",
         message: b.description,
@@ -725,6 +732,7 @@ Deno.serve(async (req) => {
         for (const r of recips.filter((r:any) => r.emergency_contacts?.email)) {
           await db.from("emergency_notifications").insert({
             incident_id: incident.id,
+            property_id: propertyId,
             recipient_id: r.id,
             channel: "EMAIL",
             status: emailResult.status,
@@ -738,6 +746,7 @@ Deno.serve(async (req) => {
         if (g.whatsapp_group_url) {
           await db.from("emergency_notifications").insert({
             incident_id: incident.id,
+            property_id: propertyId,
             group_id: g.id,
             channel: "WHATSAPP",
             status: "PENDING",
@@ -750,6 +759,7 @@ Deno.serve(async (req) => {
       for (const r of recips.filter((r: any) => r.emergency_contacts?.phone_number)) {
         await db.from("emergency_notifications").insert({
           incident_id: incident.id,
+          property_id: propertyId,
           recipient_id: r.id,
           channel: "SMS",
           status: "PENDING",
