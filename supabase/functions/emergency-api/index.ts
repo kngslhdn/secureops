@@ -398,10 +398,10 @@ Deno.serve(async (req) => {
         if (r.error) {
           if (r.error.code === "23505") {
             const message = String(r.error.message || "");
-            if (message.includes("emergency_contacts_email_unique_idx")) {
+            if (message.includes("emergency_contacts_property_email_unique_idx")) {
               throw new Error("Email address is already registered.");
             }
-            if (message.includes("emergency_contacts_whatsapp_unique_idx")) {
+            if (message.includes("emergency_contacts_property_whatsapp_unique_idx")) {
               throw new Error("WhatsApp number is already registered.");
             }
           }
