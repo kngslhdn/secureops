@@ -292,6 +292,7 @@ Deno.serve(async (req) => {
       if (resource === "incident_type") {
         if (!d.code || !d.name) throw new Error("Incident type code and name are required.");
         const payload = {
+          property_id: propertyId,
           code: String(d.code).trim().toUpperCase(),
           name: String(d.name).trim(),
           description: d.description || null,
@@ -378,6 +379,7 @@ Deno.serve(async (req) => {
         }
 
         const payload = {
+          property_id: propertyId,
           full_name: String(d.full_name).trim(),
           position: d.position || null,
           department: d.department || null,
@@ -441,6 +443,7 @@ Deno.serve(async (req) => {
         if (!allowed.has(d.setting_key)) throw new Error("Unsupported setting.");
         if (d.setting_key.startsWith("smtp_") && !isSuperAdmin(profile)) throw new Error("SMTP settings require SUPERADMIN.");
         const payload = {
+          property_id: propertyId,
           setting_key: d.setting_key,
           setting_value: d.setting_value,
           description: d.description || null,
