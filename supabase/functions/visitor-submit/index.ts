@@ -31,7 +31,7 @@ const types:Record<string,string>={entry:'visitor_entry',masuk:'visitor_entry',e
 const val=(b:any,...keys:string[])=>keys.map(k=>b[k]).find(v=>v!==undefined&&v!==null&&String(v).trim()!=='')??'';
 const required=(v:unknown,label:string,max=200)=>{const s=clean(v);if(!s)throw new Error(label+' is required.');if(s.length>max)throw new Error(label+' is too long.');return s};
 const validPhone=(v:unknown)=>{const p=phone(v);const digits=p.replace(/\D/g,'');if(!p||!/^[0-9+]{8,16}$/.test(p)||digits.length<8||digits.length>15)throw new Error('A valid phone number is required.');return p};
-const enumValue=(v:unknown,allowed:string[],label:string)=>{const s=clean(v).toUpperCase();if(!allowed.includes(s))throw new Error(label+' has an invalid value.');return s};
+const enumValue=(v:unknown,allowed:string[],label:string)=>{const s=clean(v).toUpperCase();const match=allowed.find(x=>x.toUpperCase()===s);if(!match)throw new Error(label+' has an invalid value.');return match};
 
 // Durable, cross-instance rate limiting backed by Postgres.
 const RATE_LIMIT_MAX=60;
@@ -107,7 +107,7 @@ Deno.serve(async req=>{
    const visitorName=required(val(body,'name','visitor_name','nama'),'Name',120);
    const visitorPhone=validPhone(val(body,'phone','mobile_phone','telepon'));
    const visitorCompany=required(val(body,'company_name','company','perusahaan'),'Company / Vendor Name',160);
-   const category=enumValue(val(body,'category','kategori'),['CONTRACTOR','SUPPLIER','VISITOR','PART-TIME'],'Category');
+   const category=enumValue(val(body,'category','kategori'),['Contractor','Supplier','Visitor','Part-time'],'Category');
    const location=required(val(body,'work_location','lokasi'),'Work Location',160);
    const purpose=required(val(body,'purpose','tujuan'),'Purpose',500);
    const pass=required(val(body,'pass_vest_number','pass'),'Pass / Vest Number',80);
