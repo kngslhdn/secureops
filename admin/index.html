@@ -61,19 +61,6 @@ function applyPropertyBranding(b){
  if(url){wrap.innerHTML='<img class="top-logo" alt="" title="">';const img=wrap.querySelector('img');img.src=url;img.alt=b?.property_name||'Property Logo';img.title=b?.property_name||'Property Logo';img.onerror=()=>{wrap.innerHTML='<div class="top-logo-text" aria-label="SECUREOPS">SECUREOPS</div>'};}
  else wrap.innerHTML='<div class="top-logo-text" aria-label="SECUREOPS">SECUREOPS</div>';
 }
-async function loadPublicBranding(){
- try{
-  const r=await fetch(SUPABASE_URL+'/functions/v1/visitor-submit',{headers:{apikey:SUPABASE_PUBLISHABLE_KEY}});
-  const j=await r.json();const b=j.branding,url=String(b?.logo_url||'').trim();
-  if(!url)return;
-  const logo=document.querySelector('#login .logo-text');
-  if(logo){const img=document.createElement('img');img.className='logo';img.alt=b?.property_name||'Property Logo';img.src=url;img.onerror=()=>img.remove();logo.replaceWith(img);}
-  const brand=document.querySelector('#login .brand');
-  if(brand&&b?.property_name)brand.innerHTML=escBrand(b.property_name)+'<small>SECURITY ADMIN CONSOLE<br><span class="app-version" data-app-version>ks.v.001</span></small>';
- }catch(e){}
-}
-function escBrand(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
-loadPublicBranding();
 function showLogin(message=''){document.getElementById('app').classList.add('hidden');document.getElementById('login').classList.remove('hidden');document.getElementById('loginError').textContent=message}
 async function enter(session){await profile(session);document.getElementById('login').classList.add('hidden');document.getElementById('app').classList.remove('hidden');window.dispatchEvent(new CustomEvent('hikj-admin-ready',{detail:{session}}));if(window.HIKJAdminV2Build)window.HIKJAdminV2Build()}
 async function initAuth(){const {data,error}=await sb.auth.getSession();if(error||!data.session){showLogin(error?.message||'Please sign in to continue');return}try{await enter(data.session)}catch(e){console.error('Admin bootstrap failed:',e);showLogin('Session could not be validated. Please sign in again.')}}
