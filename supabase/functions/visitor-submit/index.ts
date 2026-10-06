@@ -102,7 +102,7 @@ Deno.serve(async req=>{
    return json({ok:true,key_asset:{key_number:data.key_number,description:data.key_description||'',quantity:Number(data.quantity||0)}});
   }
   const idem=clean(req.headers.get('idempotency-key')||body.idempotency_key);if(idem){const {data}=await propertySelect('submissions','submission_id').eq('idempotency_key',idem).maybeSingle();if(data)return json({ok:true,duplicate:true,submission_id:data.submission_id},200,req);}
-  const name=clean(val(body,'name','visitor_name','nama','returnName','borrowerName','namaPengantar')),mobile=clean(val(body,'phone','mobile_phone','telepon')),company=clean(val(body,'company_name','company','perusahaan'));let visitorId:string|null=null;let matchedExitEntry:any=null;
+  let visitorId:string|null=null;let matchedExitEntry:any=null;
   if(type==='visitor_entry'){
    const visitorName=required(val(body,'name','visitor_name','nama'),'Name',120);
    const visitorPhone=validPhone(val(body,'phone','mobile_phone','telepon'));
