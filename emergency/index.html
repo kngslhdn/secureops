@@ -214,7 +214,7 @@ async function loadPropertyBranding(){
  if(img)img.src='https://bosfcjwacdrwtwgpmaex.supabase.co/storage/v1/object/public/property-assets/HIKJ/32d10d47-b483-494f-bb39-e477858addf2.png';
 }
 loadPropertyBranding();
-async function enter(s){session=s;try{const me=await api('me');$('userBox').innerHTML='<b>'+esc(me.profile?.full_name||s.user.email)+'</b><span>'+esc(me.profile?.role||'ADMIN')+'</span>;$('sessionGate').classList.add('hidden');$('app').classList.remove('hidden');await boot()}catch(e){console.error('Emergency bootstrap failed:',e);await sb.auth.signOut();location.href='../admin/'}}
+async function enter(s){session=s;try{const me=await api('me');$('userBox').innerHTML='<b>'+esc(me.profile?.full_name||s.user.email)+'</b><span>'+esc(me.profile?.role||'ADMIN')+'</span>';$('sessionGate').classList.add('hidden');$('app').classList.remove('hidden');await boot()}catch(e){console.error('Emergency bootstrap failed:',e);await sb.auth.signOut();location.href='../admin/'}}
 async function initAuth(){
   const {data,error}=await sb.auth.getSession();
   if(error||!data.session){location.href='../admin/';return}
