@@ -127,7 +127,7 @@ async function api(action,method='GET',body=null){const r=await fetch(API+'?acti
 function setting(k,d){const x=state.settings.find(x=>x.setting_key===k);return x?x.setting_value:d}
 function canEdit(){return ['ADMIN','MANAGER','SUPERADMIN'].includes(state.profile?.role)}
 function superAdmin(){return state.profile?.role==='SUPERADMIN'}
-async function load(){const r=await api('settings_bootstrap');state=r;state.settings=r.settings||[];state.types=r.types||[];state.templates=r.templates||[];state.groups=r.groups||[];state.contacts=r.contacts||[];state.members=r.members||[];state.audit=r.audit||[];state.smtp=r.smtp||{};$('userBox').innerHTML='<b>'+esc(r.profile.full_name||'Admin')+'</b><span>'+esc(r.profile.role)+'</span>;renderAll()}
+async function load(){const r=await api('settings_bootstrap');state=r;state.settings=r.settings||[];state.types=r.types||[];state.templates=r.templates||[];state.groups=r.groups||[];state.contacts=r.contacts||[];state.members=r.members||[];state.audit=r.audit||[];state.smtp=r.smtp||{};$('userBox').innerHTML='<b>'+esc(r.profile.full_name||'Admin')+'</b><span>'+esc(r.profile.role)+'</span>';renderAll()}
 async function save(resource,data,notify=true){
   const r=await api('settings_mutation','POST',{resource,op:data.id?'update':'create',data});
   try{await load()}catch(refreshErr){console.error('Settings refresh failed after save:',refreshErr)}
