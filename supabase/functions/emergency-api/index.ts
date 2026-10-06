@@ -323,6 +323,7 @@ Deno.serve(async (req) => {
       if (resource === "group") {
         if (!d.code || !d.name) throw new Error("Group code and name are required.");
         const payload = {
+          property_id: propertyId,
           code: String(d.code).trim().toUpperCase(),
           name: String(d.name).trim(),
           description: d.description || null,
