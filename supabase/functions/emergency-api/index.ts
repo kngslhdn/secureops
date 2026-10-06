@@ -60,7 +60,7 @@ function isSuperAdmin(profile: any) {
   return profile?.role === "SUPERADMIN";
 }
 
-async function settingsMap(db: any) {
+async function settingsMap(db: any, property_id: string) {
   const { data, error } = await admin
     .from("emergency_settings")
     .select("setting_key,setting_value,description,active")
@@ -230,7 +230,7 @@ Deno.serve(async (req) => {
         db.from("audit_logs").select("*").eq("module","EMERGENCY").eq("property_id", propertyId).order("created_at",{ascending:false}).limit(100),
       ]);
       for (const x of [types,templates,groups,contacts,members,settings,auditRows]) if (x.error) throw x.error;
-      const smtp = await smtpSettings(db);
+      const smtp = await smtpSettings(db, propertyId);
       return json(req, {
         profile,
         types: types.data || [],
@@ -348,7 +348,7 @@ Deno.serve(async (req) => {
         const duplicateErrors: string[] = [];
 
         if (email) {
-          let q = db.from("emergency_contacts").select("id").eq("email", email).limit(1);
+          let q = db.from("emergency_contacts").select("id").eq("property_id", propertyId).eq("email", email).limit(1);
           if (d.id) q = q.neq("id", d.id);
           const r = await q.maybeSingle();
           if (r.error) throw r.error;
@@ -452,14 +452,14 @@ Deno.serve(async (req) => {
 
         if (action === "bootstrap") {
       const [a, b, c, d, settings] = await Promise.all([
-        db.from("emergency_incident_types").select("*").eq("active", true).order("priority").order("name"),
-        db.from("emergency_message_templates").select("*").eq("active", true).order("name"),
-        db.from("emergency_contacts").select("*").eq("active", true).order("priority").order("full_name"),
-        db.from("emergency_contact_groups").select("*").eq("active", true).order("name"),
+        db.from("emergency_incident_types").select("*").eq("property_id", propertyId).eq("active", true).order("priority").order("name"),
+        db.from("emergency_message_templates").select("*").eq("property_id", propertyId).eq("active", true).order("name"),
+        db.from("emergency_contacts").select("*").eq("property_id", propertyId).eq("active", true).order("priority").order("full_name"),
+        db.from("emergency_contact_groups").select("*").eq("property_id", propertyId).eq("active", true).order("name"),
         db.from("emergency_settings").select("setting_key,setting_value").eq("property_id", propertyId).eq("active", true).order("setting_key"),
       ]);
       for (const x of [a,b,c,d,settings]) if (x.error) throw x.error;
-      const smtp = await smtpSettings(db);
+      const smtp = await smtpSettings(db, propertyId);
       return json(req, {
         types: a.data || [],
         templates: b.data || [],
@@ -481,7 +481,7 @@ Deno.serve(async (req) => {
         db.from("emergency_contact_groups").select("id,name,whatsapp_group_url").eq("property_id", propertyId).eq("active", true),
       ]);
       const active = (inc.data || []).filter((x: any) => ["ACTIVE", "MONITORING"].includes(x.status));
-      const smtp = await smtpSettings(db);
+      const smtp = await smtpSettings(db, propertyId);
       const settingRows = await db.from("emergency_settings").select("setting_key,setting_value").eq("property_id", propertyId).eq("active",true);
       if (settingRows.error) throw settingRows.error;
       const settingMap: Record<string, any> = {};
@@ -581,7 +581,7 @@ Deno.serve(async (req) => {
       if (!b.incident_id) throw new Error("incident_id is required.");
       const notes = String(b.notes || "").trim();
       if (!notes) throw new Error("Reopen notes are required.");
-      const current = await db.from("emergency_incidents").select("*").eq("id", b.incident_id).single();
+      const current = await db.from("emergency_incidents").select("*").eq("id", b.incident_id).eq("property_id", propertyId).single();
       if (current.error) throw current.error;
       if (!["RESOLVED","CLOSED","FALSE_ALARM"].includes(current.data.status)) throw new Error("Only resolved/closed incidents can be reopened.");
       const now = new Date().toISOString();
@@ -627,7 +627,7 @@ Deno.serve(async (req) => {
     
     if (action === "smtp_test" && req.method === "POST") {
       if (!isSuperAdmin(profile)) throw new Error("SMTP test requires SUPERADMIN.");
-      const cfg = await smtpSettings(db);
+      const cfg = await smtpSettings(db, propertyId);
       if (!cfg.configured) throw new Error("SMTP is not fully configured. Check host, From address and SMTP secrets.");
       const result = await sendEmail(
         [user.email!],
@@ -657,8 +657,8 @@ Deno.serve(async (req) => {
 
       const { groups, contacts, memberships } = await resolveRecipients(db, groupIds, directContactIds, propertyId);
       const whatsappGroups = groups.filter((g: any) => g.whatsapp_group_url);
-      const smtp = await smtpSettings(db);
-      const systemSettings = await settingsMap(db);
+      const smtp = await smtpSettings(db, propertyId);
+      const systemSettings = await settingsMap(db, propertyId);
       const productionEnabled = systemSettings.production_enabled !== false;
       const productionReady = productionEnabled && smtp.configured && whatsappGroups.length > 0;
 
