@@ -209,7 +209,7 @@ let session=null, types=[], templates=[], contacts=[], groups=[], systemSettings
 async function api(action,method='GET',body=null,query=null){const qs=new URLSearchParams({action,...(query||{})});const r=await fetch(API+'?'+qs.toString(),{method,headers:{apikey:K,Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Request failed');return j}
 async function loadPropertyBranding(){
  try{
-  const fallback='../assets/hikj-property-logo.png';
+  const fallback='https://bosfcjwacdrwtwgpmaex.supabase.co/storage/v1/object/public/property-assets/HIKJ/3780a0e5-580b-4d46-9b12-f8b9fab95a95.svg';
   const r=await fetch(U+'/functions/v1/visitor-submit?branding=1&_='+Date.now(),{headers:{apikey:K},cache:'no-store'});
   const j=await r.json().catch(()=>({}));
   const b=j?.branding||{};
