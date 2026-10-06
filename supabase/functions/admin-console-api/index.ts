@@ -41,7 +41,7 @@ async function getReport(req:Request,url:URL,caller:any){
     if(type==='package_summary')rows=rows.map(x=>({date:x.date,package_registration:x.package_registration,package_distribution:x.package_distribution}));
     return json(req,{data:rows.slice(0,n),metrics:summaryMetrics(r),analytics:dailyAnalytics(r)});
   }
-  let rows=await getOverallRows(start,to);
+  let rows=await getOverallRows(start,to,caller);
   if(type&&type!=='overall')rows=rows.filter(x=>x.record_type===type);
   if(search)rows=rows.filter(x=>Object.values(x).some(v=>String(v??'').toLowerCase().includes(search)));
   if(status)rows=rows.filter(x=>String(x.status||'').toUpperCase()===status);
