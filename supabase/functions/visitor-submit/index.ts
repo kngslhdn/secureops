@@ -29,6 +29,9 @@ const phone=(v:unknown)=>clean(v).replace(/[^0-9+]/g,'').replace(/^0+/,'');
 const normText=(v:unknown)=>clean(v).toLowerCase().replace(/\s+/g,' ');
 const types:Record<string,string>={entry:'visitor_entry',masuk:'visitor_entry',exit:'visitor_exit',keluar:'visitor_exit',borrowing:'key_borrowing',pinjamKunci:'key_borrowing',return:'key_return',kembaliKunci:'key_return',package:'package_registration',paket:'package_registration',key_asset_lookup:'key_asset_lookup'};
 const val=(b:any,...keys:string[])=>keys.map(k=>b[k]).find(v=>v!==undefined&&v!==null&&String(v).trim()!=='')??'';
+const required=(v:unknown,label:string,max=200)=>{const s=clean(v);if(!s)throw new Error(label+' is required.');if(s.length>max)throw new Error(label+' is too long.');return s};
+const validPhone=(v:unknown)=>{const p=phone(v);const digits=p.replace(/\D/g,'');if(!p||!/^[0-9+]{8,16}$/.test(p)||digits.length<8||digits.length>15)throw new Error('A valid phone number is required.');return p};
+const enumValue=(v:unknown,allowed:string[],label:string)=>{const s=clean(v).toUpperCase();if(!allowed.includes(s))throw new Error(label+' has an invalid value.');return s};
 
 // Durable, cross-instance rate limiting backed by Postgres.
 const RATE_LIMIT_MAX=60;
@@ -101,8 +104,16 @@ Deno.serve(async req=>{
   const idem=clean(req.headers.get('idempotency-key')||body.idempotency_key);if(idem){const {data}=await propertySelect('submissions','submission_id').eq('idempotency_key',idem).maybeSingle();if(data)return json({ok:true,duplicate:true,submission_id:data.submission_id},200,req);}
   const name=clean(val(body,'name','visitor_name','nama','returnName','borrowerName','namaPengantar')),mobile=clean(val(body,'phone','mobile_phone','telepon')),company=clean(val(body,'company_name','company','perusahaan'));let visitorId:string|null=null;let matchedExitEntry:any=null;
   if(type==='visitor_entry'){
-   const pass=clean(val(body,'pass_vest_number','pass')),officer=clean(val(body,'security_officer_name','security')),category=clean(val(body,'category','kategori'));if(!name||!pass||!officer||!category)return json({error:'Required visitor fields are missing'},400);
-   visitorId=await visitorIdentity(name,mobile,company,category);
+   const visitorName=required(val(body,'name','visitor_name','nama'),'Name',120);
+   const visitorPhone=validPhone(val(body,'phone','mobile_phone','telepon'));
+   const visitorCompany=required(val(body,'company_name','company','perusahaan'),'Company / Vendor Name',160);
+   const category=enumValue(val(body,'category','kategori'),['CONTRACTOR','SUPPLIER','VISITOR','PART-TIME'],'Category');
+   const location=required(val(body,'work_location','lokasi'),'Work Location',160);
+   const purpose=required(val(body,'purpose','tujuan'),'Purpose',500);
+   const pass=required(val(body,'pass_vest_number','pass'),'Pass / Vest Number',80);
+   const officer=required(val(body,'security_officer_name','security'),'Security Officer Name',120);
+   visitorId=await visitorIdentity(visitorName,visitorPhone,visitorCompany,category);
+   body.__validated={visitorName,visitorPhone,visitorCompany,category,location,purpose,pass,officer};
   }else if(type==='visitor_exit'){
    const pass=clean(val(body,'pass_vest_number','pass')),officer=clean(val(body,'security_officer_name','security'));
    if(!pass||!officer)return json({error:'Pass / Vest Number and Security Officer Name are required.'},400);
@@ -113,9 +124,9 @@ Deno.serve(async req=>{
 
   let returnBorrowing:any=null;
   if(type==='key_return'){
-   const key=clean(body.key_number||body.keyNumber);const quantity=Number(body.quantity||body.qty||1);
-   if(!key)return json({error:'Please enter Key Number.'},400);
-   if(!Number.isInteger(quantity)||quantity<1)return json({error:'Quantity of Keys must be a whole number greater than 0.'},400);
+   const key=required(body.key_number||body.keyNumber,'Key Number',80);
+   const quantity=Number(body.quantity||body.qty);
+   if(!Number.isInteger(quantity)||quantity<1||quantity>1000)return json({error:'Quantity of Keys must be a whole number between 1 and 1000.'},400);
    const {data,error}=await Promise.resolve({data:await outstandingKey(key),error:null});
    if(error)throw error;
    returnBorrowing=data||null;
@@ -124,8 +135,7 @@ Deno.serve(async req=>{
   }
 
   if(type==='key_borrowing'){
-   const key=clean(body.key_number||body.keyNumber);
-   if(!key)return json({error:'Please enter Key Number.'},400);
+   const key=required(body.key_number||body.keyNumber,'Key Number',80);
    const {data:keyAsset,error:keyAssetError}=await propertySelect('key_assets','key_number,key_description,quantity,active').eq('key_number',key).maybeSingle();
    if(keyAssetError)throw keyAssetError;
    if(!keyAsset)return json({ok:false,error:`Key Number ${key} was not found in Key Assets.`},404);
@@ -156,11 +166,10 @@ Deno.serve(async req=>{
    const {data,error}=await Promise.resolve({data:await outstandingKey(key),error:null});
    if(error)throw error;
    if(data)return json({ok:false,error:`Key ${key} is currently outstanding to ${data.borrower_name} with ${data.outstanding_quantity} key(s) outstanding. Please return the outstanding key(s) before a new borrowing.`},409);
-   const borrowerName=clean(val(body,'borrower_name','borrowerName'));
-   const department=clean(body.department);
-   const description=clean(keyAsset.key_description||'');
-   const officer=clean(val(body,'security_officer_name','security'));
-   if(!borrowerName||!officer)return json({error:'Borrower Name and Issued By Security Officer are required.'},400);
+   const borrowerName=required(val(body,'borrower_name','borrowerName'),'Borrower Name',120);
+   const department=required(body.department,'Department',120);
+   const description=required(keyAsset.key_description||'','Key Description',300);
+   const officer=required(val(body,'security_officer_name','security'),'Issued By Security Officer',120);
    const borrowedAt=timestamp(body.borrowed_at||body.datetime);
    const expectedReturnAt=new Date(new Date(borrowedAt).getTime()+24*60*60*1000).toISOString();
    const borrowingPayload={property_id:HIKJ_PROPERTY_ID,submission_id:submission.id,borrower_name:borrowerName,department,key_number:key,key_description:description,quantity,security_officer_name:officer,borrowed_at:borrowedAt,expected_return_at:expectedReturnAt} as Record<string,unknown>;
@@ -176,7 +185,20 @@ Deno.serve(async req=>{
    keyReturnResult={key_number:borrowing.key_number,original_borrowed_quantity:originalBorrowed,previously_returned_quantity:previouslyReturned,returned_now:quantity,total_returned:newTotal,outstanding_quantity:originalBorrowed-newTotal,discrepancy,new_status:newTotal===originalBorrowed?'CLOSED':'PARTIALLY RETURNED'};
 
   }else{
-   const path=await uploadPackagePhoto(clean(body.foto||body.photo_data_url));const {error}=await supabase.from('package_registrations').insert({property_id:HIKJ_PROPERTY_ID,submission_id:submission.id,courier_name:clean(val(body,'courier_name','namaPengantar')),phone:mobile||null,phone_normalized:phone(mobile)||null,company_name:company,item_type:clean(val(body,'item_type','jenisBarang')).toUpperCase(),item_count:Number(body.item_count||body.number_of_items||body.jumlah||1),recipient_type:clean(val(body,'recipient_type','tujuan')).toUpperCase(),recipient_name:clean(val(body,'recipient_name','namaTujuan')),security_officer_name:clean(val(body,'security_officer_name','security')),photo_storage_path:path});if(error)throw error;
+   const courierName=required(val(body,'courier_name','namaPengantar'),'Courier Name',120);
+   const packagePhone=validPhone(val(body,'phone','mobile_phone','telepon'));
+   const expeditionCompany=required(val(body,'company_name','company','perusahaan'),'Expedition Company',160);
+   const itemType=enumValue(val(body,'item_type','jenisBarang'),['LETTER','PACKAGE'],'Item Type');
+   const itemCount=Number(body.item_count||body.number_of_items||body.jumlah);
+   if(!Number.isInteger(itemCount)||itemCount<1||itemCount>1000)return json({error:'Number of Items must be a whole number between 1 and 1000.'},400);
+   const recipientType=enumValue(val(body,'recipient_type','tujuan'),['STAFF','GUEST'],'Recipient Type');
+   const recipientName=required(val(body,'recipient_name','namaTujuan'),'Recipient Name',160);
+   const securityOfficer=required(val(body,'security_officer_name','security'),'Security Officer Name',120);
+   const photoData=clean(body.foto||body.photo_data_url);
+   if(!photoData)throw new Error('Item Photo is required.');
+   const path=await uploadPackagePhoto(photoData);
+   if(!path)throw new Error('Item Photo must be a JPEG, PNG, or WebP image.');
+   const {error}=await supabase.from('package_registrations').insert({property_id:HIKJ_PROPERTY_ID,submission_id:submission.id,courier_name:courierName,phone:packagePhone,phone_normalized:phone(packagePhone),company_name:expeditionCompany,item_type:itemType,item_count:itemCount,recipient_type:recipientType,recipient_name:recipientName,security_officer_name:securityOfficer,photo_storage_path:path});if(error)throw error;
   }
   await supabase.from('submissions').update({status:'completed'}).eq('id',submission.id);return json({ok:true,submission_id:submission.submission_id,whatsapp_number:settings.whatsapp?.phone_number||null,...(keyReturnResult?{key_return:keyReturnResult}:{})},200,req);
  }catch(e){
