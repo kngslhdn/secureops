@@ -292,7 +292,7 @@ Deno.serve(async (req) => {
           active: d.active !== false,
         };
         const q = d.id
-          ? db.from("emergency_incident_types").update(payload).eq("id", d.id).select().single()
+          ? db.from("emergency_incident_types").update(payload).eq("id", d.id).eq("property_id", propertyId).select().single()
           : db.from("emergency_incident_types").insert(payload).select().single();
         const r = await q;
         if (r.error) throw r.error;
@@ -312,7 +312,7 @@ Deno.serve(async (req) => {
           active: d.active !== false,
         };
         const q = d.id
-          ? db.from("emergency_message_templates").update(payload).eq("id", d.id).select().single()
+          ? db.from("emergency_message_templates").update(payload).eq("id", d.id).eq("property_id", propertyId).select().single()
           : db.from("emergency_message_templates").insert(payload).select().single();
         const r = await q;
         if (r.error) throw r.error;
@@ -330,7 +330,7 @@ Deno.serve(async (req) => {
           active: d.active !== false,
         };
         const q = d.id
-          ? db.from("emergency_contact_groups").update(payload).eq("id", d.id).select().single()
+          ? db.from("emergency_contact_groups").update(payload).eq("id", d.id).eq("property_id", propertyId).select().single()
           : db.from("emergency_contact_groups").insert(payload).select().single();
         const r = await q;
         if (r.error) throw r.error;
@@ -356,7 +356,7 @@ Deno.serve(async (req) => {
         }
 
         if (whatsapp) {
-          const all = await db.from("emergency_contacts").select("id,whatsapp_number");
+          const all = await db.from("emergency_contacts").select("id,whatsapp_number").eq("property_id", propertyId);
           if (all.error) throw all.error;
           const duplicate = (all.data || []).some((row:any) =>
             row.id !== d.id &&
@@ -381,7 +381,7 @@ Deno.serve(async (req) => {
         };
 
         const q = d.id
-          ? db.from("emergency_contacts").update(payload).eq("id", d.id).select().single()
+          ? db.from("emergency_contacts").update(payload).eq("id", d.id).eq("property_id", propertyId).select().single()
           : db.from("emergency_contacts").insert(payload).select().single();
         const r = await q;
 
@@ -456,7 +456,7 @@ Deno.serve(async (req) => {
         db.from("emergency_message_templates").select("*").eq("active", true).order("name"),
         db.from("emergency_contacts").select("*").eq("active", true).order("priority").order("full_name"),
         db.from("emergency_contact_groups").select("*").eq("active", true).order("name"),
-        db.from("emergency_settings").select("setting_key,setting_value").eq("active", true).order("setting_key"),
+        db.from("emergency_settings").select("setting_key,setting_value").eq("property_id", propertyId).eq("active", true).order("setting_key"),
       ]);
       for (const x of [a,b,c,d,settings]) if (x.error) throw x.error;
       const smtp = await smtpSettings(db);
