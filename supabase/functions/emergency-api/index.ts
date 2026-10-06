@@ -52,7 +52,12 @@ async function auth(req: Request) {
   return { user, profile, db, propertyId: profile.property_id };
 }
 
-function propertyId(profile: any) {\n  const id = String(profile?.property_id || "").trim();\n  if (!id) throw new Error("Property assignment required");\n  return id;\n}\n\nfunction canConfigure(profile: any) {
+function propertyId(profile: any) {
+  const id = String(profile?.property_id || "").trim();\n  if (!id) throw new Error("Property assignment required");
+  return id;
+}
+
+function canConfigure(profile: any) {
   return ["ADMIN", "MANAGER", "SUPERADMIN"].includes(profile?.role);
 }
 
@@ -64,7 +69,8 @@ async function settingsMap(db: any, property_id: string) {
   const { data, error } = await admin
     .from("emergency_settings")
     .select("setting_key,setting_value,description,active")
-    .eq("property_id", property_id)\n    .eq("active", true)
+    .eq("property_id", property_id)
+    .eq("active", true)
     .order("setting_key");
   if (error) throw error;
   const out: Record<string, any> = {};
@@ -74,7 +80,8 @@ async function settingsMap(db: any, property_id: string) {
   return out;
 }
 
-async function smtpSettings(db: any, property_id: string) {\n  const s = await settingsMap(db, property_id);
+async function smtpSettings(db: any, property_id: string) {
+  const s = await settingsMap(db, property_id);
   const host = s.smtp_host ?? Deno.env.get("SMTP_HOST");
   const port = Number(s.smtp_port ?? Deno.env.get("SMTP_PORT") ?? "587");
   const secure = Boolean(s.smtp_secure ?? (Deno.env.get("SMTP_SECURE") === "true"));
@@ -142,7 +149,8 @@ async function resolveRecipients(db: any, groupIds: string[], contactIds: string
     const { data, error } = await admin
       .from("emergency_group_members")
       .select("group_id,contact_id")
-      .in("group_id", groupIds)\n      .eq("property_id", property_id);
+      .in("group_id", groupIds)
+      .eq("property_id", property_id);
     if (error) throw error;
     memberships = (data || []).map((row:any) => ({group_id:row.group_id,contact_id:row.contact_id}));
     for (const row of memberships) ids.add(row.contact_id);
@@ -668,7 +676,8 @@ Deno.serve(async (req) => {
         throw new Error("PRODUCTION EMERGENCY BLOCKED: SMTP and an ERT WhatsApp group must be configured first.");
       }
 
-      const { data: incident, error } = await db.from("emergency_incidents").insert({\n        property_id: propertyId,
+      const { data: incident, error } = await db.from("emergency_incidents").insert({
+        property_id: propertyId,
         incident_type_id: b.incident_type_id || null,
         severity: b.severity || "URGENT",
         title: b.title,
