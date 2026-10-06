@@ -159,7 +159,7 @@ async function saveSmtp(){if(!superAdmin()){SecureOpsUI.error('Access Denied','S
 async function testSmtp(){if(!superAdmin()){SecureOpsUI.error('Access Denied','SMTP test requires SUPERADMIN.');return}try{const r=await api('smtp_test','POST',{});$('smtpNotice').textContent='Test email sent to '+r.recipient;$('smtpNotice').classList.remove('err');SecureOpsUI.success('SMTP Test Successful','Test email sent successfully to '+r.recipient+'.')}catch(e){$('smtpNotice').textContent=e.message;$('smtpNotice').classList.add('err');SecureOpsUI.error('SMTP Test Failed',e.message)}}
 async function loadPropertyBranding(){
  try{
-  const fallback='https://bosfcjwacdrwtwgpmaex.supabase.co/storage/v1/object/public/property-assets/HIKJ/32d10d47-b483-494f-bb39-e477858addf2.png';
+  const fallback='https://bosfcjwacdrwtwgpmaex.supabase.co/storage/v1/object/public/property-assets/HIKJ/3780a0e5-580b-4d46-9b12-f8b9fab95a95.svg';
   const r=await fetch(U+'/functions/v1/visitor-submit?branding=1&_='+Date.now(),{headers:{apikey:K},cache:'no-store'});
   const j=await r.json().catch(()=>({}));
   const b=j?.branding||{};
