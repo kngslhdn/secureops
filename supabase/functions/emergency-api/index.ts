@@ -120,6 +120,7 @@ async function audit(db: any, user: any, profile: any, action: string, target: s
       action,
       target,
       description,
+      property_id: profile.property_id || null,
     });
     if (error) console.error("Emergency audit log write failed:", error);
   } catch (e) {
@@ -133,6 +134,7 @@ async function selectedGroups(db: any, groupIds: string[], property_id: string) 
     .from("emergency_contact_groups")
     .select("*")
     .in("id", groupIds)
+    .eq("property_id", property_id)
     .eq("active", true);
   if (error) throw error;
   if ((data || []).length !== groupIds.length) {
