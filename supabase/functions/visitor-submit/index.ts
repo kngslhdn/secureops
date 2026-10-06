@@ -2,7 +2,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const APP_VERSION='ks.v.001';
 const APP_TITLE='SECUREOPS | Security Operations';
-const cors = {'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type, idempotency-key','Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Expose-Headers':'X-SECUREOPS-Version, X-SECUREOPS-Title','X-SECUREOPS-Version':APP_VERSION,'X-SECUREOPS-Title':APP_TITLE};
+const ALLOWED_ORIGINS=new Set(['https://kngslhdn.github.io','https://visitor.myhikj.com','http://visitor.myhikj.com','http://localhost:3000','http://127.0.0.1:5500']);
+function corsHeaders(req:Request){
+ const origin=req.headers.get('origin')||'';
+ return {'Access-Control-Allow-Origin':ALLOWED_ORIGINS.has(origin)?origin:'https://kngslhdn.github.io','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type, idempotency-key','Access-Control-Allow-Methods':'GET, POST, OPTIONS','Access-Control-Expose-Headers':'X-SECUREOPS-Version, X-SECUREOPS-Title','Access-Control-Max-Age':'86400','Vary':'Origin','X-SECUREOPS-Version':APP_VERSION,'X-SECUREOPS-Title':APP_TITLE};
+}
 const supabase=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 const HIKJ_PROPERTY_ID='9ca8c398-c376-4d7a-8b74-91a8ffb771e7';
 const propertySelect=(table:string,columns:string)=>supabase.from(table).select(columns).eq('property_id',HIKJ_PROPERTY_ID);
@@ -19,30 +23,25 @@ async function outstandingKey(key:string){
  }
  return null;
 }
-const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json'}});
+const json=(body:unknown,status=200,req?:Request)=>new Response(JSON.stringify(body),{status,headers:{...corsHeaders(req||new Request('https://secureops.local')),'Content-Type':'application/json'}});
 const clean=(v:unknown)=>String(v??'').trim().replace(/[<>]/g,'');
 const phone=(v:unknown)=>clean(v).replace(/[^0-9+]/g,'').replace(/^0+/,'');
 const normText=(v:unknown)=>clean(v).toLowerCase().replace(/\s+/g,' ');
 const types:Record<string,string>={entry:'visitor_entry',masuk:'visitor_entry',exit:'visitor_exit',keluar:'visitor_exit',borrowing:'key_borrowing',pinjamKunci:'key_borrowing',return:'key_return',kembaliKunci:'key_return',package:'package_registration',paket:'package_registration',key_asset_lookup:'key_asset_lookup'};
 const val=(b:any,...keys:string[])=>keys.map(k=>b[k]).find(v=>v!==undefined&&v!==null&&String(v).trim()!=='')??'';
 
-// SecureOps P1 hardening: lightweight per-edge rate limiting for the public submission endpoint.
-// This is defense-in-depth; for globally coordinated limits, place the endpoint behind a
-// durable rate limiter such as Upstash/Cloudflare as traffic grows.
-const RATE_LIMIT_WINDOW_MS=60_000;
+// Durable, cross-instance rate limiting backed by Postgres.
 const RATE_LIMIT_MAX=60;
-const rateBuckets=new Map<string,{count:number,resetAt:number}>();
+const RATE_LIMIT_WINDOW_SECONDS=60;
 function clientKey(req:Request){
  const forwarded=req.headers.get('x-forwarded-for')||req.headers.get('cf-connecting-ip')||'';
  return (forwarded.split(',')[0]||'unknown').trim().slice(0,100);
 }
-function rateLimit(req:Request){
- const now=Date.now(),key=clientKey(req);let bucket=rateBuckets.get(key);
- if(!bucket||now>=bucket.resetAt){bucket={count:0,resetAt:now+RATE_LIMIT_WINDOW_MS};rateBuckets.set(key,bucket);}
- bucket.count++;
- if(bucket.count>RATE_LIMIT_MAX)return {allowed:false,retryAfter:Math.max(1,Math.ceil((bucket.resetAt-now)/1000))};
- if(rateBuckets.size>5000){for(const [k,b] of rateBuckets)if(now>=b.resetAt)rateBuckets.delete(k);}
- return {allowed:true,retryAfter:0};
+async function rateLimit(req:Request){
+ const {data,error}=await supabase.rpc('consume_public_rate_limit',{p_key:`visitor-submit:${clientKey(req)}`,p_limit:RATE_LIMIT_MAX,p_window_seconds:RATE_LIMIT_WINDOW_SECONDS});
+ if(error)throw error;
+ const row=Array.isArray(data)?data[0]:data;
+ return {allowed:Boolean(row?.allowed),retryAfter:Number(row?.retry_after||1)};
 }
 
 function timestamp(_v:unknown){
@@ -80,26 +79,26 @@ async function uploadPackagePhoto(dataUrl:string){
 }
 
 Deno.serve(async req=>{
- if(req.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
+ if(req.method==='OPTIONS')return new Response(null,{status:204,headers:corsHeaders(req)});
  if(req.method==='GET'){
    const {data,error}=await supabase.from('properties').select('property_code,property_name,logo_url,primary_color,secondary_color').eq('id',HIKJ_PROPERTY_ID).eq('is_active',true).maybeSingle();
-   if(error)return json({error:'Unable to load property branding'},500);
-   return json({ok:true,branding:data||null});
+   if(error)return json({error:'Unable to load property branding'},500,req);
+   return json({ok:true,branding:data||null},200,req);
  }
- if(req.method!=='POST')return json({error:'Method not allowed'},405);const limit=rateLimit(req);if(!limit.allowed)return new Response(JSON.stringify({error:'Too many requests. Please wait and try again.'}),{status:429,headers:{...cors,'Content-Type':'application/json','Retry-After':String(limit.retryAfter)}});
+ if(req.method!=='POST')return json({error:'Method not allowed'},405,req);const limit=await rateLimit(req);if(!limit.allowed)return new Response(JSON.stringify({error:'Too many requests. Please wait and try again.'}),{status:429,headers:{...corsHeaders(req),'Content-Type':'application/json','Retry-After':String(limit.retryAfter)}});
  try{
-  const contentLength=Number(req.headers.get('content-length')||0);if(contentLength>8*1024*1024)return json({error:'Request payload is too large.'},413);
-  const body=await req.json();const rawType=clean(body.type||body.form_type),type=types[rawType]||rawType;if(!['visitor_entry','visitor_exit','key_borrowing','key_return','package_registration','key_asset_lookup'].includes(type))return json({error:'Invalid submission type'},400);const settings=await publicSettings();const ops=settings.operations||{};const enabledByType:Record<string,string>={visitor_entry:'visitor_entry_enabled',visitor_exit:'visitor_exit_enabled',key_borrowing:'key_borrowing_enabled',key_return:'key_return_enabled',package_registration:'package_registration_enabled'};if(enabledByType[type]&&ops[enabledByType[type]]===false)return json({error:'This service is currently disabled by Security Administration.'},403);
+  const contentLength=Number(req.headers.get('content-length')||0);if(contentLength>8*1024*1024)return json({error:'Request payload is too large.'},413,req);
+  const body=await req.json();const rawType=clean(body.type||body.form_type),type=types[rawType]||rawType;if(!['visitor_entry','visitor_exit','key_borrowing','key_return','package_registration','key_asset_lookup'].includes(type))return json({error:'Invalid submission type'},400,req);const settings=await publicSettings();const ops=settings.operations||{};const enabledByType:Record<string,string>={visitor_entry:'visitor_entry_enabled',visitor_exit:'visitor_exit_enabled',key_borrowing:'key_borrowing_enabled',key_return:'key_return_enabled',package_registration:'package_registration_enabled'};if(enabledByType[type]&&ops[enabledByType[type]]===false)return json({error:'This service is currently disabled by Security Administration.'},403,req);
   if(type==='key_asset_lookup'){
    const key=clean(body.key_number||body.keyNumber);
-   if(!key)return json({error:'Please enter Key Number.'},400);
+   if(!key)return json({error:'Please enter Key Number.'},400,req);
    const {data,error}=await propertySelect('key_assets','key_number,key_description,quantity,active').eq('key_number',key).maybeSingle();
    if(error)throw error;
    if(!data)return json({ok:false,error:`Key Number ${key} was not found in Key Assets.`},404);
    if(!data.active)return json({ok:false,error:`Key Number ${key} is inactive.`},409);
    return json({ok:true,key_asset:{key_number:data.key_number,description:data.key_description||'',quantity:Number(data.quantity||0)}});
   }
-  const idem=clean(req.headers.get('idempotency-key')||body.idempotency_key);if(idem){const {data}=await propertySelect('submissions','submission_id').eq('idempotency_key',idem).maybeSingle();if(data)return json({ok:true,duplicate:true,submission_id:data.submission_id});}
+  const idem=clean(req.headers.get('idempotency-key')||body.idempotency_key);if(idem){const {data}=await propertySelect('submissions','submission_id').eq('idempotency_key',idem).maybeSingle();if(data)return json({ok:true,duplicate:true,submission_id:data.submission_id},200,req);}
   const name=clean(val(body,'name','visitor_name','nama','returnName','borrowerName','namaPengantar')),mobile=clean(val(body,'phone','mobile_phone','telepon')),company=clean(val(body,'company_name','company','perusahaan'));let visitorId:string|null=null;let matchedExitEntry:any=null;
   if(type==='visitor_entry'){
    const pass=clean(val(body,'pass_vest_number','pass')),officer=clean(val(body,'security_officer_name','security')),category=clean(val(body,'category','kategori'));if(!name||!pass||!officer||!category)return json({error:'Required visitor fields are missing'},400);
@@ -179,7 +178,7 @@ Deno.serve(async req=>{
   }else{
    const path=await uploadPackagePhoto(clean(body.foto||body.photo_data_url));const {error}=await supabase.from('package_registrations').insert({property_id:HIKJ_PROPERTY_ID,submission_id:submission.id,courier_name:clean(val(body,'courier_name','namaPengantar')),phone:mobile||null,phone_normalized:phone(mobile)||null,company_name:company,item_type:clean(val(body,'item_type','jenisBarang')).toUpperCase(),item_count:Number(body.item_count||body.number_of_items||body.jumlah||1),recipient_type:clean(val(body,'recipient_type','tujuan')).toUpperCase(),recipient_name:clean(val(body,'recipient_name','namaTujuan')),security_officer_name:clean(val(body,'security_officer_name','security')),photo_storage_path:path});if(error)throw error;
   }
-  await supabase.from('submissions').update({status:'completed'}).eq('id',submission.id);return json({ok:true,submission_id:submission.submission_id,whatsapp_number:settings.whatsapp?.phone_number||null,...(keyReturnResult?{key_return:keyReturnResult}:{})});
+  await supabase.from('submissions').update({status:'completed'}).eq('id',submission.id);return json({ok:true,submission_id:submission.submission_id,whatsapp_number:settings.whatsapp?.phone_number||null,...(keyReturnResult?{key_return:keyReturnResult}:{})},200,req);
  }catch(e){
   console.error('visitor-submit error',e);
   const raw=String(e?.message||'');
@@ -188,6 +187,6 @@ Deno.serve(async req=>{
   else if(/duplicate|23505|already exists|unique constraint/i.test(raw)) message='This submission already exists or was already processed. Please wait and try again.';
   else if(/foreign key|23503/i.test(raw)) message='A related record could not be found. Please refresh and try again.';
   else if(/payload|too large|5 MB/i.test(raw)) message='The submitted file or request is too large.';
-  return json({error:message},500);
+  return json({error:message},500,req);
  }
 });
