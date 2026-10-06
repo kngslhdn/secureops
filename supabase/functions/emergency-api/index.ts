@@ -141,8 +141,8 @@ async function selectedGroups(db: any, groupIds: string[], property_id: string) 
   return data || [];
 }
 
-async function resolveRecipients(db: any, groupIds: string[], contactIds: string[]) {
-  const groups = await selectedGroups(db, groupIds);
+async function resolveRecipients(db: any, groupIds: string[], contactIds: string[], property_id: string) {
+  const groups = await selectedGroups(db, groupIds, property_id);
   const ids = new Set(contactIds);
   let memberships: Array<{group_id:string;contact_id:string}> = [];
 
