@@ -64,7 +64,7 @@ async function settingsMap(db: any, property_id: string) {
   const { data, error } = await admin
     .from("emergency_settings")
     .select("setting_key,setting_value,description,active")
-    .eq("active", true)
+    .eq("property_id", property_id)\n    .eq("active", true)
     .order("setting_key");
   if (error) throw error;
   const out: Record<string, any> = {};
@@ -74,8 +74,7 @@ async function settingsMap(db: any, property_id: string) {
   return out;
 }
 
-async function smtpSettings(db: any) {
-  const s = await settingsMap(db);
+async function smtpSettings(db: any, property_id: string) {\n  const s = await settingsMap(db, property_id);
   const host = s.smtp_host ?? Deno.env.get("SMTP_HOST");
   const port = Number(s.smtp_port ?? Deno.env.get("SMTP_PORT") ?? "587");
   const secure = Boolean(s.smtp_secure ?? (Deno.env.get("SMTP_SECURE") === "true"));
