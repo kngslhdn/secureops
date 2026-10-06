@@ -1,13 +1,12 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-  "Content-Type": "application/json",
+const ALLOWED_ORIGINS=new Set(["https://kngslhdn.github.io","https://visitor.myhikj.com","http://visitor.myhikj.com","http://localhost:3000","http://127.0.0.1:5500"]);
+const corsHeaders=(req:Request)=>{
+  const origin=req.headers.get("Origin")||"";
+  return {"Access-Control-Allow-Origin":ALLOWED_ORIGINS.has(origin)?origin:"https://kngslhdn.github.io","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"GET,POST,OPTIONS","Vary":"Origin","Content-Type":"application/json"};
 };
-const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: corsHeaders });
+const json = (req:Request, body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: corsHeaders(req) });
 const APP_VERSION = "ks.v.001";
 const APP_TITLE = "SECUREOPS | Security Operations";
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -31,7 +30,7 @@ async function requireAdmin(req: Request) {
 function isUuid(value: string) { return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value); }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
   try {
     const { db } = await requireAdmin(req);
 
