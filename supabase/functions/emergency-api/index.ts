@@ -113,7 +113,7 @@ async function smtpSettings(db: any, property_id: string) {
 
 async function audit(db: any, user: any, profile: any, action: string, target: string, description: string) {
   try {
-    const { error } = await db.from("audit_logs").insert({
+    const { error } = await admin.from("audit_logs").insert({
       user_id: user.id,
       user_name: profile.full_name || user.email,
       module: "EMERGENCY",
