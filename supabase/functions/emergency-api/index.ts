@@ -10,7 +10,7 @@ const cors = {
 const json = (x: unknown, status = 200) =>
   new Response(JSON.stringify(x), {
     status,
-    headers: { ...cors, "Content-Type": "application/json" },
+    headers: { ...corsHeaders(new Request("https://secureops.local")), "Content-Type": "application/json" },
   });
 
 const url = Deno.env.get("SUPABASE_URL")!;
@@ -49,10 +49,10 @@ async function auth(req: Request) {
     global: { headers: { Authorization: `Bearer ${token}` } },
     auth: { persistSession: false, autoRefreshToken: false }
   });
-  return { user, profile, db };
+  return { user, profile, db, propertyId: profile.property_id };
 }
 
-function canConfigure(profile: any) {
+function propertyId(profile: any) {\n  const id = String(profile?.property_id || "").trim();\n  if (!id) throw new Error("Property assignment required");\n  return id;\n}\n\nfunction canConfigure(profile: any) {
   return ["ADMIN", "MANAGER", "SUPERADMIN"].includes(profile?.role);
 }
 
@@ -120,7 +120,7 @@ async function audit(db: any, user: any, profile: any, action: string, target: s
   }
 }
  
-async function selectedGroups(db: any, groupIds: string[]) {
+async function selectedGroups(db: any, groupIds: string[], property_id: string) {
   if (!groupIds.length) return [];
   const { data, error } = await admin
     .from("emergency_contact_groups")
@@ -143,7 +143,7 @@ async function resolveRecipients(db: any, groupIds: string[], contactIds: string
     const { data, error } = await admin
       .from("emergency_group_members")
       .select("group_id,contact_id")
-      .in("group_id", groupIds);
+      .in("group_id", groupIds)\n      .eq("property_id", property_id);
     if (error) throw error;
     memberships = (data || []).map((row:any) => ({group_id:row.group_id,contact_id:row.contact_id}));
     for (const row of memberships) ids.add(row.contact_id);
@@ -210,10 +210,10 @@ async function sendEmail(recipients: string[], incident: any, cfg: any) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders(req) });
 
   try {
-    const { user, profile, db } = await auth(req);
+    const { user, profile, db, propertyId } = await auth(req);
     const u = new URL(req.url);
     const action = u.searchParams.get("action") || "dashboard";
 
@@ -221,13 +221,13 @@ Deno.serve(async (req) => {
     if (action === "settings_bootstrap") {
       if (!canConfigure(profile)) throw new Error("Emergency Settings access requires ADMIN, MANAGER or SUPERADMIN.");
       const [types, templates, groups, contacts, members, settings, auditRows] = await Promise.all([
-        db.from("emergency_incident_types").select("*").order("priority").order("name"),
-        db.from("emergency_message_templates").select("*").order("name"),
-        db.from("emergency_contact_groups").select("*").order("name"),
-        db.from("emergency_contacts").select("*").order("priority").order("full_name"),
-        db.from("emergency_group_members").select("group_id,contact_id"),
-        db.from("emergency_settings").select("setting_key,setting_value,description,active,updated_at").order("setting_key"),
-        db.from("audit_logs").select("*").eq("module","EMERGENCY").order("created_at",{ascending:false}).limit(100),
+        db.from("emergency_incident_types").eq("property_id", propertyId).select("*").order("priority").order("name"),
+        db.from("emergency_message_templates").eq("property_id", propertyId).select("*").order("name"),
+        db.from("emergency_contact_groups").eq("property_id", propertyId).select("*").order("name"),
+        db.from("emergency_contacts").eq("property_id", propertyId).select("*").order("priority").order("full_name"),
+        db.from("emergency_group_members").eq("property_id", propertyId).select("group_id,contact_id"),
+        db.from("emergency_settings").eq("property_id", propertyId).select("setting_key,setting_value,description,active,updated_at").order("setting_key"),
+        db.from("audit_logs").select("*").eq("module","EMERGENCY").eq("property_id", propertyId).order("created_at",{ascending:false}).limit(100),
       ]);
       for (const x of [types,templates,groups,contacts,members,settings,auditRows]) if (x.error) throw x.error;
       const smtp = await smtpSettings(db);
@@ -404,19 +404,19 @@ Deno.serve(async (req) => {
 
       if (resource === "members") {
         if (!d.group_id) throw new Error("group_id is required.");
-        const group = await db.from("emergency_contact_groups").select("id").eq("id", d.group_id).eq("active", true).maybeSingle();
+        const group = await db.from("emergency_contact_groups").select("id").eq("id", d.group_id).eq("property_id", propertyId).eq("active", true).maybeSingle();
         if (group.error) throw group.error;
         if (!group.data) throw new Error("Selected group is inactive or unavailable.");
         const contactIds = Array.isArray(d.contact_ids) ? [...new Set(d.contact_ids)] : [];
         if (contactIds.length) {
-          const valid = await db.from("emergency_contacts").select("id").in("id", contactIds).eq("active", true);
+          const valid = await db.from("emergency_contacts").select("id").in("id", contactIds).eq("property_id", propertyId).eq("active", true);
           if (valid.error) throw valid.error;
           if ((valid.data || []).length !== contactIds.length) throw new Error("One or more selected contacts are inactive or unavailable.");
         }
-        const del = await db.from("emergency_group_members").delete().eq("group_id", d.group_id);
+        const del = await db.from("emergency_group_members").delete().eq("group_id", d.group_id).eq("property_id", propertyId);
         if (del.error) throw del.error;
         if (contactIds.length) {
-          const ins = await db.from("emergency_group_members").insert(contactIds.map((contact_id: string) => ({group_id:d.group_id,contact_id})));
+          const ins = await db.from("emergency_group_members").insert(contactIds.map((contact_id: string) => ({group_id:d.group_id,contact_id,property_id:propertyId})));
           if (ins.error) throw ins.error;
         }
         await audit(db, user, profile, "UPDATE", d.group_id, "Updated emergency group membership.");
@@ -440,7 +440,7 @@ Deno.serve(async (req) => {
           updated_by: user.id,
           updated_at: new Date().toISOString(),
         };
-        const r = await db.from("emergency_settings").upsert(payload,{onConflict:"setting_key"}).select().single();
+        const r = await db.from("emergency_settings").upsert(payload,{onConflict:"setting_key,property_id"}).select().single();
         if (r.error) throw r.error;
         await audit(db, user, profile, "UPDATE", d.setting_key, "Updated emergency system setting.");
         return json({ ok: true, row: r.data });
@@ -475,14 +475,14 @@ Deno.serve(async (req) => {
       const start = new Date();
       start.setHours(0, 0, 0, 0);
       const [inc, not, ack, groups] = await Promise.all([
-        db.from("emergency_incidents").select("*").order("created_at", { ascending: false }).limit(30),
-        db.from("emergency_notifications").select("id,status,created_at:queued_at", { count: "exact" }).gte("queued_at", start.toISOString()),
-        db.from("emergency_incident_recipients").select("id,emergency_incidents!inner(status),emergency_acknowledgements!left(id)", { count: "exact" }).in("emergency_incidents.status", ["ACTIVE", "MONITORING"]),
-        db.from("emergency_contact_groups").select("id,name,whatsapp_group_url").eq("active", true),
+        db.from("emergency_incidents").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }).limit(30),
+        db.from("emergency_notifications").select("id,status,created_at:queued_at", { count: "exact" }).eq("property_id", propertyId).gte("queued_at", start.toISOString()),
+        db.from("emergency_incident_recipients").select("id,emergency_incidents!inner(status),emergency_acknowledgements!left(id)", { count: "exact" }).eq("property_id", propertyId).in("emergency_incidents.status", ["ACTIVE", "MONITORING"]),
+        db.from("emergency_contact_groups").select("id,name,whatsapp_group_url").eq("property_id", propertyId).eq("active", true),
       ]);
       const active = (inc.data || []).filter((x: any) => ["ACTIVE", "MONITORING"].includes(x.status));
       const smtp = await smtpSettings(db);
-      const settingRows = await db.from("emergency_settings").select("setting_key,setting_value").eq("active",true);
+      const settingRows = await db.from("emergency_settings").select("setting_key,setting_value").eq("property_id", propertyId).eq("active",true);
       if (settingRows.error) throw settingRows.error;
       const settingMap: Record<string, any> = {};
       for (const row of settingRows.data || []) settingMap[row.setting_key] = row.setting_value;
@@ -508,7 +508,7 @@ Deno.serve(async (req) => {
       const allowedReasons = new Set(["FALSE_ALARM","HANDLED","UNDER_CONTROL","EVAC_COMPLETED","TECHNICAL_RESOLVED","OTHER"]);
       if (!allowedReasons.has(reason)) throw new Error("A valid resolution reason is required.");
       if (!notes) throw new Error("Resolution notes are required.");
-      const current = await db.from("emergency_incidents").select("*").eq("id", b.incident_id).single();
+      const current = await db.from("emergency_incidents").select("*").eq("id", b.incident_id).eq("property_id", propertyId).single();
       if (current.error) throw current.error;
       if (!["ACTIVE","MONITORING"].includes(current.data.status)) throw new Error("Only ACTIVE or MONITORING incidents can be resolved.");
       const now = new Date().toISOString();
@@ -610,9 +610,9 @@ Deno.serve(async (req) => {
       const id = u.searchParams.get("incident_id");
       if (!id) throw new Error("incident_id required");
       const [i, n, up] = await Promise.all([
-        db.from("emergency_incidents").select("*,emergency_incident_types(name)").eq("id", id).single(),
-        db.from("emergency_notifications").select("*,emergency_incident_recipients(contact_id,emergency_contacts(full_name)),emergency_contact_groups(name)").eq("incident_id", id).order("queued_at"),
-        db.from("emergency_incident_updates").select("*").eq("incident_id", id).order("created_at", { ascending: true }),
+        db.from("emergency_incidents").select("*,emergency_incident_types(name)").eq("id", id).eq("property_id", propertyId).single(),
+        db.from("emergency_notifications").select("*,emergency_incident_recipients(contact_id,emergency_contacts(full_name)),emergency_contact_groups(name)").eq("incident_id", id).eq("property_id", propertyId).order("queued_at"),
+        db.from("emergency_incident_updates").select("*").eq("incident_id", id).eq("property_id", propertyId).order("created_at", { ascending: true }),
       ]);
       const notifications = (n.data || []).map((x: any) => ({
         id: x.id,
@@ -655,7 +655,7 @@ Deno.serve(async (req) => {
         throw new Error("Title, message and at least one recipient group/contact are required.");
       }
 
-      const { groups, contacts, memberships } = await resolveRecipients(db, groupIds, directContactIds);
+      const { groups, contacts, memberships } = await resolveRecipients(db, groupIds, directContactIds, propertyId);
       const whatsappGroups = groups.filter((g: any) => g.whatsapp_group_url);
       const smtp = await smtpSettings(db);
       const systemSettings = await settingsMap(db);
@@ -669,7 +669,7 @@ Deno.serve(async (req) => {
         throw new Error("PRODUCTION EMERGENCY BLOCKED: SMTP and an ERT WhatsApp group must be configured first.");
       }
 
-      const { data: incident, error } = await db.from("emergency_incidents").insert({
+      const { data: incident, error } = await db.from("emergency_incidents").insert({\n        property_id: propertyId,
         incident_type_id: b.incident_type_id || null,
         severity: b.severity || "URGENT",
         title: b.title,
@@ -684,7 +684,7 @@ Deno.serve(async (req) => {
       const recipientRows: any[] = [];
       for (const contact of contacts) {
         const matchingGroup = memberships.find((m:any) => m.contact_id === contact.id);
-        recipientRows.push({ incident_id: incident.id, contact_id: contact.id, group_id: matchingGroup?.group_id || null });
+        recipientRows.push({ incident_id: incident.id, property_id: propertyId, contact_id: contact.id, group_id: matchingGroup?.group_id || null });
       }
       let recips: any[] = [];
       if (recipientRows.length) {
