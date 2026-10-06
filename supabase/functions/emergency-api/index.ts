@@ -7,10 +7,10 @@ const cors = {
   "Access-Control-Allow-Headers": "authorization,apikey,content-type",
   "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
 };
-const json = (x: unknown, status = 200) =>
+const json = (req: Request, x: unknown, status = 200) =>
   new Response(JSON.stringify(x), {
     status,
-    headers: { ...corsHeaders(new Request("https://secureops.local")), "Content-Type": "application/json" },
+    headers: { ...corsHeaders(req), "Content-Type": "application/json" },
   });
 
 const url = Deno.env.get("SUPABASE_URL")!;
@@ -217,7 +217,7 @@ Deno.serve(async (req) => {
     const u = new URL(req.url);
     const action = u.searchParams.get("action") || "dashboard";
 
-    if (action === "me") return json({ profile });
+    if (action === "me") return json(req, { profile });
     if (action === "settings_bootstrap") {
       if (!canConfigure(profile)) throw new Error("Emergency Settings access requires ADMIN, MANAGER or SUPERADMIN.");
       const [types, templates, groups, contacts, members, settings, auditRows] = await Promise.all([
@@ -231,7 +231,7 @@ Deno.serve(async (req) => {
       ]);
       for (const x of [types,templates,groups,contacts,members,settings,auditRows]) if (x.error) throw x.error;
       const smtp = await smtpSettings(db);
-      return json({
+      return json(req, {
         profile,
         types: types.data || [],
         templates: templates.data || [],
@@ -278,7 +278,7 @@ Deno.serve(async (req) => {
         const r = await admin.rpc("emergency_set_smtp_secret", { p_name: name, p_secret: value });
         if (r.error) throw r.error;
         await audit(db, user, profile, "UPDATE", name, "Updated protected SMTP credential.");
-        return json({ ok: true });
+        return json(req, { ok: true });
       }
 
       if (resource === "incident_type") {
@@ -297,7 +297,7 @@ Deno.serve(async (req) => {
         const r = await q;
         if (r.error) throw r.error;
         await audit(db, user, profile, d.id ? "UPDATE" : "CREATE", payload.code, "Updated incident type configuration.");
-        return json({ ok: true, row: r.data });
+        return json(req, { ok: true, row: r.data });
       }
 
       if (resource === "template") {
@@ -317,7 +317,7 @@ Deno.serve(async (req) => {
         const r = await q;
         if (r.error) throw r.error;
         await audit(db, user, profile, d.id ? "UPDATE" : "CREATE", payload.code, "Updated emergency message template.");
-        return json({ ok: true, row: r.data });
+        return json(req, { ok: true, row: r.data });
       }
 
       if (resource === "group") {
@@ -335,7 +335,7 @@ Deno.serve(async (req) => {
         const r = await q;
         if (r.error) throw r.error;
         await audit(db, user, profile, d.id ? "UPDATE" : "CREATE", payload.code, "Updated emergency contact group.");
-        return json({ ok: true, row: r.data });
+        return json(req, { ok: true, row: r.data });
       }
 
       if (resource === "contact") {
@@ -399,7 +399,7 @@ Deno.serve(async (req) => {
         }
 
         await audit(db, user, profile, d.id ? "UPDATE" : "CREATE", payload.full_name, "Updated emergency contact.");
-        return json({ ok: true, row: r.data });
+        return json(req, { ok: true, row: r.data });
       }
 
       if (resource === "members") {
@@ -420,7 +420,7 @@ Deno.serve(async (req) => {
           if (ins.error) throw ins.error;
         }
         await audit(db, user, profile, "UPDATE", d.group_id, "Updated emergency group membership.");
-        return json({ ok: true });
+        return json(req, { ok: true });
       }
 
       if (resource === "setting") {
@@ -443,7 +443,7 @@ Deno.serve(async (req) => {
         const r = await db.from("emergency_settings").upsert(payload,{onConflict:"setting_key,property_id"}).select().single();
         if (r.error) throw r.error;
         await audit(db, user, profile, "UPDATE", d.setting_key, "Updated emergency system setting.");
-        return json({ ok: true, row: r.data });
+        return json(req, { ok: true, row: r.data });
       }
 
       throw new Error("Unknown settings resource.");
@@ -460,7 +460,7 @@ Deno.serve(async (req) => {
       ]);
       for (const x of [a,b,c,d,settings]) if (x.error) throw x.error;
       const smtp = await smtpSettings(db);
-      return json({
+      return json(req, {
         types: a.data || [],
         templates: b.data || [],
         contacts: c.data || [],
@@ -486,7 +486,7 @@ Deno.serve(async (req) => {
       if (settingRows.error) throw settingRows.error;
       const settingMap: Record<string, any> = {};
       for (const row of settingRows.data || []) settingMap[row.setting_key] = row.setting_value;
-      return json({
+      return json(req, {
         stats: {
           active: active.length,
           urgent: active.filter((x: any) => x.severity === "URGENT").length,
@@ -568,7 +568,7 @@ Deno.serve(async (req) => {
       }
 
       await audit(db, user, profile, "RESOLVE_INCIDENT", upd.data.incident_id, `Resolved incident. reason=${reason}`);
-      return json({
+      return json(req, {
         ok: true,
         incident: upd.data,
         whatsapp: { manual: true, dispatches: resolutionDispatches },
@@ -603,7 +603,7 @@ Deno.serve(async (req) => {
       });
       if (timeline.error) throw timeline.error;
       await audit(db, user, profile, "REOPEN_INCIDENT", upd.data.incident_id, "Reopened incident.");
-      return json({ ok: true, incident: upd.data });
+      return json(req, { ok: true, incident: upd.data });
     }
 
     if (action === "incident_detail") {
@@ -621,7 +621,7 @@ Deno.serve(async (req) => {
         name: x.emergency_contact_groups?.name || x.emergency_incident_recipients?.emergency_contacts?.full_name || "Group",
         error_message: x.error_message || null,
       }));
-      return json({ incident: i.data, notifications, updates: up.data || [] });
+      return json(req, { incident: i.data, notifications, updates: up.data || [] });
     }
 
     
@@ -644,7 +644,7 @@ Deno.serve(async (req) => {
       );
       await audit(db, user, profile, "TEST", "SMTP", "Executed SMTP test email.");
       if (result.status !== "SENT") throw new Error(result.error || "SMTP test failed.");
-      return json({ ok: true, status: result.status, recipient: user.email });
+      return json(req, { ok: true, status: result.status, recipient: user.email });
     }
 
     if (action === "create_incident" && req.method === "POST") {
@@ -770,7 +770,7 @@ Deno.serve(async (req) => {
         ].join("\n"),
       }));
 
-      return json({
+      return json(req, {
         ok: true,
         incident,
         email: { status: emailResult.status, recipients: uniqueEmails.length },
@@ -782,6 +782,6 @@ Deno.serve(async (req) => {
 
     throw new Error("Unknown action");
   } catch (e) {
-    return json({ error: e?.message || String(e) }, 400);
+    return json(req, { error: e?.message || String(e) }, 400);
   }
 });
