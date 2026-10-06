@@ -1,22 +1,23 @@
-project_id = "hmqgmusellcetakoalva"
+project_id = "bosfcjwacdrwtwgpmaex"
 
 [functions.visitor-submit]
 verify_jwt = false
 
 [functions.admin-api]
-verify_jwt = false
+verify_jwt = true
 
 [functions.visitor-monitoring]
-verify_jwt = false
+verify_jwt = true
 
 [functions.visitor-detail]
-verify_jwt = false
+verify_jwt = true
 
 [functions.admin-console-api]
-verify_jwt = false
+verify_jwt = true
 
 [functions.package-distribution]
-verify_jwt = false
+verify_jwt = true
 
 [functions.emergency-api]
 verify_jwt = true
+import_map = "./functions/emergency-api/deno.json"
