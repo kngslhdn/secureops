@@ -19,7 +19,19 @@ async function outstandingKey(key:string){
    if(r.error)throw r.error;
    const returned=(r.data||[]).reduce((n:any,x:any)=>n+Number(x.quantity||0),0);
    const outstanding=Math.max(Number(b.quantity||0)-returned,0);
-   if(outstanding>0)return {borrowing_id:b.id,borrower_name:b.borrower_name,borrowed_quantity:Number(b.quantity||0),returned_quantity:returned,outstanding_quantity:outstanding,key_number:key};
+   if(outstanding>0){
+     // A discrepancy that has been formally resolved no longer blocks a new borrowing.
+     // Historical borrowing/return quantities remain unchanged for audit purposes.
+     const {data:resolution,error:resolutionError}=await supabase
+       .from('key_discrepancy_resolutions')
+       .select('id')
+       .eq('borrowing_id',b.id)
+       .maybeSingle();
+     if(resolutionError)throw resolutionError;
+     if(!resolution){
+       return {borrowing_id:b.id,borrower_name:b.borrower_name,borrowed_quantity:Number(b.quantity||0),returned_quantity:returned,outstanding_quantity:outstanding,key_number:key};
+     }
+   }
  }
  return null;
 }
