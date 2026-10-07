@@ -172,6 +172,7 @@ async function load(){
   ]);
   for(const x of [types,templates,groups,contacts,members,settings,auditRows]) if(x.error) throw x.error;
 
+  const fallbackSetting=(key,def)=>{const row=(settings.data||[]).find(x=>x.setting_key===key);return row?.setting_value??def};
   state={
     profile,
     types:types.data||[],
@@ -186,12 +187,12 @@ async function load(){
       username_configured:false,
       password_configured:false,
       username:'',
-      host:'',
-      port:465,
-      secure:true,
-      from:'',
-      from_name:'',
-      reply_to:''
+      host:fallbackSetting('smtp_host','smtp.gmail.com'),
+      port:Number(fallbackSetting('smtp_port',465)),
+      secure:fallbackSetting('smtp_secure',true)!==false,
+      from:fallbackSetting('smtp_from',''),
+      from_name:fallbackSetting('smtp_from_name','HIKJ Emergency Response (SAMPLE)'),
+      reply_to:fallbackSetting('smtp_reply_to','')
     }
   };
   $('userBox').innerHTML='<b>'+esc(profile.full_name||'Admin')+'</b><span>'+esc(profile.role)+'</span>';
