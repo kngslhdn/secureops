@@ -153,48 +153,60 @@ function adminDialog(row=null,token=null){
 }
 
 function exportKeyAssets(rows){
- const headers=['Key Number','Description','Location / Department','Quantity','Status'];
- const csvEsc=v=>{const s=String(v??'');return /[\",\n\r]/.test(s)?'\"'+s.replace(/\"/g,'\"\"')+'\"':s};
- const csv=[headers,...rows.map(x=>[x.key_number,x.key_description,x.location_department,x.quantity,x.active?'ACTIVE':'INACTIVE'])].map(row=>row.map(csvEsc).join(',')).join('\r\n');
+ const headers=['Key Number','Key Name','Category','Floor','Quantity','Quantity Detail','Remarks','Status','Source Document'];
+ const csvEsc=v=>{const s=String(v??'');return /[\",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
+ const csv=[headers,...rows.map(x=>[x.key_number,x.key_description,x.category,x.floor,x.quantity,x.quantity_detail,x.remarks,x.active?'ACTIVE':'INACTIVE',x.source_document])].map(row=>row.map(csvEsc).join(',')).join('\r\n');
  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='SECUREOPS-Key-Assets-'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
 }
 async function keys(token){
  const r=await req('key_assets');if(!current(token))return;const rows=r.data||[];
- $('sContent').innerHTML=card('Key Assets','Master inventory for physical hotel keys',`<div class="s-table"><table><thead><tr><th>Key Number</th><th>Description</th><th>Location / Department</th><th>Quantity</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.length?rows.map(x=>`<tr><td><b>${esc(x.key_number)}</b></td><td>${esc(x.key_description||'—')}</td><td>${esc(x.location_department||'—')}</td><td>${esc(x.quantity)}</td><td><span class="s-badge ${x.active?'s-on':'s-off'}">${x.active?'ACTIVE':'INACTIVE'}</span></td><td><button class="s-btn" data-key-edit="${x.id}">Edit</button></td></tr>`).join(''):'<tr><td colspan="6">No key assets configured</td></tr>'}</tbody></table></div>`, '<button class="s-btn primary" id="addKey">Add Key Asset</button>');
- const toolbar='<div class="key-toolbar"><input id="keySearch" class="key-search" type="search" placeholder="Search key number, description, location or department..." autocomplete="off"><span id="keyCount" class="key-count"></span><button class="s-btn key-export" id="exportKeys">Export CSV</button></div>';
+ const renderRows=list=>list.length?list.map(x=>`<tr><td><b>${esc(x.key_number)}</b></td><td>${esc(x.key_description||'—')}</td><td>${esc(x.category||'—')}</td><td>${esc(x.floor||'—')}</td><td>${esc(x.quantity)}</td><td>${esc(x.quantity_detail||'—')}</td><td>${esc(x.remarks||'—')}</td><td><span class="s-badge ${x.active?'s-on':'s-off'}">${x.active?'ACTIVE':'INACTIVE'}</span></td><td><button class="s-btn" data-key-edit="${x.id}">Edit</button></td></tr>`).join(''):'<tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:18px">No matching key assets found</td></tr>';
+ $('sContent').innerHTML=card('Key Assets','Master inventory for physical hotel keys',`<div class="s-table"><table><thead><tr><th>Key Number</th><th>Key Name</th><th>Category</th><th>Floor</th><th>Quantity</th><th>Quantity Detail</th><th>Remarks</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>`, '<button class="s-btn primary" id="addKey">Add Key Asset</button>');
+ const toolbar='<div class="key-toolbar"><input id="keySearch" class="key-search" type="search" placeholder="Search key number, name, category, floor or remarks..." autocomplete="off"><span id="keyCount" class="key-count"></span><button class="s-btn key-export" id="exportKeys">Export CSV</button></div>';
  $('sContent').querySelector('.s-body').insertAdjacentHTML('afterbegin',toolbar);
  const search=$('keySearch'),tbody=document.querySelector('#sContent tbody'),count=$('keyCount');
- const filterRows=()=>{const q=String(search.value||'').trim().toLowerCase();const filtered=!q?rows:rows.filter(x=>[x.key_number,x.key_description,x.location_department,x.quantity,x.active?'active':'inactive'].some(v=>String(v??'').toLowerCase().includes(q)));tbody.innerHTML=filtered.length?filtered.map(x=>`<tr><td><b>${esc(x.key_number)}</b></td><td>${esc(x.key_description||'—')}</td><td>${esc(x.location_department||'—')}</td><td>${esc(x.quantity)}</td><td><span class="s-badge ${x.active?'s-on':'s-off'}">${x.active?'ACTIVE':'INACTIVE'}</span></td><td><button class="s-btn" data-key-edit="${x.id}">Edit</button></td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:18px">No matching key assets found</td></tr>';count.textContent=filtered.length+' of '+rows.length+' assets';document.querySelectorAll('[data-key-edit]').forEach(b=>b.onclick=()=>keyDialog(rows.find(x=>x.id===b.dataset.keyEdit),token));};
- search.oninput=filterRows;count.textContent=rows.length+' assets';$('exportKeys').onclick=()=>{const q=String(search.value||'').trim().toLowerCase();const filtered=!q?rows:rows.filter(x=>[x.key_number,x.key_description,x.location_department,x.quantity,x.active?'active':'inactive'].some(v=>String(v??'').toLowerCase().includes(q)));exportKeyAssets(filtered)};
- $('addKey').onclick=()=>keyDialog(null,token);document.querySelectorAll('[data-key-edit]').forEach(b=>b.onclick=()=>keyDialog(rows.find(x=>x.id===b.dataset.keyEdit),token));
+ const filterRows=()=>{
+   const q=String(search.value||'').trim().toLowerCase();
+   const filtered=!q?rows:rows.filter(x=>[x.key_number,x.key_description,x.category,x.floor,x.remarks,x.source_document,x.quantity_detail,x.quantity,x.active?'active':'inactive'].some(v=>String(v??'').toLowerCase().includes(q)));
+   tbody.innerHTML=renderRows(filtered);
+   count.textContent=filtered.length+' of '+rows.length+' assets';
+   document.querySelectorAll('[data-key-edit]').forEach(b=>b.onclick=()=>keyDialog(rows.find(x=>x.id===b.dataset.keyEdit),token));
+ };
+ search.oninput=filterRows;filterRows();
+ $('exportKeys').onclick=()=>{const q=String(search.value||'').trim().toLowerCase();const filtered=!q?rows:rows.filter(x=>[x.key_number,x.key_description,x.category,x.floor,x.remarks,x.source_document,x.quantity_detail,x.quantity,x.active?'active':'inactive'].some(v=>String(v??'').toLowerCase().includes(q)));exportKeyAssets(filtered)};
+ $('addKey').onclick=()=>keyDialog(null,token);
 }
 function keyDialog(row=null,token=null){
  const d=document.createElement('dialog');
- d.style.cssText='border:0;border-radius:14px;padding:0;width:min(520px,calc(100% - 24px));box-shadow:0 25px 80px #0005';
- d.innerHTML=`<form method="dialog" class="s-body"><h2 style="margin:0 0 14px;color:#071a30;font-size:16px">${row?'Edit Key Asset':'Add Key Asset'}</h2><div class="s-grid"><div class="s-field"><label>Key Number</label><input class="kaNum" required value="${esc(row?.key_number||'')}" ${row?'readonly':''}></div><div class="s-field"><label>Quantity</label><input class="kaQty" type="number" min="1" required value="${esc(row?.quantity||1)}"></div><div class="s-field"><label>Description</label><input class="kaDesc" value="${esc(row?.key_description||'')}"></div><div class="s-field"><label>Location / Department</label><input class="kaLoc" value="${esc(row?.location_department||'')}"></div></div><div class="s-toggle" style="margin-top:12px"><label>Active</label><input class="kaActive" type="checkbox" ${row?.active!==false?'checked':''}></div><div class="s-actions"><button type="button" class="s-btn kaCancel">Cancel</button><button type="button" class="s-btn primary kaSave">Save</button></div><div class="s-msg kaMsg"></div></form>`;
+ d.style.cssText='border:0;border-radius:14px;padding:0;width:min(680px,calc(100% - 24px));box-shadow:0 25px 80px #0005';
+ d.innerHTML=`<form method="dialog" class="s-body"><h2 style="margin:0 0 14px;color:#071a30;font-size:16px">${row?'Edit Key Asset':'Add Key Asset'}</h2><div class="s-grid">
+ <div class="s-field"><label>Key Number</label><input class="kaNum" required value="${esc(row?.key_number||'')}" ${row?'readonly':''}></div>
+ <div class="s-field"><label>Key Name</label><input class="kaDesc" required value="${esc(row?.key_description||'')}"></div>
+ <div class="s-field"><label>Category / Section</label><input class="kaCat" value="${esc(row?.category||'')}"></div>
+ <div class="s-field"><label>Floor</label><input class="kaFloor" value="${esc(row?.floor||'')}"></div>
+ <div class="s-field"><label>Quantity</label><input class="kaQty" type="number" min="1" required value="${esc(row?.quantity||1)}"></div>
+ <div class="s-field"><label>Quantity Detail</label><input class="kaQtyDetail" value="${esc(row?.quantity_detail||'')}"></div>
+ <div class="s-field" style="grid-column:1/-1"><label>Remarks</label><textarea class="kaRemarks" rows="3">${esc(row?.remarks||'')}</textarea></div>
+ <div class="s-field"><label>Location / Department</label><input class="kaLoc" value="${esc(row?.location_department||row?.category||'')}"></div>
+ <div class="s-field"><label>Source Document</label><input class="kaSource" value="${esc(row?.source_document||'')}"></div>
+ </div><div class="s-toggle" style="margin-top:12px"><label>Active</label><input class="kaActive" type="checkbox" ${row?.active!==false?'checked':''}></div><div class="s-actions"><button type="button" class="s-btn kaCancel">Cancel</button><button type="button" class="s-btn primary kaSave">Save</button></div><div class="s-msg kaMsg"></div></form>`;
  document.body.appendChild(d);
- const num=d.querySelector('.kaNum'),qty=d.querySelector('.kaQty'),desc=d.querySelector('.kaDesc'),loc=d.querySelector('.kaLoc'),active=d.querySelector('.kaActive'),cancel=d.querySelector('.kaCancel'),save=d.querySelector('.kaSave'),message=d.querySelector('.kaMsg');
- const cleanup=()=>d.remove();
- d.addEventListener('close',cleanup,{once:true});
- d.showModal();
- cancel.onclick=()=>d.close();
+ const num=d.querySelector('.kaNum'),name=d.querySelector('.kaDesc'),cat=d.querySelector('.kaCat'),floor=d.querySelector('.kaFloor'),qty=d.querySelector('.kaQty'),qtyDetail=d.querySelector('.kaQtyDetail'),remarks=d.querySelector('.kaRemarks'),loc=d.querySelector('.kaLoc'),source=d.querySelector('.kaSource'),active=d.querySelector('.kaActive'),cancel=d.querySelector('.kaCancel'),save=d.querySelector('.kaSave'),message=d.querySelector('.kaMsg');
+ const cleanup=()=>d.remove();d.addEventListener('close',cleanup,{once:true});d.showModal();cancel.onclick=()=>d.close();
  save.onclick=async()=>{
    save.disabled=true;cancel.disabled=true;save.textContent='Saving...';
    try{
-     const body={id:row?.id,key_number:num.value.trim(),quantity:Number(qty.value),key_description:desc.value.trim(),location_department:loc.value.trim(),active:active.checked};
+     const body={id:row?.id,key_number:num.value.trim(),quantity:Number(qty.value),key_description:name.value.trim(),category:cat.value.trim(),floor:floor.value.trim(),quantity_detail:qtyDetail.value.trim(),remarks:remarks.value.trim(),location_department:loc.value.trim()||cat.value.trim(),source_document:source.value.trim(),active:active.checked};
      if(!body.key_number)throw Error('Key Number is required');
+     if(!body.key_description)throw Error('Key Name is required');
      if(!Number.isInteger(body.quantity)||body.quantity<1)throw Error('Quantity must be at least 1');
      await req(row?'update_key_asset':'create_key_asset','POST',body);
-     if(!current(token)){d.close();return;}
-     d.close();
+     if(!current(token)){d.close();return} d.close();
      SecureOpsUI.success(row?'Key Asset Updated':'Key Asset Created',row?'The key asset was updated successfully.':'The key asset was created successfully.');
      await keys(token);
-   }catch(e){
-     message.textContent=e.message||'Request failed';message.classList.add('err');SecureOpsUI.error(row?'Key Asset Update Failed':'Key Asset Creation Failed',e.message||'Request failed');
-     save.disabled=false;cancel.disabled=false;save.textContent='Save';
-   }
- }
+   }catch(e){message.textContent=e.message||'Request failed';message.classList.add('err');SecureOpsUI.error(row?'Key Asset Update Failed':'Key Asset Creation Failed',e.message||'Request failed');save.disabled=false;cancel.disabled=false;save.textContent='Save'}
+ };
 }
 async function operations(token){
  const r=await req('settings');if(!current(token))return;const o=r.settings?.operations||{},role=String(window.HIKJAdminRole||'').toUpperCase(),canEdit=role==='SUPERADMIN'||role==='MANAGER';const fields=[['visitor_entry_enabled','Visitor Entry Registration'],['visitor_exit_enabled','Visitor Exit Registration'],['key_borrowing_enabled','Key Borrowing'],['key_return_enabled','Key Return'],['package_registration_enabled','Package Registration'],['package_distribution_enabled','Package Distribution']];
