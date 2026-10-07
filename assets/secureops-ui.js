@@ -44,8 +44,8 @@
     .so-popup-close{position:absolute;right:10px;top:8px;width:36px;height:36px;border:0;background:transparent;color:#a9bbca;font-size:27px;cursor:pointer}
     .so-popup-close:hover{color:#fff}
     .so-popup-icon{width:62px;height:62px;margin:0 auto 14px;border-radius:50%;display:grid;place-items:center;font-size:31px;font-weight:800}
-    .so-popup-icon.success{background:#c7f9d8;border:2px solid #78dda7;color:#159447}
-    .so-popup-icon.success i{font-size:31px;line-height:1;color:#159447;display:block;transform:translateY(1px)}
+    .so-popup-icon.success{background:transparent;border:0;color:#159447;width:auto;height:auto;margin:0 auto 14px}
+    .so-popup-icon.success i{font-size:43px;line-height:1;color:#159447;display:block;transform:none}
     .so-popup-icon.error{background:#ffd5d5;border:2px solid #ff9292}
     .so-popup-icon.warning{background:#fff0c2;border:2px solid #e8b94d}
     .so-popup-icon-mark{position:relative;display:block;width:26px;height:26px}
