@@ -159,8 +159,14 @@
     results.innerHTML = `<div class="pd-empty">${PDT('Searching…','Mencari…')}</div>`;
     try {
       const q = encodeURIComponent(document.querySelector('#pdSearch')?.value.trim() || '');
-      const response = await callApi(`?q=${q}&limit=50`);
-      const items = Array.isArray(response?.data) ? response.data : (Array.isArray(response?.packages) ? response.packages : []);
+      const { data: rows, error } = await client.from('package_registrations').select('id,submission_id,courier_name,phone,company_name,item_type,item_count,recipient_type,recipient_name,security_officer_name,created_at').order('created_at',{ascending:false}).limit(100);
+      if(error) throw error;
+      const ids=(rows||[]).map(p=>p.submission_id).filter(Boolean);
+      const { data: subs, error: subError } = ids.length ? await client.from('submissions').select('id,submission_id').in('id',ids) : {data:[],error:null};
+      if(subError) throw subError;
+      const publicMap=new Map((subs||[]).map(s=>[s.id,s.submission_id]));
+      const term=q.toLowerCase();
+      const items=(rows||[]).filter(p=>!term || [p.recipient_name,p.courier_name,p.company_name,p.item_type,p.recipient_type,publicMap.get(p.submission_id)].join(' ').toLowerCase().includes(term)).map(p=>({...p,submission_id:publicMap.get(p.submission_id)||p.submission_id,package_number:publicMap.get(p.submission_id)||p.submission_id,status:'READY FOR DISTRIBUTION'}));
       if (!items.length) { results.innerHTML = `<div class="pd-empty">${PDT('No package available for distribution','Tidak ada paket yang tersedia untuk didistribusikan')}</div>`; return; }
       results.innerHTML = items.map((p, i) => `<button class="pd-result" data-pd-index="${i}">
         <div><b>${esc(p.submission_id || p.package_number)}</b><span>${esc(p.recipient_name || '—')} · ${esc(p.company_name || '—')}</span></div>
