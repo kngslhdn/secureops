@@ -130,7 +130,73 @@ async function api(action,method='GET',body=null){const r=await fetch(API+'?acti
 function setting(k,d){const x=state.settings.find(x=>x.setting_key===k);return x?x.setting_value:d}
 function canEdit(){return ['ADMIN','MANAGER','SUPERADMIN'].includes(state.profile?.role)}
 function superAdmin(){return state.profile?.role==='SUPERADMIN'}
-async function load(){const r=await api('settings_bootstrap');state=r;state.settings=r.settings||[];state.types=r.types||[];state.templates=r.templates||[];state.groups=r.groups||[];state.contacts=r.contacts||[];state.members=r.members||[];state.audit=r.audit||[];state.smtp=r.smtp||{};$('userBox').innerHTML='<b>'+esc(r.profile.full_name||'Admin')+'</b><span>'+esc(r.profile.role)+'</span>';renderAll()}
+async function load(){
+  try{
+    const r=await api('settings_bootstrap');
+    state=r;
+    state.settings=r.settings||[];
+    state.types=r.types||[];
+    state.templates=r.templates||[];
+    state.groups=r.groups||[];
+    state.contacts=r.contacts||[];
+    state.members=r.members||[];
+    state.audit=r.audit||[];
+    state.smtp=r.smtp||{};
+    $('userBox').innerHTML='<b>'+esc(r.profile.full_name||'Admin')+'</b><span>'+esc(r.profile.role)+'</span>';
+    renderAll();
+    return;
+  }catch(primaryError){
+    console.warn('Emergency Settings API bootstrap failed; using direct RLS read fallback.',primaryError);
+  }
+
+  const sessionResult=await sb.auth.getSession();
+  const activeSession=sessionResult.data?.session;
+  if(!activeSession) throw new Error('Session expired. Please sign in again.');
+
+  const uid=activeSession.user.id;
+  const profileResult=await sb.from('admin_profiles').select('user_id,full_name,role,active,property_id').eq('user_id',uid).single();
+  if(profileResult.error) throw profileResult.error;
+  const profile=profileResult.data;
+  if(!profile?.active || !['ADMIN','MANAGER','SUPERADMIN'].includes(profile.role)) throw new Error('Emergency Settings access requires an active administrator profile.');
+  if(!profile.property_id) throw new Error('Property assignment required.');
+
+  const p=profile.property_id;
+  const [types,templates,groups,contacts,members,settings,auditRows]=await Promise.all([
+    sb.from('emergency_incident_types').select('*').eq('property_id',p).order('priority').order('name'),
+    sb.from('emergency_message_templates').select('*').eq('property_id',p).order('name'),
+    sb.from('emergency_contact_groups').select('*').eq('property_id',p).order('name'),
+    sb.from('emergency_contacts').select('*').eq('property_id',p).order('priority').order('full_name'),
+    sb.from('emergency_group_members').select('group_id,contact_id').eq('property_id',p),
+    sb.from('emergency_settings').select('setting_key,setting_value,description,active,updated_at').eq('property_id',p).order('setting_key'),
+    sb.from('audit_logs').select('*').eq('module','EMERGENCY').eq('property_id',p).order('created_at',{ascending:false}).limit(100)
+  ]);
+  for(const x of [types,templates,groups,contacts,members,settings,auditRows]) if(x.error) throw x.error;
+
+  state={
+    profile,
+    types:types.data||[],
+    templates:templates.data||[],
+    groups:groups.data||[],
+    contacts:contacts.data||[],
+    members:members.data||[],
+    settings:settings.data||[],
+    audit:auditRows.data||[],
+    smtp:{
+      configured:false,
+      username_configured:false,
+      password_configured:false,
+      username:'',
+      host:'',
+      port:465,
+      secure:true,
+      from:'',
+      from_name:'',
+      reply_to:''
+    }
+  };
+  $('userBox').innerHTML='<b>'+esc(profile.full_name||'Admin')+'</b><span>'+esc(profile.role)+'</span>';
+  renderAll();
+}
 async function save(resource,data,notify=true){
   const r=await api('settings_mutation','POST',{resource,op:data.id?'update':'create',data});
   try{await load()}catch(refreshErr){console.error('Settings refresh failed after save:',refreshErr)}
