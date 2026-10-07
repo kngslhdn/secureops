@@ -314,7 +314,7 @@ Deno.serve(async req=>{
       const overdueRows=transactionRows.filter(row=>row.status==='OUTSTANDING');
       const borrowedRows=transactionRows.filter(row=>row.status==='BORROWED');
       const outstandingQty=overdueRows.reduce((n,row)=>n+Number(row.outstanding_quantity||0),0);
-      const discrepancyKeys=transactionRows.filter(row=>!!row.discrepancy).length;
+      const discrepancyKeys=transactionRows.filter(row=>!!row.discrepancy&&!row.discrepancy_resolved).length;
       const partialKeys=transactionRows.filter(row=>Number(row.returned_quantity||0)>0&&Number(row.outstanding_quantity||0)>0).length;
       const ready=Math.max((totalPackages.count||0)-(distAll.count||0),0);
       let branding:any=null;
@@ -379,11 +379,42 @@ Deno.serve(async req=>{
         overdue_minutes:x.status==='OUTSTANDING'?Math.max(0,Math.floor((Date.now()-new Date(x.expected_return_at).getTime())/60000)):0,
         status:x.status,
         discrepancy:!!x.discrepancy,
+        discrepancy_resolved:!!x.discrepancy_resolved,
+        discrepancy_resolution_type:x.discrepancy_resolution_type||null,
+        discrepancy_resolution_note:x.discrepancy_resolution_note||null,
+        discrepancy_resolved_by_name:x.discrepancy_resolved_by_name||null,
+        discrepancy_resolved_at:x.discrepancy_resolved_at||null,
         return_events:(byId.get(x.borrowing_id)||[]).sort((a:any,b:any)=>new Date(b.returned_at).getTime()-new Date(a.returned_at).getTime())
       }));
       return json(req,{data:rows});
     }
 
+    if(action==='resolve_key_discrepancy'){
+      const borrowingId=(url.searchParams.get('borrowing_id')||'').trim();
+      const resolutionType=(url.searchParams.get('resolution_type')||'').trim().toUpperCase();
+      const note=(url.searchParams.get('note')||'').trim().slice(0,1000);
+      if(!borrowingId)return json(req,{error:'Borrowing ID is required.'},400);
+      if(!['KEY_UPDATED','BAST_PROCESSED'].includes(resolutionType))return json(req,{error:'Invalid discrepancy resolution type.'},400);
+      const {data:tx,error:te}=await sb.from('key_control_transactions').select('borrowing_id,property_id,discrepancy,discrepancy_resolved,submission_id,key_number,borrower_name,department').eq('borrowing_id',borrowingId).maybeSingle();
+      if(te)throw te;
+      if(!tx)return json(req,{error:'Key transaction not found.'},404);
+      if(auth.profile?.role!=='SUPERADMIN' && tx.property_id!==auth.profile?.property_id)return json(req,{error:'Property access denied.'},403);
+      if(!tx.discrepancy)return json(req,{error:'This transaction has no quantity discrepancy.'},409);
+      if(tx.discrepancy_resolved)return json(req,{error:'This discrepancy has already been resolved.'},409);
+      const {data:resolution,error:re}=await sb.from('key_discrepancy_resolutions').insert({
+        borrowing_id:tx.borrowing_id,
+        property_id:tx.property_id,
+        resolution_type:resolutionType,
+        resolution_note:note||null,
+        resolved_by:auth.user.id,
+        resolved_by_name:auth.profile?.full_name||auth.user.email||null
+      }).select('id,resolution_type,resolution_note,resolved_by_name,resolved_at').single();
+      if(re){
+        if(re.code==='23505')return json(req,{error:'This discrepancy has already been resolved.'},409);
+        throw re;
+      }
+      return json(req,{ok:true,resolution});
+    }
     if(action==='packages'){
       const n=limitOf(url.searchParams.get('limit'),200,1000),search=(url.searchParams.get('q')||'').trim().toLowerCase();const {data:packages,error}=await auth.caller.from('package_registrations').select('id,submission_id,courier_name,phone,company_name,item_type,item_count,recipient_type,recipient_name,security_officer_name,photo_storage_path,created_at').order('created_at',{ascending:false}).limit(n);if(error)throw error;const rows=packages||[];const submissionIds=rows.map((x:any)=>x.submission_id).filter(Boolean);const publicMap=new Map<string,string>();if(submissionIds.length){const {data:subs,error:se}=await auth.caller.from('submissions').select('id,submission_id').in('id',submissionIds);if(se)throw se;for(const s of subs||[])publicMap.set(s.id,s.submission_id)}rows.forEach((r:any)=>{r.public_package_id=publicMap.get(r.submission_id)||r.submission_id});const ids=rows.map(x=>x.id);let ds:any[]=[];if(ids.length){const {data,error:de}=await auth.caller.from('package_distributions').select('package_registration_id,recipient_name,security_hand_over,note,distributed_at,status').in('package_registration_id',ids);if(de)throw de;ds=data||[]}const dm=new Map(ds.map(x=>[x.package_registration_id,x]));const filtered:any[]=rows.filter((r:any)=>!search||[r.public_package_id,r.submission_id,r.courier_name,r.phone,r.company_name,r.item_type,r.item_count,r.recipient_type,r.recipient_name,r.security_officer_name,...(()=>{const d=dm.get(r.id)||{};return [d.status,d.recipient_name,d.security_hand_over,d.note,d.distributed_at]})()].some(x=>String(x??'').toLowerCase().includes(search)));for(const r of filtered as any[]){r.submission_id=r.public_package_id;if(r.photo_storage_path){const ss=await sb.storage.from('package-photos').createSignedUrl(r.photo_storage_path,600);if(!ss.error)r.photo_url=ss.data.signedUrl}const drow=dm.get(r.id);r.distribution_status=drow?.status||'READY FOR DISTRIBUTION';r.distributed_to=drow?.recipient_name||null;r.distribution_security_hand_over=drow?.security_hand_over||null;r.distribution_note=drow?.note||null;r.distributed_at=drow?.distributed_at||null}return json(req,{data:filtered});
     }
