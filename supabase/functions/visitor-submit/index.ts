@@ -179,7 +179,7 @@ Deno.serve(async req=>{
    const quantity=Number(body.quantity||body.qty||1),borrowing=returnBorrowing,returnedBy=clean(val(body,'return_name','returnName','returned_by','returnedBy')),officer=clean(val(body,'security_officer_name','security')),department=clean(body.department)||borrowing.department;
    if(!returnedBy||!officer)return json({error:'Returned By and Received By Security are required.'},400);
    const originalBorrowed=Number(borrowing.borrowed_quantity),previouslyReturned=Number(borrowing.returned_quantity),newTotal=previouslyReturned+quantity;
-   const discrepancy=false;
+   const discrepancy=newTotal<originalBorrowed;
    const {error}=await supabase.from('key_returns').insert({property_id:HIKJ_PROPERTY_ID,submission_id:submission.id,borrowing_id:borrowing.borrowing_id,return_name:returnedBy,returned_by:returnedBy,department,key_number:borrowing.key_number,quantity,borrowed_quantity:originalBorrowed,discrepancy_qty:discrepancy,security_officer_name:officer,returned_at:timestamp(body.returned_at||body.datetime)});
    if(error)throw error;
    keyReturnResult={key_number:borrowing.key_number,original_borrowed_quantity:originalBorrowed,previously_returned_quantity:previouslyReturned,returned_now:quantity,total_returned:newTotal,outstanding_quantity:originalBorrowed-newTotal,discrepancy,new_status:newTotal===originalBorrowed?'CLOSED':'PARTIALLY RETURNED'};
