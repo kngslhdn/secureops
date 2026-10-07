@@ -1,0 +1,8 @@
+-- Restore the SECUREOPS emergency incident type sample configuration for HIKJ.
+update public.emergency_incident_types set code='BOMB', name='Bomb Threat / Suspicious Package', description='Bomb threat, suspicious package or suspected explosive device.', default_severity='URGENT', priority=10, active=true where code='BOMB_URGENT';
+update public.emergency_incident_types set code='EVACUATION', name='Evacuation', description='Emergency evacuation or building evacuation requirement.', default_severity='URGENT', priority=20, active=true where code='EVAC_URGENT';
+update public.emergency_incident_types set code='FIRE', name='Fire Emergency', description='Fire, smoke condition or fire alarm activation.', default_severity='URGENT', priority=30, active=true where code='FIRE_URGENT';
+update public.emergency_incident_types set code='MEDICAL', name='Medical Emergency', description='Immediate medical assistance or medical incident.', default_severity='URGENT', priority=40, active=true where code='MEDICAL_URGENT';
+update public.emergency_incident_types set code='SECURITY', name='Security Incident', description='Security threat, incident or suspicious security activity.', default_severity='URGENT', priority=50, active=true where code='SECURITY_URGENT';
+update public.emergency_incident_types set code='UTILITY', name='Critical Utility Failure', description='Major utility or building-system failure affecting operations or safety.', default_severity='HIGH', priority=60, active=true where code='UTILITY_HIGH';
+update public.emergency_incident_types set code='OTHER', name='General Emergency', description='Other emergency requiring coordinated response.', default_severity='HIGH', priority=70, active=true where code='OTHER_HIGH';
