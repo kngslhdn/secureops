@@ -239,13 +239,28 @@ async function settingsAction(req:Request,a:any,action:string){
     await audit(a,'UPDATE','Admin Users',id,`Updated admin account role to ${role}`);return json(req,{ok:true});
   }
   if(action==='key_assets'){
-    const {data,error}=await sb.from('key_assets').select('*').order('key_number');if(error)throw error;return json(req,{data});
+    let q=sb.from('key_assets').select('*').order('key_number');
+    if(String(a.profile?.role||'').toUpperCase()!=='SUPERADMIN')q=q.eq('property_id',a.profile.property_id);
+    const {data,error}=await q;if(error)throw error;return json(req,{data});
   }
   if(action==='create_key_asset'||action==='update_key_asset'){
     const b=await req.json(),key=String(b.key_number||'').trim();const quantity=Number(b.quantity||0);
     if(!key||!Number.isInteger(quantity)||quantity<1)return json(req,{error:'Key number and a positive quantity are required.'},400);
-    if(action==='create_key_asset'){const {error}=await sb.from('key_assets').insert({key_number:key,key_description:String(b.key_description||'').trim()||null,location_department:String(b.location_department||'').trim()||null,quantity,active:b.active!==false});if(error)throw error;await audit(a,'CREATE','Key Assets',key,'Created key asset');}
-    else{const id=String(b.id||'');const {error}=await sb.from('key_assets').update({key_description:String(b.key_description||'').trim()||null,location_department:String(b.location_department||'').trim()||null,quantity,active:b.active!==false}).eq('id',id);if(error)throw error;await audit(a,'UPDATE','Key Assets',id,'Updated key asset');}
+    const propertyId=String(a.profile?.property_id||'').trim();
+    const role=String(a.profile?.role||'').toUpperCase();
+    if(action==='create_key_asset'){
+      if(role!=='SUPERADMIN'&&!propertyId)return json(req,{error:'Property assignment required'},403);
+      const payload={property_id:propertyId||b.property_id,key_number:key,key_description:String(b.key_description||'').trim()||null,location_department:String(b.location_department||'').trim()||null,quantity,active:b.active!==false};
+      if(!payload.property_id)return json(req,{error:'Property is required for Key Asset.'},400);
+      const dup=await sb.from('key_assets').select('id').eq('property_id',payload.property_id).eq('key_number',key).maybeSingle();if(dup.error)throw dup.error;if(dup.data)return json(req,{error:'A Key Asset with this Key Number already exists in this property.'},409);
+      const {error}=await sb.from('key_assets').insert(payload);if(error)throw error;await audit(a,'CREATE','Key Assets',key,'Created key asset');
+    }else{
+      const id=String(b.id||'');if(!id)return json(req,{error:'Key Asset ID is required.'},400);
+      let uq=sb.from('key_assets').update({key_description:String(b.key_description||'').trim()||null,location_department:String(b.location_department||'').trim()||null,quantity,active:b.active!==false}).eq('id',id);
+      if(role!=='SUPERADMIN')uq=uq.eq('property_id',propertyId);
+      const {data,error}=await uq.select('id,property_id').maybeSingle();if(error)throw error;if(!data)return json(req,{error:'Key Asset not found or outside your property.'},404);
+      await audit(a,'UPDATE','Key Assets',id,'Updated key asset');
+    }
     return json(req,{ok:true});
   }
   if(action==='audit_logs'){
