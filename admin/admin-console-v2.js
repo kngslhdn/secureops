@@ -167,7 +167,15 @@ async function visitors(token){if(!isCurrent(token))return;const p=$('aPage');p.
 function detailField(label,value){return '<div class="vd-field"><label>'+esc(label)+'</label><strong>'+esc(value||'—')+'</strong></div>'}
 function listDetailModal(){if($('ldDialog'))return;const d=document.createElement('dialog');d.id='ldDialog';d.className='vd-dialog';d.innerHTML=`<div class="vd-head"><div><h2 id="ldTitle">Record Detail</h2><p id="ldSub">Operational record</p></div><button type="button" class="vd-close" id="ldClose">Close</button></div><div id="ldBody"></div><div class="vd-foot">SECUREOPS Security Admin Console</div>`;document.body.appendChild(d);$('ldClose').onclick=()=>d.close();d.addEventListener('click',e=>{if(e.target===d)d.close()})}
 function openListDetail(row,title){const th=[...row.closest('table').querySelectorAll('thead th')],td=[...row.querySelectorAll('td')];if(!td.length)return;try{listDetailModal();$('ldTitle').textContent=title;$('ldSub').textContent=td[0]?.innerText?.trim()||'Operational record';$('ldBody').innerHTML='<div class="vd-section">Record Information</div><div class="vd-grid">'+td.map((cell,i)=>detailField(th[i]?.innerText||'Field',cell.innerText.trim()||'—')).join('')+'</div>';const d=$('ldDialog');if(!d.open)d.showModal()}catch(err){console.error('SECUREOPS detail popup error',err);SecureOpsUI.error('Unable to Open Detail',err?.message||'Unable to open record detail')}}
-document.addEventListener('click',e=>{const row=e.target.closest?.('#krows tr,#prows tr');if(!row||row.querySelector('.a-empty'))return;const table=row.closest('table');const first=table?.querySelector('thead th')?.innerText||'';openListDetail(row,first.includes('RETURN')?'Key Return Detail':first.includes('TRANSACTION')?'Key Transaction Detail':first.includes('DISTRIBUTION')?'Package Distribution Detail':'Package Registration Detail')});
+document.addEventListener('click',e=>{
+ const actionButton=e.target.closest?.('.k-resolve');
+ if(actionButton)return;
+ const row=e.target.closest?.('#krows tr,#prows tr');
+ if(!row||row.querySelector('.a-empty'))return;
+ const table=row.closest('table');
+ const first=table?.querySelector('thead th')?.innerText||'';
+ openListDetail(row,first.includes('RETURN')?'Key Return Detail':first.includes('TRANSACTION')?'Key Transaction Detail':first.includes('DISTRIBUTION')?'Package Distribution Detail':'Package Registration Detail')
+});
 async function keys(token){
  if(!isCurrent(token))return;const p=$('aPage');
  p.innerHTML=shell('Key Monitoring','Live key custody control: one transaction per borrowing, with multiple return events',`<button class="a-btn" id="kr">Refresh</button>`)+tabs('ktab',['All Record','Key Returned','Outstanding'])+filters('kf','Transaction, borrower, returner, department or key',['All Status','BORROWED','OUTSTANDING','RETURNED','DISCREPANCY'])+`
