@@ -5,13 +5,13 @@
   function close(el){ if(el) el.remove(); }
   function show(type,title,message='',details='',buttonText='OK'){
     const old=document.getElementById('secureopsPopup'); if(old) old.remove();
-    const icon=type==='success'?'✓':type==='warning'?'!':'×';
+    const icon=type==='success'?'check':type==='warning'?'warning':'error';
     const el=document.createElement('div');
     el.id='secureopsPopup';
     el.className='so-popup-backdrop';
     el.innerHTML='<div class="so-popup" role="dialog" aria-modal="true" aria-labelledby="soPopupTitle">'+
       '<button type="button" class="so-popup-close" aria-label="Close">×</button>'+
-      '<div class="so-popup-icon '+esc(type)+'">'+icon+'</div>'+
+      '<div class="so-popup-icon '+esc(type)+'"><span class="so-popup-icon-mark '+esc(icon)+'" aria-hidden="true"></span></div>'+
       '<h3 id="soPopupTitle"></h3>'+
       '<p class="so-popup-message"></p>'+
       (details?'<div class="so-popup-details"></div>':'')+
@@ -44,9 +44,15 @@
     .so-popup-close{position:absolute;right:10px;top:8px;width:36px;height:36px;border:0;background:transparent;color:#a9bbca;font-size:27px;cursor:pointer}
     .so-popup-close:hover{color:#fff}
     .so-popup-icon{width:62px;height:62px;margin:0 auto 14px;border-radius:50%;display:grid;place-items:center;font-size:31px;font-weight:800}
-    .so-popup-icon.success{background:#c7f9d8;color:#075b32;border:2px solid #78dda7}
-    .so-popup-icon.error{background:#ffd5d5;color:#8b1111;border:2px solid #ff9292}
-    .so-popup-icon.warning{background:#fff0c2;color:#7a4d00;border:2px solid #e8b94d}
+    .so-popup-icon.success{background:#c7f9d8;border:2px solid #78dda7}
+    .so-popup-icon.error{background:#ffd5d5;border:2px solid #ff9292}
+    .so-popup-icon.warning{background:#fff0c2;border:2px solid #e8b94d}
+    .so-popup-icon-mark{position:relative;display:block;width:26px;height:26px}
+    .so-popup-icon-mark.check:after{content:"";position:absolute;left:5px;top:1px;width:9px;height:17px;border:solid #075b32;border-width:0 3px 3px 0;transform:rotate(45deg);border-radius:1px}
+    .so-popup-icon-mark.error:before,.so-popup-icon-mark.error:after{content:"";position:absolute;left:11px;top:2px;width:3px;height:22px;background:#8b1111;border-radius:2px}
+    .so-popup-icon-mark.error:before{transform:rotate(45deg)}
+    .so-popup-icon-mark.error:after{transform:rotate(-45deg)}
+    .so-popup-icon-mark.warning:before{content:"!";position:absolute;inset:0;display:grid;place-items:center;color:#7a4d00;font-size:25px;font-weight:900;line-height:26px;font-family:Arial,sans-serif}
     .so-popup h3{margin:0 0 8px;font-size:1.12rem}
     .so-popup-message{margin:0 auto 16px;line-height:1.5;font-size:.84rem;color:rgba(255,255,255,.86)}
     .so-popup-details{padding:13px 15px;margin:0 0 18px;border:1px solid rgba(180,210,235,.2);border-radius:11px;background:rgba(255,255,255,.035);text-align:left;font-size:.73rem;line-height:1.55}
