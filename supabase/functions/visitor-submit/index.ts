@@ -206,9 +206,11 @@ Deno.serve(async req=>{
   const raw=String(e?.message||'');
   let message='Submission failed. Please try again.';
   if(/Bucket not found|NoSuchBucket/i.test(raw)) message='Package photo storage is unavailable. Please try again later.';
+  else if(/EntityTooLarge|too large|max.*size|exceed.*5 MB/i.test(raw)) message='Package photo is too large. Please use a smaller photo.';
+  else if(/InvalidMimeType/i.test(raw)) message='Package photo format is not supported. Please use JPEG, PNG, or WebP.';
   else if(/duplicate|23505|already exists|unique constraint/i.test(raw)) message='This submission already exists or was already processed. Please wait and try again.';
   else if(/foreign key|23503/i.test(raw)) message='A related record could not be found. Please refresh and try again.';
-  else if(/payload|too large|5 MB/i.test(raw)) message='The submitted file or request is too large.';
+  else if(/payload/i.test(raw)) message='The submitted file or request is too large.';
   return json({error:message},500,req);
  }
 });
