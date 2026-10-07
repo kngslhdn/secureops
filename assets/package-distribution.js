@@ -244,13 +244,28 @@
         <div><b>${esc(PDT('Recipient:','Penerima:'))}</b> ${esc(d.recipient_name||'—')}</div>
         <div><b>${esc(PDT('Security Hand Over:','Serah Terima Security:'))}</b> ${esc(d.security_hand_over||'—')}</div>
         <div><b>${esc(PDT('Distribution Date &amp; Time:','Tanggal &amp; Waktu Distribusi:'))}</b> ${esc(fmt(d.distributed_at))}</div>`;
-      showPDPopup(
+      const successPopup = showPDPopup(
         'success',
         PDT('Distribution Successful','Distribusi Berhasil'),
         PDT('The package has been successfully distributed.','Paket berhasil didistribusikan.'),
         detail,
         PDT('DONE','SELESAI')
       );
+
+      // When the success popup is closed (X) or DONE is clicked,
+      // refresh the distribution screen so the distributed package
+      // disappears and newly registered packages are loaded.
+      if (successPopup) {
+        const refreshDistributionList = () => {
+          selected = null;
+          setTimeout(() => {
+            if (document.querySelector('#pdMain')) renderAuth();
+          }, 0);
+        };
+        successPopup.querySelector('.so-popup-close')?.addEventListener('click', refreshDistributionList, { once:true });
+        successPopup.querySelector('.so-popup-action')?.addEventListener('click', refreshDistributionList, { once:true });
+      }
+
       document.querySelector('#pdSelected').innerHTML = `<div class="pd-success"><h3>${PDT('Package successfully distributed','Paket berhasil didistribusikan')}</h3><p><b>${PDT('Distribution ID:','ID Distribusi:')}</b> ${esc(d.distribution_number||'—')}</p><p><b>${PDT('Package ID:','ID Paket:')}</b> ${esc(d.package_number||'—')}</p><button class="submit" id="pdBack">${PDT('SEARCH ANOTHER PACKAGE','CARI PAKET LAIN')}</button></div>`;
       document.querySelector('#pdBack').onclick = () => { selected = null; renderAuth(); };
     } catch (e) {
