@@ -220,8 +220,8 @@ Deno.serve(async (req) => {
     if (action === "settings_bootstrap") {
       if (!canConfigure(profile)) throw new Error("Emergency Settings access requires ADMIN, MANAGER or SUPERADMIN.");
       const [types, templates, groups, contacts, members, settings, auditRows] = await Promise.all([
-        db.from("emergency_incident_types").eq("property_id", propertyId).select("*").order("priority").order("name"),
-        db.from("emergency_message_templates").eq("property_id", propertyId).select("*").order("name"),
+        admin.from("emergency_incident_types").eq("property_id", propertyId).select("*").order("priority").order("name"),
+        admin.from("emergency_message_templates").eq("property_id", propertyId).select("*").order("name"),
         db.from("emergency_contact_groups").eq("property_id", propertyId).select("*").order("name"),
         db.from("emergency_contacts").eq("property_id", propertyId).select("*").order("priority").order("full_name"),
         db.from("emergency_group_members").eq("property_id", propertyId).select("group_id,contact_id"),
