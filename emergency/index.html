@@ -253,6 +253,115 @@ sb.auth.onAuthStateChange((event,s)=>{
 document.querySelectorAll('#recipients input,#groups input').forEach(x=>x.checked=false);
   applyDefaults();
 };
+async function boot(){
+  const r=await api('bootstrap');
+  types=r.types||[];
+  templates=r.templates||[];
+  contacts=r.contacts||[];
+  groups=r.groups||[];
+  systemSettings=Object.fromEntries((r.settings||[]).map(x=>[x.setting_key,x.setting_value]));
+  renderTypes();
+  renderTemplates();
+  renderRecipients();
+  renderGroups();
+  applyDefaults();
+  await refresh();
+  syncSidebar();
+  if(location.hash){
+    const el=$(location.hash.slice(1));
+    if(el)setTimeout(()=>el.scrollIntoView({block:'start'}),50);
+  }
+}
+function renderTypes(){
+  $('type').innerHTML='<option value="">Select incident type</option>'+types.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('');
+  $('type').onchange=()=>{
+    const t=types.find(x=>x.id===$('type').value);
+    if(t){
+      const r=document.querySelector('input[name="severity"][value="'+esc(t.default_severity||'URGENT')+'"]');
+      if(r)r.checked=true;
+      const selected=templates.find(x=>x.incident_type_code===t.code);
+      $('template').value=selected?.id||'';
+      if(selected)applyTemplate(selected,{force:true});
+    }
+  };
+}
+function renderTemplates(){
+  $('template').innerHTML='<option value="">Custom message</option>'+templates.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('');
+}
+function renderRecipients(){
+  $('recipients').innerHTML=contacts.length
+    ? contacts.map(x=>'<label class="recip"><input type="checkbox" value="'+esc(x.id)+'"><span><b>'+esc(x.full_name)+'</b><small>'+esc(x.position||x.department||'')+' · '+esc(x.whatsapp_number||x.phone_number||x.email||'No channel')+'</small></span></label>').join('')
+    : '<div style="padding:8px">No active emergency contacts configured yet</div>';
+}
+function renderGroups(){
+  $('groups').innerHTML=groups.length
+    ? groups.map(x=>'<label class="recip"><input type="checkbox" value="'+esc(x.id)+'"><span><b>'+esc(x.name)+'</b><small>'+esc(x.code)+' · '+(x.whatsapp_group_url?'WhatsApp configured':'No WhatsApp URL')+'</small></span></label>').join('')
+    : '<div style="padding:8px">No active emergency groups configured yet</div>';
+}
+function applyDefaults(){
+  const sev=systemSettings.default_severity||'URGENT';
+  const typeCode=systemSettings.default_incident_type_code;
+  const t=types.find(x=>x.code===typeCode)||types[0];
+  if(t){
+    $('type').value=t.id;
+    const selected=templates.find(x=>x.incident_type_code===t.code);
+    if(selected){
+      $('template').value=selected.id;
+      applyTemplate(selected,{force:true});
+    }
+  }
+  $('location').value=systemSettings.default_location||'';
+  const radio=document.querySelector('input[name="severity"][value="'+esc(sev)+'"]');
+  if(radio)radio.checked=true;
+  $('testMode').value=systemSettings.production_enabled===false?'true':'false';
+}
+function renderTemplateText(t){
+  const type=types.find(x=>x.id===$('type').value);
+  const vars={title:$('title').value||'Incident',location:$('location').value||'Location',time:new Date().toLocaleString('en-GB'),incident_id:'[Generated on create]',severity:document.querySelector('input[name="severity"]:checked')?.value||'URGENT',incident_type:type?.name||'',description:$('message').value||''};
+  const replace=s=>String(s||'').replace(/{{(title|location|time|incident_id|severity|incident_type|description)}}/g,(_,k)=>vars[k]??'');
+  $('title').value=replace(t.title_template);
+  $('message').value=replace(t.message_template);
+}
+let templateBase={title:'',message:'',generatedTitle:'',generatedMessage:''};
+function applyTemplate(t,{force=false}={}){
+  if(!t)return;
+  const currentTitle=$('title').value.trim();
+  const currentMessage=$('message').value.trim();
+  const titleIsGenerated=currentTitle===templateBase.generatedTitle;
+  const messageIsGenerated=currentMessage===templateBase.generatedMessage;
+  const userTitle=(!currentTitle||titleIsGenerated)?'':currentTitle;
+  const userMessage=(!currentMessage||messageIsGenerated)?'':currentMessage;
+  const type=types.find(x=>x.id===$('type').value);
+  const vars={title:userTitle||'Incident',location:$('location').value||systemSettings.default_location||'Location',time:new Date().toLocaleString('en-GB'),incident_id:'[Generated on create]',severity:document.querySelector('input[name="severity"]:checked')?.value||'URGENT',incident_type:type?.name||'',description:userMessage||''};
+  const replace=s=>String(s||'').replace(/{{(title|location|time|incident_id|severity|incident_type|description)}}/g,(_,k)=>vars[k]??'');
+  const nextTitle=replace(t.title_template);
+  const nextMessage=replace(t.message_template);
+  if(force||!currentTitle||titleIsGenerated)$('title').value=nextTitle;
+  if(force||!currentMessage||messageIsGenerated)$('message').value=nextMessage;
+  templateBase={title:userTitle,message:userMessage,generatedTitle:$('title').value,generatedMessage:$('message').value};
+}
+$('template').onchange=()=>{
+  const t=templates.find(x=>x.id===$('template').value);
+  if(!t){templateBase={title:'',message:'',generatedTitle:'',generatedMessage:''};return}
+  applyTemplate(t,{force:true});
+};
+$('location').oninput=()=>{
+  const t=templates.find(x=>x.id===$('template').value);
+  if(t)applyTemplate(t);
+};
+$('title').oninput=()=>{
+  if($('template').value)templateBase.generatedTitle='';
+};
+$('message').oninput=()=>{
+  if($('template').value)templateBase.generatedMessage='';
+};
+$('clearBtn').onclick=()=>{
+  $('incidentForm').reset();
+  $('message').value='';
+  templateBase={title:'',message:'',generatedTitle:'',generatedMessage:''};
+  document.querySelectorAll('#recipients input,#groups input').forEach(x=>x.checked=false);
+  applyDefaults();
+};
 $('incidentForm').onsubmit=async e=>{e.preventDefault();const ids=[...document.querySelectorAll('#recipients input:checked')].map(x=>x.value);const groupIds=[...document.querySelectorAll('#groups input:checked')].map(x=>x.value);const requireRecipientSelection=systemSettings.require_recipient_selection!==false;if(requireRecipientSelection&&!ids.length&&!groupIds.length){$('sendNotice').textContent='Select at least one recipient group or direct recipient';$('sendNotice').classList.add('err');return}const production=$('testMode').value==='false';const requireConfirm=systemSettings.require_production_confirmation!==false;if(production&&requireConfirm&&!confirm('CONFIRM PRODUCTION EMERGENCY\n\nThis will create a production emergency notification. Continue?'))return;if(!confirm('Review complete? Create notification for '+(ids.length+groupIds.length)+' recipient target(s)?'))return;
 
 // Pre-open WhatsApp tabs while still inside the user click/submit gesture.
