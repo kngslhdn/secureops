@@ -362,6 +362,7 @@ Deno.serve(async req=>{
       }
       const rows=tx.map((x:any)=>({
         record_type:'key_transaction',
+        borrowing_id:x.borrowing_id,
         transaction_id:x.submission_id,
         submission_id:x.submission_id,
         person_name:x.borrower_name,
