@@ -5,13 +5,17 @@
   function close(el){ if(el) el.remove(); }
   function show(type,title,message='',details='',buttonText='OK'){
     const old=document.getElementById('secureopsPopup'); if(old) old.remove();
-    const icon=type==='success'?'check':type==='warning'?'warning':'error';
+    const icon=type==='success'
+      ? '<i class="fi fi-tr-shield-trust" aria-hidden="true"></i>'
+      : type==='error'
+        ? '<i class="fi fi-tr-circle-xmark" aria-hidden="true"></i>'
+        : '<span class="so-popup-warning-mark" aria-hidden="true">!</span>';
     const el=document.createElement('div');
     el.id='secureopsPopup';
     el.className='so-popup-backdrop';
     el.innerHTML='<div class="so-popup" role="dialog" aria-modal="true" aria-labelledby="soPopupTitle">'+
       '<button type="button" class="so-popup-close" aria-label="Close">×</button>'+
-      '<div class="so-popup-icon '+esc(type)+'"><i class="fi fi-tr-shield-trust" aria-hidden="true"></i></div>'+
+      '<div class="so-popup-icon '+esc(type)+'">'+icon+'</div>'+
       '<h3 id="soPopupTitle"></h3>'+
       '<p class="so-popup-message"></p>'+
       (details?'<div class="so-popup-details"></div>':'')+
@@ -46,8 +50,10 @@
     .so-popup-icon{width:62px;height:62px;margin:0 auto 14px;border-radius:50%;display:grid;place-items:center;font-size:31px;font-weight:800}
     .so-popup-icon.success{background:transparent;border:0;color:#159447;width:auto;height:auto;margin:0 auto 14px}
     .so-popup-icon.success i{font-size:43px;line-height:1;color:#159447;display:block;transform:none}
-    .so-popup-icon.error{background:#ffd5d5;border:2px solid #ff9292}
+    .so-popup-icon.error{background:transparent;border:0;color:#e03b3b;width:auto;height:auto;margin:0 auto 14px}
+    .so-popup-icon.error i{font-size:43px;line-height:1;color:#e03b3b;display:block}
     .so-popup-icon.warning{background:#fff0c2;border:2px solid #e8b94d}
+    .so-popup-warning-mark{display:block;color:#7a4d00;font-size:25px;font-weight:900;line-height:26px;font-family:Arial,sans-serif}
     .so-popup-icon-mark{position:relative;display:block;width:26px;height:26px}
     .so-popup-icon-mark.check:after{content:"";position:absolute;left:5px;top:1px;width:9px;height:17px;border:solid #075b32;border-width:0 3px 3px 0;transform:rotate(45deg);border-radius:1px}
     .so-popup-icon-mark.error:before,.so-popup-icon-mark.error:after{content:"";position:absolute;left:11px;top:2px;width:3px;height:22px;background:#8b1111;border-radius:2px}
