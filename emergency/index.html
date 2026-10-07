@@ -251,8 +251,6 @@ sb.auth.onAuthStateChange((event,s)=>{
   else if(s&&event!=='INITIAL_SESSION'){setTimeout(()=>enter(s),0)}
 });
 document.querySelectorAll('#recipients input,#groups input').forEach(x=>x.checked=false);
-  applyDefaults();
-};
 async function boot(){
   const r=await api('bootstrap');
   types=r.types||[];
