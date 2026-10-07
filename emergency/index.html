@@ -313,7 +313,8 @@ function applyDefaults(){
   $('location').value=systemSettings.default_location||'';
   const radio=document.querySelector('input[name="severity"][value="'+esc(sev)+'"]');
   if(radio)radio.checked=true;
-  $('testMode').value=systemSettings.production_enabled===false?'true':'false';
+  // Safety default: always open in TEST / DRILL mode. Production must be selected explicitly by the operator.
+  $('testMode').value='true';
 }
 function renderTemplateText(t){
   const type=types.find(x=>x.id===$('type').value);
