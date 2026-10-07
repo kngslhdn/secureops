@@ -257,6 +257,31 @@ async function boot(){
   const r=await api('bootstrap');
   types=r.types||[];
   templates=r.templates||[];
+  // Hard fallback for the HIKJ emergency catalog. This keeps the operator UI usable
+  // even if a stale Pages build or bootstrap response returns empty arrays.
+  if(!types.length){
+    types=[
+      {id:'f1c84a41-f72b-44e9-9b06-97f357226de7',code:'BOMB',name:'Bomb Threat / Suspicious Package',default_severity:'URGENT',priority:10},
+      {id:'622f1bcd-0aef-4764-8abb-b961c1820e72',code:'EVACUATION',name:'Evacuation',default_severity:'URGENT',priority:20},
+      {id:'b5c0ec7d-7f60-4b26-86e0-35e53db16eb4',code:'FIRE',name:'Fire Emergency',default_severity:'URGENT',priority:30},
+      {id:'37a2cdf2-9f99-44b7-99c2-5667b8e1c033',code:'MEDICAL',name:'Medical Emergency',default_severity:'URGENT',priority:40},
+      {id:'05ea3f02-7450-4fc7-aefa-435d19fb4779',code:'SECURITY',name:'Security Incident',default_severity:'URGENT',priority:50},
+      {id:'ff326396-bd08-49a0-97c3-5aa5c0ee2f8e',code:'UTILITY',name:'Critical Utility Failure',default_severity:'HIGH',priority:60},
+      {id:'ef7fb9d5-72e6-43e7-9db6-e58a1c0403e5',code:'OTHER',name:'General Emergency',default_severity:'HIGH',priority:70}
+    ];
+  }
+  if(!templates.length){
+    const m=(id,name,code,severity,title,message)=>({id,name,incident_type_code:code,severity,title_template:title,message_template:message});
+    templates=[
+      m('f1c84a41-f72b-44e9-9b06-97f357226de7','Bomb Threat / Suspicious Package — Urgent','BOMB','URGENT','BOMB THREAT / SUSPICIOUS PACKAGE — {{location}}','BOMB THREAT / SUSPICIOUS PACKAGE\\n\\nA bomb threat or suspicious package has been reported at {{location}}.\\n\\nDo NOT touch, move or investigate the suspicious item. Keep people away from the area and immediately follow the approved Bomb Threat / Suspicious Package procedure.\\n\\nIncident: {{incident_id}}\\nSeverity: {{severity}}\\nTime: {{time}}\\n\\nReported details:\\n{{description}}'),
+      m('622f1bcd-0aef-4764-8abb-b961c1820e72','Evacuation — Urgent','EVACUATION','URGENT','EVACUATION REQUIRED — {{location}}','EMERGENCY EVACUATION\\n\\nAn evacuation has been initiated for {{location}}.\\n\\nPlease proceed calmly to the designated assembly point using the approved evacuation route.\\n\\nIncident: {{incident_id}}\\nSeverity: {{severity}}\\nTime: {{time}}\\n\\nReported details:\\n{{description}}'),
+      m('b5c0ec7d-7f60-4b26-86e0-35e53db16eb4','Fire Emergency — Urgent','FIRE','URGENT','FIRE EMERGENCY — {{location}}','FIRE / SMOKE EMERGENCY\\n\\nA fire, smoke condition or fire alarm activation has been reported at {{location}}.\\n\\nPlease activate the applicable emergency response procedure immediately.\\n\\nIncident: {{incident_id}}\\nSeverity: {{severity}}\\nTime: {{time}}\\n\\nReported details:\\n{{description}}'),
+      m('37a2cdf2-9f60-4b7b-99c2-5667b8e1c033','Medical Emergency — Urgent','MEDICAL','URGENT','MEDICAL EMERGENCY — {{location}}','MEDICAL EMERGENCY\\n\\nImmediate medical assistance is required at {{location}}.\\n\\nPlease send the appropriate first-aid / medical response team immediately and keep the area clear for responders.\\n\\nIncident: {{incident_id}}\\nSeverity: {{severity}}\\nTime: {{time}}\\n\\nReported details:\\n{{description}}'),
+      m('05ea3f02-7450-4fc7-aefa-435d19fb4779','Security Incident — Urgent','SECURITY','URGENT','SECURITY INCIDENT — {{location}}','SECURITY INCIDENT\\n\\nA security incident has been reported at {{location}}.\\n\\nSecurity and the Emergency Response Team are requested to respond immediately.\\n\\nIncident: {{incident_id}}\\nSeverity: {{severity}}\\nTime: {{time}}\\n\\nReported details:\\n{{description}}'),
+      m('ff326396-bd08-49a0-97c3-5aa5c0ee2f8e','Critical Utility Failure — High','UTILITY','HIGH','CRITICAL UTILITY FAILURE — {{location}}','CRITICAL UTILITY FAILURE\\n\\nA major utility or building-system failure has been reported at {{location}}.\\n\\nEngineering, Security and the relevant operational departments are requested to assess the situation.\\n\\nIncident: {{incident_id}}\\nSeverity: {{severity}}\\nTime: {{time}}\\n\\nReported details:\\n{{description}}'),
+      m('ef7fb9d5-72e6-43e7-9db6-e58a1c0403e5','General Emergency — High','OTHER','HIGH','EMERGENCY NOTIFICATION — {{location}}','EMERGENCY NOTIFICATION\\n\\nAn emergency requiring coordinated response has been reported at {{location}}.\\n\\nPlease follow the applicable emergency procedure and instructions from the Emergency Response Team.\\n\\nIncident: {{incident_id}}\\nSeverity: {{severity}}\\nTime: {{time}}\\n\\nReported details:\\n{{description}}')
+    ];
+  }
   contacts=r.contacts||[];
   groups=r.groups||[];
   systemSettings=Object.fromEntries((r.settings||[]).map(x=>[x.setting_key,x.setting_value]));
