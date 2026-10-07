@@ -173,7 +173,7 @@ function formatMessage(title,data){const lines=['SECUREOPS VISITOR MANAGEMENT','
 async function readFile(file){
   if(!file)return '';
   if(file.size<=3*1024*1024)return await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)});
-  if(!/^image\\/(jpeg|png|webp)$/i.test(file.type))throw Error('Item Photo must be a JPEG, PNG, or WebP image.');
+  if(!/^image\/(jpeg|png|webp)$/i.test(file.type))throw Error('Item Photo must be a JPEG, PNG, or WebP image.');
   const bitmap=await createImageBitmap(file);
   const maxSide=1600;
   const scale=Math.min(1,maxSide/Math.max(bitmap.width,bitmap.height));
