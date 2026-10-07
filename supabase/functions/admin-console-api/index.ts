@@ -299,7 +299,7 @@ Deno.serve(async req=>{
         auth.caller.from('package_registrations').select('id',{count:'exact',head:true}).gte('created_at',since.toISOString()),
         auth.caller.from('currently_inside').select('entry_id,entry_at',{count:'exact'}),
         auth.caller.from('outstanding_keys').select('borrowing_id,outstanding_quantity,status,discrepancy'),
-        auth.caller.from('key_control_transactions').select('borrowing_id,outstanding_quantity,returned_quantity,status,expected_return_at,discrepancy'),
+        auth.caller.from('key_control_transactions').select('borrowing_id,outstanding_quantity,returned_quantity,status,expected_return_at,discrepancy,discrepancy_resolved'),
         auth.caller.from('submissions').select('id',{count:'exact',head:true}),
         auth.caller.from('package_distributions').select('id',{count:'exact',head:true}),
         auth.caller.from('package_distributions').select('id',{count:'exact',head:true}).gte('distributed_at',since.toISOString()),
