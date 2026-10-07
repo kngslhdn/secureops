@@ -170,7 +170,25 @@ function inputMarkup([name,label,type='text',options=[]]){if(type==='textarea')r
 Object.entries(forms).forEach(([key,form])=>choiceRoot.insertAdjacentHTML('beforeend',`<button type="button" class="choice" data-form="${key}" aria-pressed="false"><span class="choice-icon">${icons[form.icon]}</span><strong>${form.title}</strong><span class="arrow">→</span></button>`));
 choiceRoot.addEventListener('click',e=>{const b=e.target.closest('[data-form]');if(b)showForm(b.dataset.form)});
 function formatMessage(title,data){const lines=['SECUREOPS VISITOR MANAGEMENT','',`NEW ${title.toUpperCase()}`,''];for(const [key,value] of data.entries()){if(key==='foto')continue;const field=document.querySelector(`[name="${CSS.escape(key)}"]`);lines.push(`${field?.closest('.field')?.querySelector('label')?.textContent||key}: ${value}`)}if(lastSubmission?.submissionId)lines.push('',`Submission ID: ${lastSubmission.submissionId}`);return lines.join('\n')}
-async function readFile(file){if(!file)return '';return await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)})}
+async function readFile(file){
+  if(!file)return '';
+  if(file.size<=3*1024*1024)return await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)});
+  if(!/^image\\/(jpeg|png|webp)$/i.test(file.type))throw Error('Item Photo must be a JPEG, PNG, or WebP image.');
+  const bitmap=await createImageBitmap(file);
+  const maxSide=1600;
+  const scale=Math.min(1,maxSide/Math.max(bitmap.width,bitmap.height));
+  const canvas=document.createElement('canvas');
+  canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+  canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+  const ctx=canvas.getContext('2d');
+  if(!ctx)throw Error('Unable to process Item Photo.');
+  ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
+  bitmap.close?.();
+  let quality=.82;
+  let dataUrl=canvas.toDataURL('image/jpeg',quality);
+  while(dataUrl.length>3.8*1024*1024&&quality>.5){quality-=.08;dataUrl=canvas.toDataURL('image/jpeg',quality)}
+  return dataUrl;
+}
 async function submitToSupabase(form,data){const payload=Object.fromEntries(data.entries());payload.type=form.type;payload.submission_source='public-web';payload.idempotency_key=generateUUID();if(form.upload){const file=data.get('foto');payload.foto=await readFile(file)}const r=await fetch(SUPABASE_FUNCTION_URL,{method:'POST',headers:{'Content-Type':'application/json','idempotency-key':payload.idempotency_key},body:JSON.stringify(payload)});let result=null;try{result=await r.json()}catch{}if(!r.ok||!result?.ok)throw Error(result?.error||`HTTP ${r.status}`);return result}
 function resetHome(){panel.classList.remove('visible');panel.innerHTML='';document.querySelectorAll('.choice').forEach(x=>x.setAttribute('aria-pressed','false'));window.scrollTo({top:0,behavior:'smooth'})}
 function showSuccess(key,data,result,waWindow){const form=forms[key],id=result?.submission_id||'SECUREOPS-SUBMISSION';lastSubmission={submissionId:id};if(key==='kembaliKunci'&&result?.key_return?.discrepancy){SecureOpsUI.warning(DEVICE_LANG==='id'?'Perbedaan Jumlah Kunci':'Key Quantity Discrepancy',`Borrowed: ${result.key_return.original_borrowed_quantity}\nReturned: ${result.key_return.total_returned}\nKey Number: ${result.key_return.key_number}`)}const waNumber=String(result?.whatsapp_number||'').replace(/[^0-9]/g,'');
