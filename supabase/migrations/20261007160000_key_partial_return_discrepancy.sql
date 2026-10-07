@@ -108,3 +108,29 @@ group by b.id,s.submission_id,b.borrower_name,b.department,b.key_number,b.key_de
 dr.id,dr.resolution_type,dr.resolution_note,dr.resolved_by,dr.resolved_by_name,dr.resolved_at;
 
 grant select on public.key_discrepancy_resolutions to authenticated;
+
+
+-- Resolved discrepancies must not block a new borrowing.
+create or replace function public.prevent_outstanding_key_borrowing_race()
+returns trigger
+language plpgsql
+set search_path = public
+as $function$
+declare
+  outstanding_exists boolean;
+begin
+  perform pg_advisory_xact_lock(hashtextextended(NEW.key_number,0));
+  select exists(
+    select 1
+    from public.key_control_transactions
+    where key_number = NEW.key_number
+      and outstanding_quantity > 0
+      and not coalesce(discrepancy_resolved,false)
+  ) into outstanding_exists;
+  if outstanding_exists then
+    raise exception 'Key % is currently outstanding. Please return the outstanding key(s) before a new borrowing.', NEW.key_number
+      using errcode='23514';
+  end if;
+  return NEW;
+end;
+$function$;
