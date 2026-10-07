@@ -102,7 +102,7 @@ Deno.serve(async req=>{
    return json({ok:true,key_asset:{key_number:data.key_number,description:data.key_description||'',quantity:Number(data.quantity||0)}});
   }
   const idem=clean(req.headers.get('idempotency-key')||body.idempotency_key);if(idem){const {data}=await propertySelect('submissions','submission_id').eq('idempotency_key',idem).maybeSingle();if(data)return json({ok:true,duplicate:true,submission_id:data.submission_id},200,req);}
-  let visitorId:string|null=null;let matchedExitEntry:any=null;
+  let visitorId:string|null=null;let matchedExitEntry:any=null;let createdSubmissionId:string|null=null;
   if(type==='visitor_entry'){
    const visitorName=required(val(body,'name','visitor_name','nama'),'Name',120);
    const visitorPhone=validPhone(val(body,'phone','mobile_phone','telepon'));
@@ -147,7 +147,7 @@ Deno.serve(async req=>{
    if(data)return json({ok:false,error:`Key ${key} is currently outstanding to ${data.borrower_name} with ${data.outstanding_quantity} key(s) outstanding. Please return the outstanding key(s) before a new borrowing.`},409);
   }
 
-  const {data:submission,error:se}=await supabase.from('submissions').insert({property_id:HIKJ_PROPERTY_ID,submission_id:null,submission_type:type,visitor_id:visitorId,status:'submitted',idempotency_key:idem||null,metadata:{source_form:rawType}}).select('id,submission_id').single();if(se)throw se;
+  const {data:submission,error:se}=await supabase.from('submissions').insert({property_id:HIKJ_PROPERTY_ID,submission_id:null,submission_type:type,visitor_id:visitorId,status:'submitted',idempotency_key:idem||null,metadata:{source_form:rawType}}).select('id,submission_id').single();if(se)throw se;createdSubmissionId=submission.id;
   let keyReturnResult:any=null;
   if(type==='visitor_entry'){
    const validated=body.__validated||{};const {error}=await supabase.from('visitor_entries').insert({property_id:HIKJ_PROPERTY_ID,submission_id:submission.id,visitor_id:visitorId,visitor_name:validated.visitorName,visitor_phone:validated.visitorPhone||null,visitor_company_name:validated.visitorCompany||null,visitor_category:validated.category,visitor_name_snapshot:validated.visitorName,phone_snapshot:validated.visitorPhone||null,company_name_snapshot:validated.visitorCompany||null,category_snapshot:validated.category,work_location:validated.location,purpose:validated.purpose,security_officer_name:validated.officer,pass_vest_number:validated.pass,entry_at:timestamp(body.entry_at||body.datetime)});if(error)throw error;
@@ -205,12 +205,14 @@ Deno.serve(async req=>{
   console.error('visitor-submit error',e);
   const raw=String(e?.message||'');
   let message='Submission failed. Please try again.';
+  if(/valid phone number|phone number is required/i.test(raw)) message='A valid phone number is required (8–15 digits).';
   if(/Bucket not found|NoSuchBucket/i.test(raw)) message='Package photo storage is unavailable. Please try again later.';
   else if(/EntityTooLarge|too large|max.*size|exceed.*5 MB/i.test(raw)) message='Package photo is too large. Please use a smaller photo.';
   else if(/InvalidMimeType/i.test(raw)) message='Package photo format is not supported. Please use JPEG, PNG, or WebP.';
   else if(/duplicate|23505|already exists|unique constraint/i.test(raw)) message='This submission already exists or was already processed. Please wait and try again.';
   else if(/foreign key|23503/i.test(raw)) message='A related record could not be found. Please refresh and try again.';
   else if(/payload/i.test(raw)) message='The submitted file or request is too large.';
-  return json({error:message},500,req);
+  if(createdSubmissionId)await supabase.from('submissions').update({status:'cancelled'}).eq('id',createdSubmissionId);
+  return json({error:message},400,req);
  }
 });
