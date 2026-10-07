@@ -11,7 +11,7 @@
     el.className='so-popup-backdrop';
     el.innerHTML='<div class="so-popup" role="dialog" aria-modal="true" aria-labelledby="soPopupTitle">'+
       '<button type="button" class="so-popup-close" aria-label="Close">×</button>'+
-      '<div class="so-popup-icon '+esc(type)+'"><span class="so-popup-icon-mark '+esc(icon)+'" aria-hidden="true"></span></div>'+
+      '<div class="so-popup-icon '+esc(type)+'"><i class="fi fi-tr-shield-trust" aria-hidden="true"></i></div>'+
       '<h3 id="soPopupTitle"></h3>'+
       '<p class="so-popup-message"></p>'+
       (details?'<div class="so-popup-details"></div>':'')+
@@ -44,7 +44,8 @@
     .so-popup-close{position:absolute;right:10px;top:8px;width:36px;height:36px;border:0;background:transparent;color:#a9bbca;font-size:27px;cursor:pointer}
     .so-popup-close:hover{color:#fff}
     .so-popup-icon{width:62px;height:62px;margin:0 auto 14px;border-radius:50%;display:grid;place-items:center;font-size:31px;font-weight:800}
-    .so-popup-icon.success{background:#c7f9d8;border:2px solid #78dda7}
+    .so-popup-icon.success{background:#c7f9d8;border:2px solid #78dda7;color:#159447}
+    .so-popup-icon.success i{font-size:31px;line-height:1;color:#159447;display:block;transform:translateY(1px)}
     .so-popup-icon.error{background:#ffd5d5;border:2px solid #ff9292}
     .so-popup-icon.warning{background:#fff0c2;border:2px solid #e8b94d}
     .so-popup-icon-mark{position:relative;display:block;width:26px;height:26px}
