@@ -83,6 +83,16 @@ const css=` :root{--k-navy:#071a30;--k-navy-2:#102d4b;--k-gold:#c99a3d;--k-gold-
 .a-empty-block{padding:32px 15px;text-align:center;color:#94a3b8;font-size:10px}
 .a-loading{text-align:center;color:#94a3b8;padding:70px}
 .a-error{background:#fff;border:1px solid #fecaca;color:#991b1b;padding:22px;border-radius:10px}
+.a-key-resolve{position:fixed;inset:0;background:rgba(7,26,48,.48);display:flex;align-items:center;justify-content:center;padding:20px;z-index:9999}
+.a-key-resolve-card{width:min(520px,100%);background:#fff;border:1px solid var(--k-line);border-radius:12px;box-shadow:0 18px 55px rgba(7,26,48,.24);overflow:hidden}
+.a-key-resolve-head{padding:16px 18px;border-bottom:1px solid var(--k-line);display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.a-key-resolve-head h3{margin:0;color:var(--k-navy);font-size:15px}.a-key-resolve-head small{display:block;color:#64748b;margin-top:4px;font-size:9px}
+.a-key-resolve-body{padding:18px}.a-key-resolve-info{background:#f7f9fb;border:1px solid var(--k-line);border-radius:8px;padding:11px;margin-bottom:14px;font-size:9px;color:#475569;line-height:1.7}
+.a-key-resolve-option{display:flex;align-items:flex-start;gap:9px;border:1px solid var(--k-line);border-radius:8px;padding:10px;margin-bottom:8px;cursor:pointer}
+.a-key-resolve-option:has(input:checked){border-color:#c99a3d;background:#fffaf0}
+.a-key-resolve-option b{display:block;color:var(--k-navy);font-size:10px}.a-key-resolve-option small{display:block;color:#64748b;font-size:8px;margin-top:3px}
+.a-key-resolve-body label.note{display:block;margin-top:12px;color:#475569;font-size:9px;font-weight:700}.a-key-resolve-body textarea{width:100%;min-height:75px;margin-top:6px;border:1px solid #d8dee5;border-radius:8px;padding:9px;font:inherit;font-size:10px;resize:vertical}
+.a-key-resolve-actions{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid var(--k-line);background:#fafbfc}
 .a-report{padding:14px}
 .a-report-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1.4fr 1fr;gap:9px}
 .a-report-grid label{font-size:9px;font-weight:700;color:#64748b}
@@ -165,11 +175,6 @@ async function keys(token){
  const load=async()=>{if(!isCurrent(token))return;
    const r=await api('key_history',{limit:5000,q:$('kfQ').value,from:$('kfFrom').value,to:$('kfTo').value?$('kfTo').value+'T23:59:59':'',status:$('kfStatus').value.toUpperCase()});
    if(!isCurrent(token))return;const tx=r.data||[];
-   const totalBorrowed=tx.reduce((n,x)=>n+Number(x.borrowed_quantity||0),0);
-   const totalReturned=tx.reduce((n,x)=>n+Number(x.returned_quantity||0),0);
-   const totalOutstanding=tx.reduce((n,x)=>n+Number(x.outstanding_quantity||0),0);
-   const partial=tx.filter(x=>Number(x.returned_quantity||0)>0&&Number(x.outstanding_quantity||0)>0).length;
-   const discrepancy=tx.filter(x=>(x.return_events||[]).some(e=>e.discrepancy_qty)).length;
    const tab=document.querySelector('[data-ktab].active')?.dataset.ktab;
    if(tab==='Key Returned'){
      const events=tx.flatMap(x=>(x.return_events||[]).map(e=>({...e,transaction_id:x.transaction_id,key_number:x.key_number,borrower_name:x.person_name,department:x.department,original_borrowed_quantity:x.borrowed_quantity})));
@@ -178,8 +183,12 @@ async function keys(token){
    }else{
      let z=tx;
      if(tab==='Outstanding')z=z.filter(x=>x.status==='OUTSTANDING'||x.status==='DISCREPANCY');
-     $('kh').innerHTML='<tr><th>Transaction</th><th>Key</th><th>Borrower</th><th>Issued By</th><th>Borrowed</th><th>Expected Return</th><th>Returned</th><th>Outstanding</th><th>Last Return</th><th>Status</th></tr>';
+     $('kh').innerHTML='<tr><th>Transaction</th><th>Key</th><th>Borrower</th><th>Issued By</th><th>Borrowed</th><th>Expected Return</th><th>Returned</th><th>Outstanding</th><th>Last Return</th><th>Status</th><th>Action</th></tr>';
      $('krows').innerHTML=z.length?z.map(x=>{
+       const isDiscrepancy=!!x.discrepancy;
+       const isResolved=!!x.discrepancy_resolved;
+       const statusLabel=isDiscrepancy?(isResolved?'DISCREPANCY · RESOLVED':'DISCREPANCY'):(x.status==='OUTSTANDING'&&x.overdue_minutes?x.status+' · '+overdueText(x.overdue_minutes):x.status);
+       const action=isDiscrepancy&&!isResolved?`<button class="a-btn primary k-resolve" data-borrowing="${esc(x.borrowing_id)}" data-key="${esc(x.key_number)}" data-tx="${esc(x.transaction_id||x.submission_id)}">Resolve</button>`:(isResolved?`<small style="color:#15803d;font-weight:700">Resolved · ${esc(x.discrepancy_resolution_type==='BAST_PROCESSED'?'BAST':'Key Updated')}</small>`:'—');
        return `<tr>
          <td><b>${esc(x.transaction_id||x.submission_id)}</b></td>
          <td><b>${esc(x.key_number)}</b><small>${esc(x.key_description||'—')}</small></td>
@@ -190,11 +199,47 @@ async function keys(token){
          <td>${esc(x.returned_quantity)}</td>
          <td><b>${esc(x.outstanding_quantity)}</b></td>
          <td>${fmt(x.last_returned_at)}</td>
-         <td>${badge((x.return_events||[]).some(e=>e.discrepancy_qty)||x.status==='OUTSTANDING'||x.status==='DISCREPANCY'?'warn':x.status==='BORROWED'?'key':'ok',x.status+(x.status==='OUTSTANDING'&&x.overdue_minutes?` · ${overdueText(x.overdue_minutes)}`:'')+((x.return_events||[]).some(e=>e.discrepancy_qty)?' · DISCREPANCY':''))}</td>
+         <td>${badge(isDiscrepancy?'warn':x.status==='OUTSTANDING'?'warn':x.status==='BORROWED'?'key':'ok',statusLabel)}</td>
+         <td>${action}</td>
        </tr>`
-     }).join(''):empty(10,'No key transactions found');
+     }).join(''):empty(11,'No key transactions found');
    }
    $('knote').textContent=(tab==='Key Returned' ? 'Return events: ' : 'Transactions: ')+((tab==='Key Returned')?tx.flatMap(x=>x.return_events||[]).length:tx.length)+' record(s) found';
+   document.querySelectorAll('.k-resolve').forEach(btn=>btn.onclick=()=>openResolve(btn.dataset.borrowing,btn.dataset.key,btn.dataset.tx));
+ };
+ const openResolve=(borrowingId,keyNumber,transactionId)=>{
+   document.querySelector('.a-key-resolve')?.remove();
+   document.body.insertAdjacentHTML('beforeend',`
+    <div class="a-key-resolve" role="dialog" aria-modal="true">
+      <div class="a-key-resolve-card">
+        <div class="a-key-resolve-head"><div><h3>Resolve Key Discrepancy</h3><small>${esc(transactionId)} · ${esc(keyNumber)}</small></div><button class="a-btn" data-rx>Close</button></div>
+        <div class="a-key-resolve-body">
+          <div class="a-key-resolve-info"><b>Outstanding quantity requires reconciliation.</b><br>Select how the discrepancy was resolved. This action does not alter the historical borrowing/return quantities.</div>
+          <label class="a-key-resolve-option"><input type="radio" name="keyResolveType" value="KEY_UPDATED" checked><span><b>Key Updated</b><small>Physical key/inventory record has been updated or adjusted.</small></span></label>
+          <label class="a-key-resolve-option"><input type="radio" name="keyResolveType" value="BAST_PROCESSED"><span><b>BAST Processed</b><small>Berita Acara Serah Terima / supporting document has been processed.</small></span></label>
+          <label class="note">Resolution Note / Reference<textarea id="keyResolveNote" placeholder="Optional for Key Updated; enter BAST number/reference for BAST Processed"></textarea></label>
+        </div>
+        <div class="a-key-resolve-actions"><button class="a-btn" data-rx>Cancel</button><button class="a-btn primary" id="keyResolveSubmit">Resolve Discrepancy</button></div>
+      </div>
+    </div>`);
+   const modal=document.querySelector('.a-key-resolve');
+   const close=()=>modal?.remove();
+   modal.querySelectorAll('[data-rx]').forEach(b=>b.onclick=close);
+   modal.addEventListener('click',e=>{if(e.target===modal)close()});
+   modal.querySelector('#keyResolveSubmit').onclick=async()=>{
+     const type=modal.querySelector('input[name="keyResolveType"]:checked')?.value;
+     const note=modal.querySelector('#keyResolveNote').value.trim();
+     if(type==='BAST_PROCESSED'&&!note){alert('Please enter the BAST number or reference.');return}
+     const btn=modal.querySelector('#keyResolveSubmit');btn.disabled=true;btn.textContent='Processing…';
+     try{
+       await api('resolve_key_discrepancy',{borrowing_id:borrowingId,resolution_type:type,note});
+       close();
+       await load();
+     }catch(e){
+       btn.disabled=false;btn.textContent='Resolve Discrepancy';
+       alert(e?.message||'Unable to resolve discrepancy.');
+     }
+   };
  };
  bindFilters(load,'kf','ktab');$('kr').onclick=load;await load();
 }
