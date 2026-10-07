@@ -268,7 +268,8 @@ async function settingsAction(req:Request,a:any,action:string){
       const {error}=await sb.from('key_assets').insert(payload);if(error)throw error;await audit(a,'CREATE','Key Assets',key,'Created key asset');
     }else{
       const id=String(b.id||'');if(!id)return json(req,{error:'Key Asset ID is required.'},400);
-      let uq=sb.from('key_assets').update({...fields,key_number:undefined}).eq('id',id);
+      const updateFields={...fields};delete updateFields.key_number;
+      let uq=sb.from('key_assets').update(updateFields).eq('id',id);
       if(role!=='SUPERADMIN')uq=uq.eq('property_id',propertyId);
       const {data,error}=await uq.select('id,property_id').maybeSingle();
       if(error)throw error;if(!data)return json(req,{error:'Key Asset not found or outside your property.'},404);
