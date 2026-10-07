@@ -210,83 +210,47 @@ const sb=window.supabase.createClient(U,K,{auth:{persistSession:true,autoRefresh
 const $=id=>document.getElementById(id), esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 let session=null, types=[], templates=[], contacts=[], groups=[], systemSettings={}, currentWaDispatches=[];
 async function api(action,method='GET',body=null,query=null){const qs=new URLSearchParams({action,...(query||{})});const r=await fetch(API+'?'+qs.toString(),{method,headers:{apikey:K,Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Request failed');return j}
-async function enter(s){session=s;try{const me=await api('me');$('userBox').innerHTML='<b>'+esc(me.profile?.full_name||s.user.email)+'</b><span>'+esc(me.profile?.role||'ADMIN')+'</span>';$('sessionGate').classList.add('hidden');$('app').classList.remove('hidden');await boot()}catch(e){console.error('Emergency bootstrap failed:',e);await sb.auth.signOut();location.href='../admin/'}}
+function authFailure(e){
+  const msg=String(e?.message||e||'').toLowerCase();
+  return msg.includes('unauthorized')||msg.includes('missing authorization')||msg.includes('active admin profile required')||msg.includes('property assignment required');
+}
+async function enter(s){
+  if(!s?.access_token){location.href='../admin/';return}
+  session=s;
+  try{
+    const me=await api('me');
+    $('userBox').innerHTML='<b>'+esc(me.profile?.full_name||s.user.email)+'</b><span>'+esc(me.profile?.role||'ADMIN')+'</span>';
+    $('sessionGate').classList.add('hidden');
+    $('app').classList.remove('hidden');
+    await boot();
+  }catch(e){
+    console.error('Emergency bootstrap failed:',e);
+    if(authFailure(e)){location.href='../admin/';return}
+    SecureOpsUI?.error?.('Emergency Load Failed',e?.message||String(e));
+  }
+}
 async function initAuth(){
-  const {data,error}=await sb.auth.getSession();
-  if(error||!data.session){location.href='../admin/';return}
-  await enter(data.session);
+  try{
+    const first=await sb.auth.getSession();
+    if(first.error)throw first.error;
+    if(first.data.session){await enter(first.data.session);return}
+    await new Promise(resolve=>setTimeout(resolve,700));
+    const retry=await sb.auth.getSession();
+    if(retry.error)throw retry.error;
+    if(retry.data.session){await enter(retry.data.session);return}
+    location.href='../admin/';
+  }catch(e){
+    console.error('Emergency auth bootstrap failed:',e);
+    location.href='../admin/';
+  }
 }
 $('logout').onclick=async()=>{await sb.auth.signOut();location.href='../admin/'};
 $('mobileMenu')?.addEventListener('click',()=>document.querySelector('.side')?.classList.toggle('open'));
 sb.auth.onAuthStateChange((event,s)=>{
   if(event==='SIGNED_OUT'){location.href='../admin/'}
-  else if(event==='SIGNED_IN'&&s){setTimeout(()=>enter(s),0)}
+  else if(s&&event!=='INITIAL_SESSION'){setTimeout(()=>enter(s),0)}
 });
-
-async function boot(){const r=await api('bootstrap');types=r.types||[];templates=r.templates||[];contacts=r.contacts||[];groups=r.groups||[];systemSettings=Object.fromEntries((r.settings||[]).map(x=>[x.setting_key,x.setting_value]));renderTypes();renderTemplates();renderRecipients();renderGroups();applyDefaults();await refresh();syncSidebar();if(location.hash){const el=$(location.hash.slice(1));if(el)setTimeout(()=>el.scrollIntoView({block:'start'}),50)}}
-function renderTypes(){$('type').innerHTML='<option value="">Select</option>'+types.map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join('');$('type').onchange=()=>{const t=types.find(x=>x.id===$('type').value);if(t){const r=document.querySelector('input[name=severity][value="'+(t.default_severity||'URGENT')+'"]');if(r)r.checked=true}}}
-function renderTemplates(){$('template').innerHTML='<option value="">Custom message</option>'+templates.map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join('')}
-function renderRecipients(){$('recipients').innerHTML=(contacts.length?contacts.map(x=>'<label class="recip"><input type="checkbox" value="'+x.id+'"><span><b>'+esc(x.full_name)+'</b><small>'+esc(x.position||x.department||'')+' · '+esc(x.whatsapp_number||x.phone_number||x.email||'No channel')+'</small></span></label>').join(''):'No active emergency contacts configured yet')}
-function renderGroups(){$('groups').innerHTML=(groups.length?groups.map(x=>'<label class="recip"><input type="checkbox" value="'+x.id+'"><span><b>'+esc(x.name)+'</b><small>'+esc(x.code)+' · '+(x.whatsapp_group_url?'WhatsApp configured':'No WhatsApp URL')+'</small></span></label>').join(''):'No active emergency groups configured yet')}
-function applyDefaults(){const sev=systemSettings.default_severity||'URGENT';const typeCode=systemSettings.default_incident_type_code;const t=types.find(x=>x.code===typeCode)||types[0];if(t)$('type').value=t.id;$('location').value=systemSettings.default_location||'';const radio=document.querySelector('input[name=severity][value="'+sev+'"]');if(radio)radio.checked=true;$('testMode').value=systemSettings.production_enabled===false?'true':'false';}
-function renderTemplateText(t){const type=types.find(x=>x.id===$('type').value);const vars={title:$('title').value||'Incident',location:$('location').value||'Location',time:new Date().toLocaleString('en-GB'),incident_id:'[Generated on create]',severity:document.querySelector('input[name=severity]:checked')?.value||'URGENT',incident_type:type?.name||'',description:$('message').value||''};const replace=s=>String(s||'').replace(/{{(title|location|time|incident_id|severity|incident_type|description)}}/g,(_,k)=>vars[k]??'');$('title').value=replace(t.title_template);$('message').value=replace(t.message_template)}
-let templateBase={title:'',message:'',generatedTitle:'',generatedMessage:''};
-function applyTemplate(t,{force=false}={}){
-  if(!t)return;
-  const currentTitle=$('title').value.trim();
-  const currentMessage=$('message').value.trim();
-
-  // Prevent previously generated template output from being used as the
-  // {{title}}/{{description}} input on the next template render.
-  const titleIsGenerated=currentTitle===templateBase.generatedTitle;
-  const messageIsGenerated=currentMessage===templateBase.generatedMessage;
-  const userTitle=(!currentTitle||titleIsGenerated)?'':currentTitle;
-  const userMessage=(!currentMessage||messageIsGenerated)?'':currentMessage;
-
-  const type=types.find(x=>x.id===$('type').value);
-  const vars={
-    title:userTitle||'Incident',
-    location:$('location').value||systemSettings.default_location||'Location',
-    time:new Date().toLocaleString('en-GB'),
-    incident_id:'[Generated on create]',
-    severity:document.querySelector('input[name=severity]:checked')?.value||'URGENT',
-    incident_type:type?.name||'',
-    description:userMessage||''
-  };
-  const replace=s=>String(s||'').replace(/{{(title|location|time|incident_id|severity|incident_type|description)}}/g,(_,k)=>vars[k]??'');
-
-  const nextTitle=replace(t.title_template);
-  const nextMessage=replace(t.message_template);
-  if(force||!currentTitle||titleIsGenerated)$('title').value=nextTitle;
-  if(force||!currentMessage||messageIsGenerated)$('message').value=nextMessage;
-
-  templateBase={
-    title:userTitle,
-    message:userMessage,
-    generatedTitle:$('title').value,
-    generatedMessage:$('message').value
-  };
-}
-$('template').onchange=()=>{
-  const t=templates.find(x=>x.id===$('template').value);
-  if(!t){templateBase={title:'',message:'',generatedTitle:'',generatedMessage:''};return}
-  applyTemplate(t,{force:true});
-};
-$('location').oninput=()=>{
-  const t=templates.find(x=>x.id===$('template').value);
-  if(t)applyTemplate(t);
-};
-$('title').oninput=()=>{
-  if($('template').value)templateBase.generatedTitle='';
-};
-$('message').oninput=()=>{
-  if($('template').value)templateBase.generatedMessage='';
-};
-$('clearBtn').onclick=()=>{
-  $('incidentForm').reset();
-  $('message').value='';
-  templateBase={title:'',message:'',generatedTitle:'',generatedMessage:''};
-  document.querySelectorAll('#recipients input,#groups input').forEach(x=>x.checked=false);
+document.querySelectorAll('#recipients input,#groups input').forEach(x=>x.checked=false);
   applyDefaults();
 };
 $('incidentForm').onsubmit=async e=>{e.preventDefault();const ids=[...document.querySelectorAll('#recipients input:checked')].map(x=>x.value);const groupIds=[...document.querySelectorAll('#groups input:checked')].map(x=>x.value);const requireRecipientSelection=systemSettings.require_recipient_selection!==false;if(requireRecipientSelection&&!ids.length&&!groupIds.length){$('sendNotice').textContent='Select at least one recipient group or direct recipient';$('sendNotice').classList.add('err');return}const production=$('testMode').value==='false';const requireConfirm=systemSettings.require_production_confirmation!==false;if(production&&requireConfirm&&!confirm('CONFIRM PRODUCTION EMERGENCY\n\nThis will create a production emergency notification. Continue?'))return;if(!confirm('Review complete? Create notification for '+(ids.length+groupIds.length)+' recipient target(s)?'))return;
