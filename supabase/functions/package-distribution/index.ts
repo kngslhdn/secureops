@@ -32,26 +32,32 @@ function isUuid(value: string) { return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
   try {
-    const { db } = await requireAdmin(req);
+    const { db, profile } = await requireAdmin(req);
 
     if (req.method === "GET") {
       const url = new URL(req.url);
       const q = (url.searchParams.get("q") || "").trim();
-      let query = db.from("package_registrations")
-        .select("id,submission_id,courier_name,phone,company_name,item_type,item_count,recipient_type,recipient_name,security_officer_name,created_at")
+      // Use the service-role client for the read path after requireAdmin().
+      // This keeps Package Distribution independent from public RLS visibility,
+      // while still enforcing the authenticated Security Admin check above.
+      let query = sb.from("package_registrations")
+        .select("id,submission_id,courier_name,phone,company_name,item_type,item_count,recipient_type,recipient_name,security_officer_name,created_at,property_id")
         .order("created_at", { ascending: false }).limit(100);
+      if (String(profile?.role || "").toUpperCase() !== "SUPERADMIN") {
+        query = query.eq("property_id", profile.property_id);
+      }
 
-      const { data: distributed, error: de } = await db.from("package_distributions").select("package_registration_id");
+      const { data: distributed, error: de } = await sb.from("package_distributions").select("package_registration_id");
       if (de) throw de;
       const distributedIds = (distributed || []).map((r) => r.package_registration_id);
       if (distributedIds.length) query = query.not("id", "in", `(${distributedIds.join(",")})`);
 
       if (isUuid(q)) {
-        const { data: exact } = await db.from("package_registrations")
+        const { data: exact } = await sb.from("package_registrations")
           .select("id,submission_id,courier_name,phone,company_name,item_type,item_count,recipient_type,recipient_name,security_officer_name,created_at")
           .eq("submission_id", q).maybeSingle();
         if (exact && !distributedIds.includes(exact.id)) {
-          const { data: sub } = await db.from("submissions").select("submission_id").eq("id", exact.submission_id).maybeSingle();
+          const { data: sub } = await sb.from("submissions").select("submission_id").eq("id", exact.submission_id).maybeSingle();
           const publicId = sub?.submission_id || exact.submission_id;
           return json({ packages: [{ ...exact, submission_id: publicId, package_number: publicId, status: "READY FOR DISTRIBUTION" }] });
         }
@@ -63,7 +69,7 @@ Deno.serve(async (req) => {
       const submissionIds = rows.map((p) => p.submission_id).filter(Boolean);
       const publicMap = new Map<string, string>();
       if (submissionIds.length) {
-        const { data: subs, error: se } = await db.from("submissions").select("id,submission_id").in("id", submissionIds);
+        const { data: subs, error: se } = await sb.from("submissions").select("id,submission_id").in("id", submissionIds);
         if (se) return json({ error: se.message }, 400);
         for (const s of subs || []) publicMap.set(s.id, s.submission_id);
       }
