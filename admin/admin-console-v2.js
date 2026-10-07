@@ -177,7 +177,7 @@ async function keys(token){
      $('krows').innerHTML=events.length?events.map(e=>`<tr><td><b>${esc(e.return_public_id||'—')}</b></td><td><b>${esc(e.transaction_id||'—')}</b></td><td>${fmt(e.returned_at)}</td><td>${esc(e.key_number)}</td><td>${esc(e.borrower_name)}</td><td>${esc(e.returned_by||'—')}</td><td>${esc(e.returned_quantity)}</td><td>${esc(e.received_by_security||'—')}</td><td>${badge(e.discrepancy_qty?'warn':'ok',e.discrepancy_qty?'DISCREPANCY':'RETURNED')}</td></tr>`).join(''):empty(9,'No return events found');
    }else{
      let z=tx;
-     if(tab==='Outstanding')z=z.filter(x=>x.status==='OUTSTANDING');
+     if(tab==='Outstanding')z=z.filter(x=>x.status==='OUTSTANDING'||x.status==='DISCREPANCY');
      $('kh').innerHTML='<tr><th>Transaction</th><th>Key</th><th>Borrower</th><th>Issued By</th><th>Borrowed</th><th>Expected Return</th><th>Returned</th><th>Outstanding</th><th>Last Return</th><th>Status</th></tr>';
      $('krows').innerHTML=z.length?z.map(x=>{
        return `<tr>
@@ -190,7 +190,7 @@ async function keys(token){
          <td>${esc(x.returned_quantity)}</td>
          <td><b>${esc(x.outstanding_quantity)}</b></td>
          <td>${fmt(x.last_returned_at)}</td>
-         <td>${badge((x.return_events||[]).some(e=>e.discrepancy_qty)||x.status==='OUTSTANDING'?'warn':x.status==='BORROWED'?'key':'ok',x.status+(x.status==='OUTSTANDING'&&x.overdue_minutes?` · ${overdueText(x.overdue_minutes)}`:'')+((x.return_events||[]).some(e=>e.discrepancy_qty)?' · DISCREPANCY':''))}</td>
+         <td>${badge((x.return_events||[]).some(e=>e.discrepancy_qty)||x.status==='OUTSTANDING'||x.status==='DISCREPANCY'?'warn':x.status==='BORROWED'?'key':'ok',x.status+(x.status==='OUTSTANDING'&&x.overdue_minutes?` · ${overdueText(x.overdue_minutes)}`:'')+((x.return_events||[]).some(e=>e.discrepancy_qty)?' · DISCREPANCY':''))}</td>
        </tr>`
      }).join(''):empty(10,'No key transactions found');
    }
