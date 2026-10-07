@@ -455,11 +455,11 @@ Deno.serve(async (req) => {
 
         if (action === "bootstrap") {
       const [a, b, c, d, settings] = await Promise.all([
-        db.from("emergency_incident_types").select("*").eq("property_id", propertyId).eq("active", true).order("priority").order("name"),
-        db.from("emergency_message_templates").select("*").eq("property_id", propertyId).eq("active", true).order("name"),
-        db.from("emergency_contacts").select("*").eq("property_id", propertyId).eq("active", true).order("priority").order("full_name"),
-        db.from("emergency_contact_groups").select("*").eq("property_id", propertyId).eq("active", true).order("name"),
-        db.from("emergency_settings").select("setting_key,setting_value").eq("property_id", propertyId).eq("active", true).order("setting_key"),
+        admin.from("emergency_incident_types").select("*").eq("property_id", propertyId).eq("active", true).order("priority").order("name"),
+        admin.from("emergency_message_templates").select("*").eq("property_id", propertyId).eq("active", true).order("name"),
+        admin.from("emergency_contacts").select("*").eq("property_id", propertyId).eq("active", true).order("priority").order("full_name"),
+        admin.from("emergency_contact_groups").select("*").eq("property_id", propertyId).eq("active", true).order("name"),
+        admin.from("emergency_settings").select("setting_key,setting_value").eq("property_id", propertyId).eq("active", true).order("setting_key"),
       ]);
       for (const x of [a,b,c,d,settings]) if (x.error) throw x.error;
       const smtp = await smtpSettings(db, propertyId);
