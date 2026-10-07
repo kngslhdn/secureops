@@ -16,7 +16,9 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.package-distribution]
-verify_jwt = true
+# Custom requireAdmin() validates the user JWT inside the function.
+# Keep the platform JWT gate off so browser OPTIONS preflight can reach the CORS handler.
+verify_jwt = false
 
 [functions.emergency-api]
 verify_jwt = true
