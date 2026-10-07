@@ -215,7 +215,17 @@
     const btn = document.querySelector('#pdSubmit');
     btn.disabled = true; notice.textContent = PDT('Processing distribution…','Memproses distribusi…');
     try {
-      const data = await callApi('', { method:'POST', body: JSON.stringify({ package_registration_id: selected.id, recipient_name: recipient, security_hand_over: security, note }) });
+      // Distribution writes go through a SECURITY DEFINER Postgres RPC.
+      // This avoids browser CORS/runtime failures on the Edge Function while
+      // keeping authorization and property isolation inside the database.
+      const { data, error } = await client.rpc('distribute_package', {
+        p_package_registration_id: selected.id,
+        p_recipient_name: recipient,
+        p_security_hand_over: security,
+        p_note: note || null
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.message || PDT('Unable to complete package distribution. Please try again','Distribusi paket gagal. Silakan coba lagi'));
       notice.textContent = '';
       const d=data.distribution||{};
       const detail=`<div><b>${esc(PDT('Distribution ID:','ID Distribusi:'))}</b> ${esc(d.distribution_number||'—')}</div>
