@@ -108,7 +108,8 @@ Deno.serve(async (req) => {
 
       const { data: pkgSubmission, error: pkgSubmissionError } = await db.from("submissions").select("submission_id").eq("id", pkg.submission_id).maybeSingle();
       if (pkgSubmissionError || !pkgSubmission) return json({ error: "Package submission record not found." }, 500);
-      const { data: distribution, error: insertError } = await sb.from("package_distributions").insert({
+      const distributedAt = new Date().toISOString();
+      const { error: insertError } = await sb.from("package_distributions").insert({
         package_registration_id: pkg.id,
         property_id: pkg.property_id,
         package_number: pkgSubmission.submission_id,
@@ -116,13 +117,31 @@ Deno.serve(async (req) => {
         recipient_name: recipientName,
         security_hand_over: securityHandOver,
         note,
-        distributed_at: new Date().toISOString(),
+        distributed_at: distributedAt,
         status: "DISTRIBUTED",
-      }).select("id,package_number,recipient_name,security_hand_over,note,distributed_at,status").single();
+      });
       if (insertError) {
         if (insertError.code === "23505") return json({ error: "Package has already been distributed." }, 409);
+        console.error("package-distribution insert failed", insertError);
         return json({ error: "Unable to complete package distribution. Please try again." }, 500);
       }
+
+      // The insert is the source of truth. Do not make the success response depend on
+      // a RETURNING/select round-trip; the previous implementation could create the
+      // record successfully and still surface a 500 to the browser afterward.
+      let distribution: Record<string, unknown> = {
+        package_number: pkgSubmission.submission_id,
+        recipient_name: recipientName,
+        security_hand_over: securityHandOver,
+        note,
+        distributed_at: distributedAt,
+        status: "DISTRIBUTED",
+      };
+      const { data: created } = await sb.from("package_distributions")
+        .select("id,distribution_number,package_number,recipient_name,security_hand_over,note,distributed_at,status")
+        .eq("package_registration_id", pkg.id).maybeSingle();
+      if (created) distribution = created;
+
       return json({ success: true, message: "Package successfully distributed.", distribution });
     }
     return json({ error: "Method not allowed." }, 405);
