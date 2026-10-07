@@ -264,6 +264,6 @@ if(key==='kembaliKunci'){
 }
 let waWindow=null;try{waWindow=window.open('about:blank','_blank');const result=await submitToSupabase(form,data);showSuccess(key,data,result,waWindow)}catch(err){if(waWindow&&!waWindow.closed)waWindow.close();const message=err?.message||'The form could not be submitted. Please try again';notice.textContent=message;notice.classList.add('error');btn.disabled=false;if(key==='keluar'&&/Visitor not found/i.test(message)){SecureOpsUI.warning(DEVICE_LANG==='id'?'Visitor Tidak Ditemukan':'Visitor Not Found',message);}else{SecureOpsUI.error(DEVICE_LANG==='id'?'Submission Gagal':'Submission Failed',message);}}}
 </script>
-<script src="assets/package-distribution.js?v=20261007-02"></script>
+<script src="assets/package-distribution.js?v=20261007-03"></script>
 </body>
 </html>
