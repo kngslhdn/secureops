@@ -352,7 +352,7 @@ function applyTemplate(t,{force=false}={}){
   const currentTitle=$('title').value.trim();
   const currentMessage=$('message').value.trim();
   const titleIsGenerated=currentTitle===templateBase.generatedTitle;
-  const messageIsGenerated=currentMessage===templateBase.generatedMessage;
+  const messageIsGenerated=currentMessage===String(templateBase.generatedMessage||'').trim();
   const userTitle=(!currentTitle||titleIsGenerated)?'':currentTitle;
   const userMessage=(!currentMessage||messageIsGenerated)?'':currentMessage;
   const type=types.find(x=>x.id===$('type').value);
@@ -369,10 +369,17 @@ $('template').onchange=()=>{
   if(!t){templateBase={title:'',message:'',generatedTitle:'',generatedMessage:''};return}
   applyTemplate(t,{force:true});
 };
-$('location').oninput=()=>{
+function syncLocationToMessage(){
   const t=templates.find(x=>x.id===$('template').value);
-  if(t)applyTemplate(t);
-};
+  if(!t)return;
+  const currentMessage=$('message').value.trim();
+  const generatedMessage=String(templateBase.generatedMessage||'').trim();
+  if(currentMessage===generatedMessage||!currentMessage){
+    applyTemplate(t,{force:true});
+  }
+}
+$('location').oninput=syncLocationToMessage;
+$('location').onchange=syncLocationToMessage;
 $('title').oninput=()=>{
   if($('template').value)templateBase.generatedTitle='';
 };
