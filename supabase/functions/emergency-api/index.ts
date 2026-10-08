@@ -97,14 +97,18 @@ async function smtpSettings(db: any, property_id: string) {
   let vaultUser = "";
   let vaultPass = "";
   try {
-    const [u, p] = await Promise.all([
-      admin.rpc("emergency_get_smtp_secret", { p_name: "hikj_emergency_smtp_username" }),
-      admin.rpc("emergency_get_smtp_secret", { p_name: "hikj_emergency_smtp_password" }),
-    ]);
-    vaultUser = u.data || "";
-    vaultPass = p.data || "";
-  } catch (_) {
-    // Fall back to Edge Function secrets for backward compatibility.
+    const u = await admin.rpc("emergency_get_smtp_secret", { p_name: "hikj_emergency_smtp_username" });
+    if (!u.error) vaultUser = String(u.data || "");
+    else console.error("SMTP username Vault read failed:", u.error.message);
+  } catch (e) {
+    console.error("SMTP username Vault read exception:", e);
+  }
+  try {
+    const p = await admin.rpc("emergency_get_smtp_secret", { p_name: "hikj_emergency_smtp_password" });
+    if (!p.error) vaultPass = String(p.data || "");
+    else console.error("SMTP password Vault read failed:", p.error.message);
+  } catch (e) {
+    console.error("SMTP password Vault read exception:", e);
   }
   const user = vaultUser || Deno.env.get("SMTP_USER") || "";
   const pass = vaultPass || Deno.env.get("SMTP_PASS") || "";
