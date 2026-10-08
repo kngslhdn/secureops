@@ -257,8 +257,15 @@ async function initAuth(){
 }
 $('logout').onclick=async()=>{await sb.auth.signOut();location.href='../../admin/'};
 sb.auth.onAuthStateChange((event,s)=>{
-  if(event==='SIGNED_OUT'){location.href='../../admin/'}
-  else if(s&&event!=='INITIAL_SESSION'){setTimeout(()=>{session=s;load().catch(e=>{console.error(e);if(authFailure(e))location.href='../../admin/'})},0)}
+  if(event==='SIGNED_OUT'){
+    location.href='../../admin/';
+    return;
+  }
+  if(!s)return;
+  session=s;
+  if(event==='SIGNED_IN'){
+    setTimeout(()=>{load().catch(e=>{console.error(e);if(authFailure(e))location.href='../../admin/'})},0);
+  }
 });
 document.querySelectorAll('a[data-nav]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();const p=a.dataset.nav;if(!p)return;history.pushState({page:p},'',`?page=${encodeURIComponent(p)}`);setPage();$('layout').classList.remove('open')}));
 window.addEventListener('popstate',()=>setPage());$('mobileMenu').onclick=()=>$('layout').classList.toggle('open');$('editor').addEventListener('click',e=>{if(e.target===$('editor'))closeEditor()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('editor').classList.contains('open'))closeEditor()});document.addEventListener('submit',async e=>{
