@@ -308,8 +308,8 @@ Deno.serve(async (req) => {
           active: d.active !== false,
         };
         const q = d.id
-          ? db.from("emergency_incident_types").update(payload).eq("id", d.id).eq("property_id", propertyId).select().single()
-          : db.from("emergency_incident_types").insert(payload).select().single();
+          ? admin.from("emergency_incident_types").update(payload).eq("id", d.id).eq("property_id", propertyId).select().single()
+          : admin.from("emergency_incident_types").insert(payload).select().single();
         const r = await q;
         if (r.error) throw r.error;
         await audit(db, user, profile, d.id ? "UPDATE" : "CREATE", payload.code, "Updated incident type configuration.");
@@ -328,8 +328,8 @@ Deno.serve(async (req) => {
           active: d.active !== false,
         };
         const q = d.id
-          ? db.from("emergency_message_templates").update(payload).eq("id", d.id).eq("property_id", propertyId).select().single()
-          : db.from("emergency_message_templates").insert(payload).select().single();
+          ? admin.from("emergency_message_templates").update(payload).eq("id", d.id).eq("property_id", propertyId).select().single()
+          : admin.from("emergency_message_templates").insert(payload).select().single();
         const r = await q;
         if (r.error) throw r.error;
         await audit(db, user, profile, d.id ? "UPDATE" : "CREATE", payload.code, "Updated emergency message template.");
@@ -347,8 +347,8 @@ Deno.serve(async (req) => {
           active: d.active !== false,
         };
         const q = d.id
-          ? db.from("emergency_contact_groups").update(payload).eq("id", d.id).eq("property_id", propertyId).select().single()
-          : db.from("emergency_contact_groups").insert(payload).select().single();
+          ? admin.from("emergency_contact_groups").update(payload).eq("id", d.id).eq("property_id", propertyId).select().single()
+          : admin.from("emergency_contact_groups").insert(payload).select().single();
         const r = await q;
         if (r.error) throw r.error;
         await audit(db, user, profile, d.id ? "UPDATE" : "CREATE", payload.code, "Updated emergency contact group.");
@@ -422,19 +422,19 @@ Deno.serve(async (req) => {
 
       if (resource === "members") {
         if (!d.group_id) throw new Error("group_id is required.");
-        const group = await db.from("emergency_contact_groups").select("id").eq("id", d.group_id).eq("property_id", propertyId).eq("active", true).maybeSingle();
+        const group = await admin.from("emergency_contact_groups").select("id").eq("id", d.group_id).eq("property_id", propertyId).eq("active", true).maybeSingle();
         if (group.error) throw group.error;
         if (!group.data) throw new Error("Selected group is inactive or unavailable.");
         const contactIds = Array.isArray(d.contact_ids) ? [...new Set(d.contact_ids)] : [];
         if (contactIds.length) {
-          const valid = await db.from("emergency_contacts").select("id").in("id", contactIds).eq("property_id", propertyId).eq("active", true);
+          const valid = await admin.from("emergency_contacts").select("id").in("id", contactIds).eq("property_id", propertyId).eq("active", true);
           if (valid.error) throw valid.error;
           if ((valid.data || []).length !== contactIds.length) throw new Error("One or more selected contacts are inactive or unavailable.");
         }
-        const del = await db.from("emergency_group_members").delete().eq("group_id", d.group_id).eq("property_id", propertyId);
+        const del = await admin.from("emergency_group_members").delete().eq("group_id", d.group_id).eq("property_id", propertyId);
         if (del.error) throw del.error;
         if (contactIds.length) {
-          const ins = await db.from("emergency_group_members").insert(contactIds.map((contact_id: string) => ({group_id:d.group_id,contact_id,property_id:propertyId})));
+          const ins = await admin.from("emergency_group_members").insert(contactIds.map((contact_id: string) => ({group_id:d.group_id,contact_id,property_id:propertyId})));
           if (ins.error) throw ins.error;
         }
         await audit(db, user, profile, "UPDATE", d.group_id, "Updated emergency group membership.");
@@ -459,7 +459,7 @@ Deno.serve(async (req) => {
           updated_by: user.id,
           updated_at: new Date().toISOString(),
         };
-        const r = await db.from("emergency_settings").upsert(payload,{onConflict:"setting_key,property_id"}).select().single();
+        const r = await admin.from("emergency_settings").upsert(payload,{onConflict:"setting_key,property_id"}).select().single();
         if (r.error) throw r.error;
         await audit(db, user, profile, "UPDATE", d.setting_key, "Updated emergency system setting.");
         return json(req, { ok: true, row: r.data });
