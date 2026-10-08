@@ -324,16 +324,16 @@ function renderGroups(){
 function applyDefaults(){
   const sev=systemSettings.default_severity||'URGENT';
   const typeCode=systemSettings.default_incident_type_code;
-  const t=types.find(x=>x.code===typeCode)||types[0];
-  if(t){
-    $('type').value=t.id;
-    const selected=templates.find(x=>x.incident_type_code===t.code);
+  $('location').value=systemSettings.default_location||'';
+  const type=types.find(x=>x.code===typeCode)||types[0];
+  if(type){
+    $('type').value=type.id;
+    const selected=templates.find(x=>x.incident_type_code===type.code);
     if(selected){
       $('template').value=selected.id;
       applyTemplate(selected,{force:true});
     }
   }
-  $('location').value=systemSettings.default_location||'';
   const radio=document.querySelector('input[name="severity"][value="'+esc(sev)+'"]');
   if(radio)radio.checked=true;
   // Safety default: always open in TEST / DRILL mode. Production must be selected explicitly by the operator.
