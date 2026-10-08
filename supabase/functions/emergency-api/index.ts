@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { SmtpClient, createMessage } from "jsr:@dreamer/email@1.1.0";
 
+// SECUREOPS emergency API CORS and authenticated admin mutations.
 function corsHeaders(req: Request) {
   const origin = req.headers.get("Origin") || "";
   const allowed = [
