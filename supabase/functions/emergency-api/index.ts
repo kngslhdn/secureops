@@ -2,6 +2,21 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { SmtpClient, createMessage } from "jsr:@dreamer/email@1.1.0";
 
+function corsHeaders(req: Request) {
+  const origin = req.headers.get("Origin") || "";
+  const allowed = [
+    "https://kngslhdn.github.io",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+  ];
+  return {
+    "Access-Control-Allow-Origin": allowed.includes(origin) ? origin : "https://kngslhdn.github.io",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
+
 const json = (req: Request, x: unknown, status = 200) =>
   new Response(JSON.stringify(x), {
     status,
