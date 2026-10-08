@@ -126,7 +126,33 @@ const U=window.SECUREOPS_CONFIG.SUPABASE_URL,K=window.SECUREOPS_CONFIG.SUPABASE_
 const sb=window.supabase.createClient(U,K,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'secureops-auth-token'}}),API=U+'/functions/v1/emergency-api';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 let session=null,state={types:[],templates:[],groups:[],contacts:[],members:[],settings:[],audit:[],smtp:{},profile:{}};
-async function api(action,method='GET',body=null){const r=await fetch(API+'?action='+encodeURIComponent(action),{method,headers:{apikey:K,Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Request failed');return j}
+async function api(action,method='GET',body=null){
+  async function request(accessToken){
+    return fetch(API+'?action='+encodeURIComponent(action),{
+      method,
+      headers:{
+        apikey:K,
+        Authorization:'Bearer '+accessToken,
+        'Content-Type':'application/json'
+      },
+      body:body?JSON.stringify(body):undefined
+    });
+  }
+  let accessToken=session?.access_token;
+  if(!accessToken)throw Error('Session expired. Please sign in again.');
+  let r=await request(accessToken);
+  if(r.status===401){
+    const refreshed=await sb.auth.refreshSession();
+    if(refreshed.error||!refreshed.data?.session){
+      throw Error('Session expired. Please sign in again.');
+    }
+    session=refreshed.data.session;
+    r=await request(session.access_token);
+  }
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw Error(j.error||'Request failed');
+  return j;
+}
 function setting(k,d){const x=state.settings.find(x=>x.setting_key===k);return x?x.setting_value:d}
 function canEdit(){return ['ADMIN','MANAGER','SUPERADMIN'].includes(state.profile?.role)}
 function superAdmin(){return state.profile?.role==='SUPERADMIN'}
