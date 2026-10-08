@@ -186,13 +186,13 @@ async function load(){
       configured:false,
       username_configured:false,
       password_configured:false,
-      username:'',
-      host:fallbackSetting('smtp_host','smtp.gmail.com'),
-      port:Number(fallbackSetting('smtp_port',465)),
-      secure:fallbackSetting('smtp_secure',true)!==false,
-      from:fallbackSetting('smtp_from',''),
-      from_name:fallbackSetting('smtp_from_name','HIKJ Emergency Response (SAMPLE)'),
-      reply_to:fallbackSetting('smtp_reply_to','')
+      username:state.smtp?.username||'',
+      host:fallbackSetting('smtp_host',state.smtp?.host||''),
+      port:Number(fallbackSetting('smtp_port',state.smtp?.port||465)),
+      secure:fallbackSetting('smtp_secure',state.smtp?.secure??true)!==false,
+      from:fallbackSetting('smtp_from',state.smtp?.from||''),
+      from_name:fallbackSetting('smtp_from_name',state.smtp?.from_name||''),
+      reply_to:fallbackSetting('smtp_reply_to',state.smtp?.reply_to||'')
     }
   };
   $('userBox').innerHTML='<b>'+esc(profile.full_name||'Admin')+'</b><span>'+esc(profile.role)+'</span>';
@@ -214,7 +214,23 @@ function renderGroups(){ $('groupRows').innerHTML=state.groups.map(x=>'<tr><td><
 function renderContacts(){ $('contactRows').innerHTML=state.contacts.map(x=>'<tr><td><b>'+esc(x.full_name)+'</b></td><td>'+esc(x.department||'-')+'<br>'+esc(x.position||'-')+'</td><td>'+esc(x.email||'-')+'</td><td>'+esc(x.whatsapp_number||'-')+'</td><td>'+esc(x.priority)+'</td><td><span class="badge '+(x.active?'ok':'off')+'">'+(x.active?'ACTIVE':'INACTIVE')+'</span></td><td><button class="btn" data-action="edit-contact" data-id="'+esc(x.id)+'">Edit</button></td></tr>').join('')||'<tr><td colspan="7">No emergency contacts</td></tr>'}
 function renderChannels(){const wa=state.groups.some(x=>x.active&&x.whatsapp_group_url);const smtp=!!state.smtp.configured;$('channelRows').innerHTML='<tr><td><b>EMAIL</b></td><td><span class="badge '+(smtp?'ok':'warn')+'">'+(smtp?'CONFIGURED':'NOT CONFIGURED')+'</span></td><td>Supabase Edge Function</td><td>SMTP password is protected server-side</td></tr><tr><td><b>WHATSAPP</b></td><td><span class="badge '+(wa?'ok':'warn')+'">'+(wa?'CONFIGURED':'NOT CONFIGURED')+'</span></td><td>Emergency Contact Groups</td><td>Manual dispatch via configured group URL</td></tr><tr><td><b>SMS</b></td><td><span class="badge off">NOT CONFIGURED</span></td><td>Provider</td><td>Provider is not configured</td></tr><tr><td><b>PUSH</b></td><td><span class="badge off">NOT CONFIGURED</span></td><td>Provider</td><td>Provider is not configured</td></tr>'}
 function renderSystem(){const set=(id,fn)=>{const el=$(id);if(el)fn(el)};set('default_severity',el=>el.value=setting('default_severity','URGENT'));set('default_incident_type_code',el=>{el.innerHTML=state.types.filter(x=>x.active).map(x=>'<option value="'+esc(x.code)+'">'+esc(x.name)+'</option>').join('');el.value=setting('default_incident_type_code','FIRE')});set('default_location',el=>el.value=setting('default_location','Ground Floor'));set('timezone',el=>el.value=setting('timezone','Asia/Jakarta'));set('incident_id_prefix',el=>el.value=setting('incident_id_prefix','HIKJ-INC'));set('auto_refresh_seconds',el=>el.value=setting('auto_refresh_seconds',30));set('production_enabled',el=>el.checked=setting('production_enabled',true)!==false);set('require_production_confirmation',el=>el.checked=setting('require_production_confirmation',true)!==false);set('require_recipient_selection',el=>el.checked=setting('require_recipient_selection',true)!==false)}
-function fillSmtp(){$('smtp_host').value=state.smtp.host||'';$('smtp_port').value=state.smtp.port||'';$('smtp_secure').value=state.smtp.secure===true?'true':'false';$('smtp_username').value=state.smtp.username||'';$('smtp_password').value='';$('smtp_from').value=state.smtp.from||'';$('smtp_from_name').value=state.smtp.from_name||'';$('smtp_reply_to').value=state.smtp.reply_to||'';const ok=!!state.smtp.configured;const partial=!!state.smtp.username_configured||!!state.smtp.password_configured||!!state.smtp.host||!!state.smtp.from;const status=ok?'CONFIGURED':(partial?'PARTIALLY CONFIGURED':'NOT CONFIGURED');$('smtpStatus').textContent=status;$('smtpStatus').className='badge '+(ok?'ok':(partial?'warn':'off'));requestAnimationFrame(()=>$('smtp_username').value=state.smtp.username||'')}
+let smtpFormDirty=false;
+function fillSmtp(force=false){
+  if(smtpFormDirty&&!force)return;
+  $('smtp_host').value=state.smtp.host||'';
+  $('smtp_port').value=state.smtp.port||'';
+  $('smtp_secure').value=state.smtp.secure===true?'true':'false';
+  $('smtp_username').value=state.smtp.username||'';
+  $('smtp_password').value='';
+  $('smtp_from').value=state.smtp.from||'';
+  $('smtp_from_name').value=state.smtp.from_name||'';
+  $('smtp_reply_to').value=state.smtp.reply_to||'';
+  const ok=!!state.smtp.configured;
+  const partial=!!state.smtp.username_configured||!!state.smtp.password_configured||!!state.smtp.host||!!state.smtp.from;
+  const status=ok?'CONFIGURED':(partial?'PARTIALLY CONFIGURED':'NOT CONFIGURED');
+  $('smtpStatus').textContent=status;
+  $('smtpStatus').className='badge '+(ok?'ok':(partial?'warn':'off'));
+}
 function renderAudit(){$('auditRows').innerHTML=state.audit.map(x=>'<tr><td>'+new Date(x.created_at).toLocaleString('en-GB')+'</td><td>'+esc(x.user_name||'-')+'</td><td>'+esc(x.action)+'</td><td>'+esc(x.target||'-')+'</td><td>'+esc(x.description||'-')+'</td></tr>').join('')||'<tr><td colspan="5">No audit entries</td></tr>'}
 function openEditor(title,body){$('editorTitle').textContent=title;$('editorBody').innerHTML=body;$('editorNotice').textContent='';$('editor').classList.add('open');requestAnimationFrame(()=>{const box=$('editor').querySelector('.modalbox');if(box)box.scrollTop=0;const first=$('editorBody').querySelector('input,select,textarea');if(first)first.focus()})}
 function closeEditor(){$('editor').classList.remove('open')}
@@ -225,7 +241,7 @@ function openMembers(id){const g=state.groups.find(x=>x.id===id);if(!g)return;co
 function openContact(id){const x=state.contacts.find(x=>x.id===id)||{full_name:'',position:'',department:'',phone_number:'',email:'',whatsapp_number:'',priority:100,active:true};openEditor(id?'Edit Emergency Contact':'Add Emergency Contact','<form id="editForm"><div class="grid"><div class="field"><label>Full Name</label><input id="f_name" value="'+esc(x.full_name)+'" required></div><div class="field"><label>Position</label><input id="f_position" value="'+esc(x.position||'')+'"></div><div class="field"><label>Department</label><input id="f_department" value="'+esc(x.department||'')+'"></div><div class="field"><label>Priority</label><input id="f_priority" type="number" value="'+esc(x.priority??100)+'"></div><div class="field"><label>Email</label><input id="f_email" type="email" value="'+esc(x.email||'')+'"></div><div class="field"><label>WhatsApp Number</label><input id="f_wa" value="'+esc(x.whatsapp_number||'')+'"></div><div class="field"><label>Phone Number</label><input id="f_phone" value="'+esc(x.phone_number||'')+'"></div><label class="check"><input id="f_active" type="checkbox" '+(x.active!==false?'checked':'')+'> Active</label></div><div class="actions" style="margin-top:14px"><button class="btn primary" type="submit">Save</button></div></form>');$('editForm').dataset.resource='contact';$('editForm').dataset.recordId=id||'';$('editForm').onsubmit=async e=>{e.preventDefault();try{await save('contact',{id,full_name:$('f_name').value,position:$('f_position').value,department:$('f_department').value,priority:Number($('f_priority').value||100),email:$('f_email').value,whatsapp_number:$('f_wa').value,phone_number:$('f_phone').value,active:$('f_active').checked});closeEditor()}catch(err){$('editorNotice').textContent=err.message;console.error('Emergency contact save failed:',err);SecureOpsUI.error('Save Failed',err.message||'Unable to save emergency contact.')}}}
 async function saveSetting(k,v){await save('setting',{setting_key:k,setting_value:v},false)}
 async function saveSystem(){const notice=$('systemNotice');notice.classList.remove('err');notice.textContent='Saving system settings';try{const values={default_severity:$('default_severity').value,default_incident_type_code:$('default_incident_type_code').value,default_location:$('default_location').value,timezone:$('timezone').value,incident_id_prefix:$('incident_id_prefix').value,auto_refresh_seconds:Math.max(5,Number($('auto_refresh_seconds').value||30)),production_enabled:$('production_enabled').checked,require_production_confirmation:$('require_production_confirmation').checked,require_recipient_selection:$('require_recipient_selection').checked};for(const [k,v] of Object.entries(values))await api('settings_mutation','POST',{resource:'setting',op:'update',data:{setting_key:k,setting_value:v}});await load();notice.classList.remove('err');notice.textContent='System settings saved successfully';SecureOpsUI.success('System Settings Saved','Emergency system settings were updated successfully.')}catch(e){notice.classList.add('err');notice.textContent=e.message;SecureOpsUI.error('System Settings Save Failed',e.message)}}
-async function saveSmtp(){if(!superAdmin()){SecureOpsUI.error('Access Denied','SMTP settings require SUPERADMIN.');return}const notice=$('smtpNotice');notice.classList.remove('err');notice.textContent='Saving SMTP settings';try{const host=$('smtp_host').value.trim();let port=Number($('smtp_port').value||465);let secure=$('smtp_secure').value==='true';const username=$('smtp_username').value.trim();const password=$('smtp_password').value.trim();if(host.toLowerCase()==='smtp.gmail.com'&&port===587){port=465;secure=true;$('smtp_port').value=465;$('smtp_secure').value='true'}for(const [k,v] of Object.entries({smtp_host:host,smtp_port:port,smtp_secure:secure,smtp_from:$('smtp_from').value.trim(),smtp_from_name:$('smtp_from_name').value.trim(),smtp_reply_to:$('smtp_reply_to').value.trim()}))await saveSetting(k,v);if(!username)throw Error('SMTP Username is required');await api('settings_mutation','POST',{resource:'smtp_secret',op:'update',data:{name:'hikj_emergency_smtp_username',value:username}});if(password){await api('settings_mutation','POST',{resource:'smtp_secret',op:'update',data:{name:'hikj_emergency_smtp_password',value:password}})}notice.textContent=password?'SMTP settings and App Password saved securely':'SMTP settings saved. Existing App Password was kept';SecureOpsUI.success('SMTP Settings Saved',password?'SMTP settings and App Password were saved securely.':'SMTP settings were saved.');await load()}catch(e){notice.textContent=e.message;notice.classList.add('err');SecureOpsUI.error('SMTP Save Failed',e.message)}}
+async function saveSmtp(){if(!superAdmin()){SecureOpsUI.error('Access Denied','SMTP settings require SUPERADMIN.');return}const notice=$('smtpNotice');notice.classList.remove('err');notice.textContent='Saving SMTP settings';try{const host=$('smtp_host').value.trim();let port=Number($('smtp_port').value||465);let secure=$('smtp_secure').value==='true';const username=$('smtp_username').value.trim();const password=$('smtp_password').value.trim();if(host.toLowerCase()==='smtp.gmail.com'&&port===587){port=465;secure=true;$('smtp_port').value=465;$('smtp_secure').value='true'}for(const [k,v] of Object.entries({smtp_host:host,smtp_port:port,smtp_secure:secure,smtp_from:$('smtp_from').value.trim(),smtp_from_name:$('smtp_from_name').value.trim(),smtp_reply_to:$('smtp_reply_to').value.trim()}))await saveSetting(k,v);if(!username)throw Error('SMTP Username is required');await api('settings_mutation','POST',{resource:'smtp_secret',op:'update',data:{name:'hikj_emergency_smtp_username',value:username}});if(password){await api('settings_mutation','POST',{resource:'smtp_secret',op:'update',data:{name:'hikj_emergency_smtp_password',value:password}})}notice.textContent=password?'SMTP settings and App Password saved securely':'SMTP settings saved. Existing App Password was kept';SecureOpsUI.success('SMTP Settings Saved',password?'SMTP settings and App Password were saved securely.':'SMTP settings were saved.');smtpFormDirty=false;await load()}catch(e){notice.textContent=e.message;notice.classList.add('err');SecureOpsUI.error('SMTP Save Failed',e.message)}}
 async function testSmtp(){if(!superAdmin()){SecureOpsUI.error('Access Denied','SMTP test requires SUPERADMIN.');return}try{const r=await api('smtp_test','POST',{});$('smtpNotice').textContent='Test email sent to '+r.recipient;$('smtpNotice').classList.remove('err');SecureOpsUI.success('SMTP Test Successful','Test email sent successfully to '+r.recipient+'.')}catch(e){$('smtpNotice').textContent=e.message;$('smtpNotice').classList.add('err');SecureOpsUI.error('SMTP Test Failed',e.message)}}
 function authFailure(e){
   const msg=String(e?.message||e||'').toLowerCase();
@@ -255,6 +271,14 @@ async function initAuth(){
     else SecureOpsUI?.error?.('Emergency Settings Load Failed',e?.message||String(e));
   }
 }
+$('smtp_host').addEventListener('input',()=>smtpFormDirty=true);
+$('smtp_port').addEventListener('input',()=>smtpFormDirty=true);
+$('smtp_secure').addEventListener('change',()=>smtpFormDirty=true);
+$('smtp_username').addEventListener('input',()=>smtpFormDirty=true);
+$('smtp_password').addEventListener('input',()=>smtpFormDirty=true);
+$('smtp_from').addEventListener('input',()=>smtpFormDirty=true);
+$('smtp_from_name').addEventListener('input',()=>smtpFormDirty=true);
+$('smtp_reply_to').addEventListener('input',()=>smtpFormDirty=true);
 $('logout').onclick=async()=>{await sb.auth.signOut();location.href='../../admin/'};
 sb.auth.onAuthStateChange((event,s)=>{
   if(event==='SIGNED_OUT'){
