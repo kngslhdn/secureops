@@ -349,7 +349,7 @@ Deno.serve(async (req) => {
         const duplicateErrors: string[] = [];
 
         if (email) {
-          let q = db.from("emergency_contacts").select("id").eq("property_id", propertyId).eq("email", email).limit(1);
+          let q = admin.from("emergency_contacts").select("id").eq("property_id", propertyId).eq("email", email).limit(1);
           if (d.id) q = q.neq("id", d.id);
           const r = await q.maybeSingle();
           if (r.error) throw r.error;
@@ -357,7 +357,7 @@ Deno.serve(async (req) => {
         }
 
         if (whatsapp) {
-          const all = await db.from("emergency_contacts").select("id,whatsapp_number").eq("property_id", propertyId);
+          const all = await admin.from("emergency_contacts").select("id,whatsapp_number").eq("property_id", propertyId);
           if (all.error) throw all.error;
           const duplicate = (all.data || []).some((row:any) =>
             row.id !== d.id &&
@@ -383,8 +383,8 @@ Deno.serve(async (req) => {
         };
 
         const q = d.id
-          ? db.from("emergency_contacts").update(payload).eq("id", d.id).eq("property_id", propertyId).select().single()
-          : db.from("emergency_contacts").insert(payload).select().single();
+          ? admin.from("emergency_contacts").update(payload).eq("id", d.id).eq("property_id", propertyId).select().single()
+          : admin.from("emergency_contacts").insert(payload).select().single();
         const r = await q;
 
         if (r.error) {
