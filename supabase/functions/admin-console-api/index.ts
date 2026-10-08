@@ -312,6 +312,18 @@ Deno.serve(async req=>{
       const overstayCutoff=Date.now()-24*60*60*1000;
       const overstayVisitors=insideRows.filter((row:any)=>row.entry_at&&new Date(row.entry_at).getTime()<=overstayCutoff);
       const overdueRows=transactionRows.filter(row=>row.status==='OUTSTANDING');
+      // Packages registered for 24+ hours without a distribution require security follow-up.
+      const packageOverdueCutoff=new Date(overstayCutoff).toISOString();
+      const {data:overduePackageRows,error:overduePackageError}=await auth.caller.from('package_registrations').select('id').lte('created_at',packageOverdueCutoff);
+      if(overduePackageError)throw overduePackageError;
+      const overduePackageIds=(overduePackageRows||[]).map((row:any)=>row.id).filter(Boolean);
+      let overduePackageCount=0;
+      if(overduePackageIds.length){
+        const {data:distributedOverdue,error:distributedOverdueError}=await auth.caller.from('package_distributions').select('package_registration_id').in('package_registration_id',overduePackageIds);
+        if(distributedOverdueError)throw distributedOverdueError;
+        const distributedIds=new Set((distributedOverdue||[]).map((row:any)=>row.package_registration_id));
+        overduePackageCount=overduePackageIds.filter((id:string)=>!distributedIds.has(id)).length;
+      }
       const borrowedRows=transactionRows.filter(row=>row.status==='BORROWED');
       const outstandingQty=overdueRows.reduce((n,row)=>n+Number(row.outstanding_quantity||0),0);
       const discrepancyKeys=transactionRows.filter(row=>!!row.discrepancy&&!row.discrepancy_resolved).length;
@@ -326,7 +338,7 @@ Deno.serve(async req=>{
       }
       const {data:brandingRows}=await brandingQ;
       branding=brandingRows?.[0]||null;
-      return json(req,{profile:auth.profile,branding,summary:{total_visitors:v.count||0,today_entry:e.count||0,today_exit:x.count||0,currently_inside:inside.count||0,visitor_overstay:overstayVisitors.length,today_key_borrowing:b.count||0,today_key_return:r.count||0,today_packages:p.count||0,outstanding_keys:outstandingQty,outstanding_key_transactions:overdueRows.length,borrowed_keys:borrowedRows.reduce((n,row)=>n+Number(row.outstanding_quantity||0),0),active_key_transactions:transactionRows.filter(row=>Number(row.outstanding_quantity||0)>0).length,discrepancy_keys:discrepancyKeys,partial_key_transactions:partialKeys,total_submissions:sub.count||0,total_packages:totalPackages.count||0,distributed_packages:distAll.count||0,distributed_packages_today:distToday.count||0,ready_packages:ready}});
+      return json(req,{profile:auth.profile,branding,summary:{total_visitors:v.count||0,today_entry:e.count||0,today_exit:x.count||0,currently_inside:inside.count||0,visitor_overstay:overstayVisitors.length,today_key_borrowing:b.count||0,today_key_return:r.count||0,today_packages:p.count||0,overdue_packages:overduePackageCount,outstanding_keys:outstandingQty,outstanding_key_transactions:overdueRows.length,borrowed_keys:borrowedRows.reduce((n,row)=>n+Number(row.outstanding_quantity||0),0),active_key_transactions:transactionRows.filter(row=>Number(row.outstanding_quantity||0)>0).length,discrepancy_keys:discrepancyKeys,partial_key_transactions:partialKeys,total_submissions:sub.count||0,total_packages:totalPackages.count||0,distributed_packages:distAll.count||0,distributed_packages_today:distToday.count||0,ready_packages:ready}});
     }
     if(action==='activity'){const n=limitOf(url.searchParams.get('limit'),100,500);const {data,error}=await auth.caller.from('recent_activity').select('*').order('submitted_at',{ascending:false}).limit(n);if(error)throw error;return json(req,{data:data||[]})}
     if(action==='inside'){const n=limitOf(url.searchParams.get('limit'),500,1000);const {data,error}=await auth.caller.from('currently_inside').select('*').order('entry_at',{ascending:false}).limit(n);if(error)throw error;return json(req,{data:data||[]})}
