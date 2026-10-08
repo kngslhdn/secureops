@@ -98,7 +98,7 @@ b,strong{font-weight:700}
 <div class="field"><label>From Email</label><input id="smtp_from" type="email"></div>
 <div class="field"><label>From Name</label><input id="smtp_from_name"></div>
 <div class="field"><label>Reply-To</label><input id="smtp_reply_to" type="email"></div>
-</div><p class="hint" style="margin-top:12px">SMTP username and Google App Password are stored in Supabase Vault and are never stored in plaintext in emergency_settings or GitHub. For Google SMTP on Supabase Edge Functions, use port 465 with SSL; Supabase blocks outbound port 587.</p><div class="actions"><button class="btn primary" type="button" data-action="save-smtp">Save SMTP Settings</button><button class="btn" type="button" data-action="test-smtp">Send Test Email</button></div><div id="smtpNotice" class="notice"></div></div></section>
+</div><div class="actions"><button class="btn primary" type="button" data-action="save-smtp">Save SMTP Settings</button><button class="btn" type="button" data-action="test-smtp">Send Test Email</button></div><div id="smtpNotice" class="notice"></div></div></section>
 
 <section class="panel page-section" id="channels"><div class="panelhead"><div><h2>Notification Channels</h2><p>Operational readiness of configured notification channels</p></div></div><div class="body"><div class="table"><table><thead><tr><th>Channel</th><th>Status</th><th>Source</th><th>Notes</th></tr></thead><tbody id="channelRows"></tbody></table></div></div></section>
 
