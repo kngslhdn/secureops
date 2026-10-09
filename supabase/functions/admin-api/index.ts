@@ -97,13 +97,19 @@ Deno.serve(async req=>{
     if(action==='distribution_history'){
       const n=limitOf(url.searchParams.get('limit'),200,5000),search=(url.searchParams.get('q')||'').trim();
       const from=url.searchParams.get('from'),to=url.searchParams.get('to'),status=url.searchParams.get('status');
-      let q=db.from('package_distribution_history').select('*').order('distributed_at',{ascending:false}).limit(n);
+      // Do not interpolate user input into PostgREST .or() filter syntax.
+      // Fetch a bounded result set, then apply search matching in application code.
+      let q=db.from('package_distribution_history').select('*').order('distributed_at',{ascending:false}).limit(5000);
       if(from) q=q.gte('distributed_at',from);
       if(to) q=q.lt('distributed_at',to);
       if(status) q=q.eq('status',status);
-      if(search){const p=like(search);q=q.or(`package_number.ilike.${p},recipient_name.ilike.${p},registered_recipient_name.ilike.${p},company_name.ilike.${p},courier_name.ilike.${p},security_hand_over.ilike.${p}`)}
       const {data,error}=await q;if(error)throw error;
-      return json(req,{data:data||[]});
+      const term=search.toLowerCase();
+      const rows=(data||[]).filter((row:any)=>!term||[
+        row.package_number,row.recipient_name,row.registered_recipient_name,
+        row.company_name,row.courier_name,row.security_hand_over
+      ].some(value=>String(value??'').toLowerCase().includes(term)));
+      return json(req,{data:rows.slice(0,n)});
     }
     if(action==='visitors'){
       const n=limitOf(url.searchParams.get('limit'),500,2000),search=(url.searchParams.get('q')||'').trim().toLowerCase();
