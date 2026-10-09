@@ -53,11 +53,19 @@ Deno.serve(async (req) => {
       if (distributedIds.length) query = query.not("id", "in", `(${distributedIds.join(",")})`);
 
       if (isUuid(q)) {
-        const { data: exact } = await sb.from("package_registrations")
-          .select("id,submission_id,courier_name,phone,company_name,item_type,item_count,recipient_type,recipient_name,security_officer_name,created_at")
-          .eq("submission_id", q).maybeSingle();
+        // Scope the service-role exact lookup to the authenticated property's records.
+        // The normal list query above is property-scoped; this branch must enforce the same boundary.
+        let exactQuery = sb.from("package_registrations")
+          .select("id,submission_id,courier_name,phone,company_name,item_type,item_count,recipient_type,recipient_name,security_officer_name,created_at,property_id")
+          .eq("submission_id", q);
+        if (String(profile?.role || "").toUpperCase() !== "SUPERADMIN") {
+          exactQuery = exactQuery.eq("property_id", profile.property_id);
+        }
+        const { data: exact, error: exactError } = await exactQuery.maybeSingle();
+        if (exactError) throw exactError;
         if (exact && !distributedIds.includes(exact.id)) {
-          const { data: sub } = await sb.from("submissions").select("submission_id").eq("id", exact.submission_id).maybeSingle();
+          const { data: sub, error: subError } = await sb.from("submissions").select("submission_id").eq("id", exact.submission_id).maybeSingle();
+          if (subError) throw subError;
           const publicId = sub?.submission_id || exact.submission_id;
           return json({ packages: [{ ...exact, submission_id: publicId, package_number: publicId, status: "READY FOR DISTRIBUTION" }] });
         }
