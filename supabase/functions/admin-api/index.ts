@@ -7,7 +7,6 @@ const APP_VERSION='ks.v.001';
 const APP_TITLE='SECUREOPS | Security Operations';
 const sb=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 const limitOf=(v:string|null,d=100,m=5000)=>Math.max(1,Math.min(Number(v||d)||d,m));
-const like=(v:string)=>`%${v.replace(/[\\%_]/g,'\\$&')}%`;
 
 async function admin(req:Request){
   const auth=req.headers.get('Authorization')||'';
