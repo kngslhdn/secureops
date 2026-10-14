@@ -244,7 +244,23 @@ async function initAuth(){
     location.href='../admin/';
   }
 }
-$('logout').onclick=async()=>{await sb.auth.signOut();location.href='../admin/'};
+$('logout').onclick=async()=>{
+  const button=$('logout');
+  if(button.disabled)return;
+  button.disabled=true;
+  const label=button.textContent;
+  button.textContent='Signing out…';
+  try{
+    const {error}=await sb.auth.signOut({scope:'local'});
+    if(error)throw error;
+    location.replace('../admin/');
+  }catch(error){
+    console.error('SECUREOPS sign out failed:',error);
+    button.disabled=false;
+    button.textContent=label||'Sign Out';
+    alert('Sign out failed. Please retry. '+String(error?.message||''));
+  }
+};
 $('mobileMenu')?.addEventListener('click',()=>document.querySelector('.side')?.classList.toggle('open'));
 sb.auth.onAuthStateChange((event,s)=>{
   if(event==='SIGNED_OUT'){location.href='../admin/'}
