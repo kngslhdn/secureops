@@ -116,34 +116,34 @@ async function whatsapp(token){
  $('waSave').onclick=async()=>{try{const p=String($('waPhone').value||'').replace(/[^0-9+]/g,'').replace(/^\+/,'');if(!/^62[0-9]{8,15}$/.test(p))throw Error('Use a valid Indonesian WhatsApp number, e.g. 6281234567890');await req('save_whatsapp','POST',{recipient_name:$('waName').value.trim(),phone_number:p});msg('waMsg','WhatsApp recipient updated');SecureOpsUI.success('WhatsApp Updated','The WhatsApp notification recipient was updated successfully.')}catch(e){msg('waMsg',e.message,true);SecureOpsUI.error('WhatsApp Update Failed',e.message)}}
 }
 async function admins(token){
- const r=await req('admin_users');if(!current(token))return;const rows=r.data||[];
+ const r=await req('admin_users');if(!current(token))return;const rows=r.data||[];window.SECUREOPSAdminProperties=r.properties||[];
  $('sContent').innerHTML=card('Admin Users','Manage access to the Security Admin Console',`
 
- <div class="s-table"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last Login</th><th>Created</th><th>Actions</th></tr></thead><tbody>${rows.length?rows.map(x=>`<tr><td><b>${esc(x.full_name||'—')}</b></td><td>${esc(x.email||'—')}</td><td>${esc(x.role)}</td><td><span class="s-badge ${x.active?'s-on':'s-off'}">${x.active?'ACTIVE':'INACTIVE'}</span></td><td>${esc(x.last_sign_in_at?new Date(x.last_sign_in_at).toLocaleString('en-GB'):'—')}</td><td>${esc(new Date(x.created_at).toLocaleDateString('en-GB'))}</td><td><button class="s-btn" data-admin-edit="${x.user_id}">Edit</button></td></tr>`).join(''):'<tr><td colspan="7">No admin users found</td></tr>'}</tbody></table></div>`, '<button class="s-btn primary" id="addAdmin">Add Admin</button>');
+ <div class="s-table"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Property</th><th>Status</th><th>Last Login</th><th>Created</th><th>Actions</th></tr></thead><tbody>${rows.length?rows.map(x=>`<tr><td><b>${esc(x.full_name||'—')}</b></td><td>${esc(x.email||'—')}</td><td>${esc(x.role)}</td><td>${esc(x.property_name||(x.role==='SUPERADMIN'?'All Properties':'Unassigned'))}</td><td><span class="s-badge ${x.active?'s-on':'s-off'}">${x.active?'ACTIVE':'INACTIVE'}</span></td><td>${esc(x.last_sign_in_at?new Date(x.last_sign_in_at).toLocaleString('en-GB'):'—')}</td><td>${esc(new Date(x.created_at).toLocaleDateString('en-GB'))}</td><td><button class="s-btn" data-admin-edit="${x.user_id}">Edit</button></td></tr>`).join(''):'<tr><td colspan="8">No admin users found</td></tr>'}</tbody></table></div>`, '<button class="s-btn primary" id="addAdmin">Add Admin</button>');
  $('addAdmin').onclick=()=>adminDialog(null,token);
  document.querySelectorAll('[data-admin-edit]').forEach(b=>b.onclick=()=>adminDialog(rows.find(x=>x.user_id===b.dataset.adminEdit),token));
 }
 function adminDialog(row=null,token=null){
  const d=document.createElement('dialog');
- d.style.cssText='border:0;border-radius:14px;padding:0;width:min(520px,calc(100% - 24px));box-shadow:0 25px 80px #0005';
- d.innerHTML=`<form method="dialog" class="s-body"><h2 style="margin:0 0 14px;color:#071a30;font-size:16px">${row?'Edit Admin':'Add Admin'}</h2><div class="s-grid"><div class="s-field"><label>Full Name</label><input class="adName" required value="${esc(row?.full_name||'')}"></div><div class="s-field"><label>Email</label><input class="adEmail" type="email" required value="${esc(row?.email||'')}" ${row?'readonly':''}></div><div class="s-field"><label>Role</label><select class="adRole"><option>VIEWER</option><option>ADMIN</option><option>MANAGER</option><option>SUPERADMIN</option></select></div><div class="s-field"><label>${row?'New Password (optional)':'Temporary Password'}</label><input class="adPass" type="password" ${row?'':'required'} minlength="8"></div></div><div class="s-actions"><button type="button" class="s-btn adCancel">Cancel</button><button type="button" class="s-btn primary adSave">Save</button></div><div class="s-msg adMsg"></div></form>`;
+ d.style.cssText='border:0;border-radius:14px;padding:0;width:min(560px,calc(100% - 24px));box-shadow:0 25px 80px #0005';
+ const properties=window.SECUREOPSAdminProperties||[];
+ d.innerHTML=`<form method="dialog" class="s-body"><h2 style="margin:0 0 14px;color:#071a30;font-size:16px">${row?'Edit Admin':'Add Admin'}</h2><div class="s-grid"><div class="s-field"><label>Full Name</label><input class="adName" required value="${esc(row?.full_name||'')}"></div><div class="s-field"><label>Email</label><input class="adEmail" type="email" required value="${esc(row?.email||'')}" ${row?'readonly':''}></div><div class="s-field"><label>Role</label><select class="adRole"><option>VIEWER</option><option>ADMIN</option><option>MANAGER</option><option>SUPERADMIN</option></select></div><div class="s-field"><label>Property Assignment</label><select class="adProperty"><option value="">Select property…</option>${properties.filter(p=>p.is_active).map(p=>`<option value="${esc(p.id)}">${esc(p.property_name||p.property_code)} (${esc(p.property_code||'')})</option>`).join('')}</select></div><div class="s-field" style="grid-column:1/-1"><label>${row?'New Password (optional)':'Temporary Password'}</label><input class="adPass" type="password" ${row?'':'required'} minlength="8"></div></div><div class="s-note">Assign an active property to every operational administrator. SUPERADMIN can be assigned across all properties.</div><div class="s-actions"><button type="button" class="s-btn adCancel">Cancel</button><button type="button" class="s-btn primary adSave">Save</button></div><div class="s-msg adMsg"></div></form>`;
  document.body.appendChild(d);
- const name=d.querySelector('.adName'),email=d.querySelector('.adEmail'),role=d.querySelector('.adRole'),pass=d.querySelector('.adPass'),cancel=d.querySelector('.adCancel'),save=d.querySelector('.adSave'),message=d.querySelector('.adMsg');
- role.value=row?.role||'VIEWER';
- const cleanup=()=>d.remove();
- d.addEventListener('close',cleanup,{once:true});
- d.showModal();
- cancel.onclick=()=>d.close();
+ const name=d.querySelector('.adName'),email=d.querySelector('.adEmail'),role=d.querySelector('.adRole'),property=d.querySelector('.adProperty'),pass=d.querySelector('.adPass'),cancel=d.querySelector('.adCancel'),save=d.querySelector('.adSave'),message=d.querySelector('.adMsg');
+ role.value=row?.role||'VIEWER';property.value=row?.property_id||'';
+ const syncProperty=()=>{property.disabled=role.value==='SUPERADMIN';if(property.disabled)property.value=''};
+ role.addEventListener('change',syncProperty);syncProperty();
+ const cleanup=()=>d.remove();d.addEventListener('close',cleanup,{once:true});d.showModal();cancel.onclick=()=>d.close();
  save.onclick=async()=>{
    save.disabled=true;cancel.disabled=true;save.textContent='Saving...';
    try{
-     const body={user_id:row?.user_id,full_name:name.value.trim(),email:email.value.trim(),role:role.value,password:pass.value};
+     const body={user_id:row?.user_id,full_name:name.value.trim(),email:email.value.trim(),role:role.value,property_id:property.value,password:pass.value};
      if(!body.full_name||!body.email)throw Error('Name and email are required');
      if(!row&&!body.password)throw Error('Temporary password is required');
+     if(body.role!=='SUPERADMIN'&&!body.property_id)throw Error('Select a property for this administrator.');
      await req(row?'update_admin':'create_admin','POST',body);
-     if(!current(token)){d.close();return;}
-     d.close();
-     SecureOpsUI.success(row?'Admin Updated':'Admin Created',row?'The administrator account was updated successfully.':'The administrator account was created successfully.');
+     if(!current(token)){d.close();return}
+     d.close();SecureOpsUI.success(row?'Admin Updated':'Admin Created',row?'The administrator account was updated successfully.':'The administrator account was created successfully.');
      await admins(token);
    }catch(e){
      message.textContent=e.message||'Request failed';message.classList.add('err');SecureOpsUI.error(row?'Admin Update Failed':'Admin Creation Failed',e.message||'Request failed');
