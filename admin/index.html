@@ -168,6 +168,27 @@ document.getElementById('loginForm').addEventListener('submit',async event=>{
     button.textContent='SIGN IN';
   }
 });
+document.getElementById('logout')?.addEventListener('click',async()=>{
+  const button=document.getElementById('logout');
+  if(!button||button.disabled)return;
+  button.disabled=true;
+  const originalLabel=button.textContent;
+  button.textContent='Signing out…';
+  try{
+    const {error}=await sb.auth.signOut({scope:'local'});
+    if(error)throw error;
+    authReady=false;
+    showLogin('You have signed out successfully.');
+    document.getElementById('loginForm')?.reset();
+    history.replaceState({},document.title,window.location.pathname);
+  }catch(error){
+    console.error('SECUREOPS sign out failed',error);
+    const node=document.getElementById('loginError');
+    if(node)node.textContent='Sign out failed. Please retry. '+String(error?.message||'');
+    button.disabled=false;
+    button.textContent=originalLabel||'Sign Out';
+  }
+});
 sb.auth.onAuthStateChange((event,session)=>{
   if(event==='SIGNED_OUT'){
     authReady=false;
@@ -190,7 +211,7 @@ sb.auth.onAuthStateChange((event,session)=>{
   }
 });
 initAuth();</script>
-<script src="admin-console-v2.js?v=33"></script>
+<script src="admin-console-v2.js?v=34"></script>
 <style id="kempinski-display-font">
 /* Luxury editorial display typography inspired by the Kempinski reference */
 .a-head h1,
