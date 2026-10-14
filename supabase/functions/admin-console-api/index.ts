@@ -217,26 +217,36 @@ async function settingsAction(req:Request,a:any,action:string){
     if(error)throw error;await audit(a,'UPDATE','System / Operations','operations','Updated operational module settings');return json(req,{ok:true});
   }
   if(action==='admin_users'){
-    const {data,error}=await sb.from('admin_profiles').select('user_id,full_name,role,active,created_at,updated_at').order('created_at');
-    if(error)throw error;const users=await sb.auth.admin.listUsers({page:1,perPage:1000});if(users.error)throw users.error;const map=new Map((users.data.users||[]).map((u:any)=>[u.id,u]));
-    return json(req,{data:(data||[]).map((x:any)=>{const u=map.get(x.user_id);return {...x,email:u?.email||null,last_sign_in_at:u?.last_sign_in_at||null}})});
+    const {data,error}=await sb.from('admin_profiles').select('user_id,full_name,role,active,property_id,created_at,updated_at').order('created_at');
+    if(error)throw error;
+    const users=await sb.auth.admin.listUsers({page:1,perPage:1000});if(users.error)throw users.error;
+    const userMap=new Map((users.data.users||[]).map((u:any)=>[u.id,u]));
+    const {data:properties,error:propertyError}=await sb.from('properties').select('id,property_code,property_name,is_active').order('property_name');
+    if(propertyError)throw propertyError;
+    const propertyMap=new Map((properties||[]).map((p:any)=>[p.id,p]));
+    return json(req,{properties:properties||[],data:(data||[]).map((x:any)=>{const u=userMap.get(x.user_id),p=propertyMap.get(x.property_id);return {...x,email:u?.email||null,last_sign_in_at:u?.last_sign_in_at||null,property_name:p?.property_name||null,property_code:p?.property_code||null}})});
   }
   if(action==='create_admin'){
-    const b=await req.json(),email=String(b.email||'').trim().toLowerCase(),password=String(b.password||''),name=String(b.full_name||'').trim(),role=String(b.role||'VIEWER').toUpperCase();
+    const b=await req.json(),email=String(b.email||'').trim().toLowerCase(),password=String(b.password||''),name=String(b.full_name||'').trim(),role=String(b.role||'VIEWER').toUpperCase(),propertyId=String(b.property_id||'').trim();
     if(!email||!name||password.length<8)return json(req,{error:'Name, email and a password of at least 8 characters are required.'},400);
     if(!['VIEWER','ADMIN','MANAGER','SUPERADMIN'].includes(role))return json(req,{error:'Invalid role'},400);
+    if(role!=='SUPERADMIN'&&!propertyId)return json(req,{error:'Select a property for this administrator.'},400);
+    if(propertyId){const {data:p,error:pe}=await sb.from('properties').select('id').eq('id',propertyId).eq('is_active',true).maybeSingle();if(pe)throw pe;if(!p)return json(req,{error:'Selected property is inactive or does not exist.'},400)}
     const created=await sb.auth.admin.createUser({email,password,email_confirm:true,user_metadata:{full_name:name}});
     if(created.error)throw created.error;
-    const {error}=await sb.from('admin_profiles').insert({user_id:created.data.user.id,full_name:name,role,active:true});
+    const {error}=await sb.from('admin_profiles').insert({user_id:created.data.user.id,full_name:name,role,active:true,property_id:propertyId||null});
     if(error){await sb.auth.admin.deleteUser(created.data.user.id);throw error}
-    await audit(a,'CREATE','Admin Users',email,`Created ${role} admin account`);return json(req,{ok:true,user_id:created.data.user.id});
+    await audit(a,'CREATE','Admin Users',email,`Created ${role} admin account for ${propertyId||'all properties'}`);return json(req,{ok:true,user_id:created.data.user.id});
   }
   if(action==='update_admin'){
-    const b=await req.json(),id=String(b.user_id||''),name=String(b.full_name||'').trim(),role=String(b.role||'VIEWER').toUpperCase(),password=String(b.password||'');
+    const b=await req.json(),id=String(b.user_id||''),name=String(b.full_name||'').trim(),role=String(b.role||'VIEWER').toUpperCase(),password=String(b.password||''),propertyId=String(b.property_id||'').trim();
     if(!id||!name||!['VIEWER','ADMIN','MANAGER','SUPERADMIN'].includes(role))return json(req,{error:'Invalid admin update'},400);
-    const {error}=await sb.from('admin_profiles').update({full_name:name,role,active:b.active!==false}).eq('user_id',id);if(error)throw error;
-    if(password){if(password.length<8)return json(req,{error:'Password must be at least 8 characters.'},400);const u=await sb.auth.admin.updateUserById(id,{password});if(u.error)throw u.error}
-    await audit(a,'UPDATE','Admin Users',id,`Updated admin account role to ${role}`);return json(req,{ok:true});
+    if(role!=='SUPERADMIN'&&!propertyId)return json(req,{error:'Select a property for this administrator.'},400);
+    if(propertyId){const {data:p,error:pe}=await sb.from('properties').select('id').eq('id',propertyId).eq('is_active',true).maybeSingle();if(pe)throw pe;if(!p)return json(req,{error:'Selected property is inactive or does not exist.'},400)}
+    if(password&&password.length<8)return json(req,{error:'Password must be at least 8 characters.'},400);
+    const {error}=await sb.from('admin_profiles').update({full_name:name,role,property_id:propertyId||null,active:b.active!==false}).eq('user_id',id);if(error)throw error;
+    if(password){const u=await sb.auth.admin.updateUserById(id,{password});if(u.error)throw u.error}
+    await audit(a,'UPDATE','Admin Users',id,`Updated admin account role to ${role}, property ${propertyId||'all properties'}`);return json(req,{ok:true});
   }
   if(action==='key_assets'){
     let q=sb.from('key_assets').select('*').order('key_number');
