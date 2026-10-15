@@ -278,16 +278,6 @@ const normalizeDate=(value)=>{
   const d=new Date(raw);
   return Number.isNaN(d.getTime())?'':d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 };
-const fromDate=$('rf').value;
-const toDate=$('rto').value||fromDate;
-const normalizeDate=(value)=>{
-  const raw=String(value||'').trim();
-  if(/^\d{4}-\d{2}-\d{2}$/.test(raw))return raw;
-  const isoMatch=raw.match(/(\d{4}-\d{2}-\d{2})/);
-  if(isoMatch)return isoMatch[1];
-  const d=new Date(raw);
-  return Number.isNaN(d.getTime())?'':d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-};
 // Prefer the API's daily source rows; if unavailable, derive daily totals from report records.
 for(const result of results){
   for(const item of (result.analytics||[])){
