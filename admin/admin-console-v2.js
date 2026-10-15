@@ -278,9 +278,28 @@ const normalizeDate=(value)=>{
   const d=new Date(raw);
   return Number.isNaN(d.getTime())?'':d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 };
-for(const [label,total] of days){
-  const key=normalizeDate(label);
-  if(key)dailyTotals.set(key,(dailyTotals.get(key)||0)+Number(total||0));
+const fromDate=$('rf').value;
+const toDate=$('rto').value||fromDate;
+const normalizeDate=(value)=>{
+  const raw=String(value||'').trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(raw))return raw;
+  const isoMatch=raw.match(/(\d{4}-\d{2}-\d{2})/);
+  if(isoMatch)return isoMatch[1];
+  const d=new Date(raw);
+  return Number.isNaN(d.getTime())?'':d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+};
+// Prefer the API's daily source rows; if unavailable, derive daily totals from report records.
+for(const result of results){
+  for(const item of (result.analytics||[])){
+    const key=normalizeDate(item.date||item.label);
+    if(key)dailyTotals.set(key,(dailyTotals.get(key)||0)+Number(item.total||0));
+  }
+}
+if(!dailyTotals.size){
+  for(const row of merged){
+    const key=normalizeDate(row.event_at||row.submitted_at||row.created_at||row.date);
+    if(key)dailyTotals.set(key,(dailyTotals.get(key)||0)+1);
+  }
 }
 // Render one bar per calendar day, including dates with zero activity.
 const analytics=[];
