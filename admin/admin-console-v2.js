@@ -272,21 +272,21 @@ const toDate=$('rto').value||fromDate;
 const dailyTotals=new Map();
 const normalizeDate=value=>{
   const raw=String(value||'').trim();
-  const iso=raw.match(/(\\d{4}-\\d{2}-\\d{2})/);
+  const iso=raw.match(/(\d{4}-\d{2}-\d{2})/);
   if(iso)return iso[1];
   const d=new Date(raw);
   return Number.isNaN(d.getTime())?'':d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 };
-// API analytics may use summarized labels such as "10–14". Only count exact dates.
+// Use only exact date buckets from the API. A grouped label like "10–14" is not a daily bucket.
 for(const result of results){
   for(const item of (result.analytics||[])){
     const key=normalizeDate(item.date||item.label);
-    if(/^\\d{4}-\\d{2}-\\d{2}$/.test(key)){
+    if(/^\d{4}-\d{2}-\d{2}$/.test(key)){
       dailyTotals.set(key,(dailyTotals.get(key)||0)+Number(item.total||0));
     }
   }
 }
-// When the API does not return daily buckets, calculate daily counts from individual records.
+// If the API only returns grouped labels, calculate daily totals from the detail records.
 if(!dailyTotals.size){
   for(const row of merged){
     const key=normalizeDate(row.event_at||row.submitted_at||row.created_at||row.date);
@@ -294,7 +294,7 @@ if(!dailyTotals.size){
   }
 }
 const analytics=[];
-if(/^\\d{4}-\\d{2}-\\d{2}$/.test(fromDate)&&/^\\d{4}-\\d{2}-\\d{2}$/.test(toDate)&&fromDate<=toDate){
+if(/^\d{4}-\d{2}-\d{2}$/.test(fromDate)&&/^\d{4}-\d{2}-\d{2}$/.test(toDate)&&fromDate<=toDate){
   const cursor=new Date(fromDate+'T12:00:00');
   const last=new Date(toDate+'T12:00:00');
   for(;cursor<=last;cursor.setDate(cursor.getDate()+1)){
