@@ -298,6 +298,19 @@ for(const result of results){
     }
   }
 }
+// Prefer counts from actual dated activity rows when available; API buckets may be grouped or zeroed.
+const recordTotals=new Map();
+for(const row of merged){
+  const rawDate=row.event_at||row.submitted_at||row.created_at;
+  if(!rawDate)continue;
+  const key=normalizeDate(rawDate);
+  if(/^\d{4}-\d{2}-\d{2}$/.test(key))recordTotals.set(key,(recordTotals.get(key)||0)+1);
+}
+if(recordTotals.size){
+  dailyTotals.clear();
+  for(const [date,total] of recordTotals)dailyTotals.set(date,total);
+}
+// If the API only returns grouped labels and no dated detail records, calculate from available date fields.
 // If the API only returns grouped labels, calculate daily totals from the detail records.
 if(!dailyTotals.size){
   for(const row of merged){
