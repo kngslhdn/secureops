@@ -270,24 +270,21 @@ $('rm').innerHTML=Object.entries(metrics).filter(([k])=>k==='total'||selected.in
 const fromDate=$('rf').value;
 const toDate=$('rto').value||fromDate;
 const dailyTotals=new Map();
+const normalizeDate=(value)=>{
+  const raw=String(value||'').trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(raw))return raw;
+  const isoMatch=raw.match(/(\d{4}-\d{2}-\d{2})/);
+  if(isoMatch)return isoMatch[1];
+  const d=new Date(raw);
+  return Number.isNaN(d.getTime())?'':d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+};
 for(const [label,total] of days){
-  // API labels may be ISO dates or already formatted labels. Normalize each recognizable date to YYYY-MM-DD.
-  const raw=String(label||'').trim();
-  let key='';
-  if(/^\\d{4}-\\d{2}-\\d{2}$/.test(raw))key=raw;
-  else{
-    const isoMatch=raw.match(/(\\d{4}-\\d{2}-\\d{2})/);
-    if(isoMatch)key=isoMatch[1];
-    else{
-      const d=new Date(raw);
-      if(!Number.isNaN(d.getTime()))key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    }
-  }
+  const key=normalizeDate(label);
   if(key)dailyTotals.set(key,(dailyTotals.get(key)||0)+Number(total||0));
 }
-// If the user has selected a date range, render every calendar day in it, including days with zero activity.
+// Render one bar per calendar day, including dates with zero activity.
 const analytics=[];
-if(/^\\d{4}-\\d{2}-\\d{2}$/.test(fromDate)&&/^\\d{4}-\\d{2}-\\d{2}$/.test(toDate)&&fromDate<=toDate){
+if(/^\d{4}-\d{2}-\d{2}$/.test(fromDate)&&/^\d{4}-\d{2}-\d{2}$/.test(toDate)&&fromDate<=toDate){
   const cursor=new Date(fromDate+'T12:00:00');
   const last=new Date(toDate+'T12:00:00');
   for(;cursor<=last;cursor.setDate(cursor.getDate()+1)){
@@ -296,7 +293,7 @@ if(/^\\d{4}-\\d{2}-\\d{2}$/.test(fromDate)&&/^\\d{4}-\\d{2}-\\d{2}$/.test(toDate
   }
 }else{
   [...dailyTotals].sort((a,b)=>a[0].localeCompare(b[0])).forEach(([date,total])=>{
-    const [y,m,d]=date.split('-');analytics.push({date,label:d+'/'+m,total});
+    const [,m,d]=date.split('-');analytics.push({date,label:d+'/'+m,total});
   });
 }
 const selectedSet=new Set(selected);
