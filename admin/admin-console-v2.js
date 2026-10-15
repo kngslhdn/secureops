@@ -266,7 +266,39 @@ try{const params={limit:5000,from:$('rf').value,to:$('rto').value+'T23:59:59',q:
 const merged=[],metrics={},days=new Map();results.forEach((r,i)=>{const type=selected[i];(r.data||[]).forEach(x=>merged.push({...x,_report_type:type}));for(const [k,v] of Object.entries(r.metrics||{})){if(type==='overall')metrics[k]=v;else if(k===type)metrics[k]=(metrics[k]||0)+Number(v||0)}for(const d of r.analytics||[])days.set(d.label,(days.get(d.label)||0)+Number(d.total||0))});
 merged.sort((a,b)=>new Date(b.event_at||b.date||0)-new Date(a.event_at||a.date||0));window.__r=merged;
 $('rm').innerHTML=Object.entries(metrics).filter(([k])=>k==='total'||selected.includes(k)||selected.includes('overall')).map(([k,v])=>`<div><span>${esc(k.replaceAll('_',' '))}</span><b>${esc(v)}</b></div>`).join('');
-const analytics=[...days].sort((a,b)=>a[0].localeCompare(b[0])).map(([label,total])=>({label,total}));
+// Build a continuous daily axis for the selected date range. Never collapse several days into a range label.
+const fromDate=$('rf').value;
+const toDate=$('rto').value||fromDate;
+const dailyTotals=new Map();
+for(const [label,total] of days){
+  // API labels may be ISO dates or already formatted labels. Normalize each recognizable date to YYYY-MM-DD.
+  const raw=String(label||'').trim();
+  let key='';
+  if(/^\\d{4}-\\d{2}-\\d{2}$/.test(raw))key=raw;
+  else{
+    const isoMatch=raw.match(/(\\d{4}-\\d{2}-\\d{2})/);
+    if(isoMatch)key=isoMatch[1];
+    else{
+      const d=new Date(raw);
+      if(!Number.isNaN(d.getTime()))key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    }
+  }
+  if(key)dailyTotals.set(key,(dailyTotals.get(key)||0)+Number(total||0));
+}
+// If the user has selected a date range, render every calendar day in it, including days with zero activity.
+const analytics=[];
+if(/^\\d{4}-\\d{2}-\\d{2}$/.test(fromDate)&&/^\\d{4}-\\d{2}-\\d{2}$/.test(toDate)&&fromDate<=toDate){
+  const cursor=new Date(fromDate+'T12:00:00');
+  const last=new Date(toDate+'T12:00:00');
+  for(;cursor<=last;cursor.setDate(cursor.getDate()+1)){
+    const key=cursor.getFullYear()+'-'+String(cursor.getMonth()+1).padStart(2,'0')+'-'+String(cursor.getDate()).padStart(2,'0');
+    analytics.push({label:String(cursor.getDate()).padStart(2,'0')+'/'+String(cursor.getMonth()+1).padStart(2,'0'),date:key,total:dailyTotals.get(key)||0});
+  }
+}else{
+  [...dailyTotals].sort((a,b)=>a[0].localeCompare(b[0])).forEach(([date,total])=>{
+    const [y,m,d]=date.split('-');analytics.push({date,label:d+'/'+m,total});
+  });
+}
 const selectedSet=new Set(selected);
 const wantsVisitor=selectedSet.has('visitor_entry')||selectedSet.has('visitor_exit')||selectedSet.has('visitor_summary')||selectedSet.has('overall');
 const wantsKeys=selectedSet.has('key_borrowing')||selectedSet.has('key_return')||selectedSet.has('key_summary')||selectedSet.has('overall');
