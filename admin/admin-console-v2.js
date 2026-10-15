@@ -263,7 +263,7 @@ $('rSelectAll').onclick=()=>{overall.checked=false;checks.forEach(x=>x.checked=t
 const run=async()=>{if(!isCurrent(token))return;const selected=overall.checked?['overall']:checks.filter(x=>x.checked).map(x=>x.value);if(!selected.length){alert('Select at least one report type.');return}
 const btn=$('rg'),top=$('rr');btn.disabled=true;top.disabled=true;
 try{const params={limit:5000,from:$('rf').value,to:$('rto').value+'T23:59:59',q:$('rq').value,status:$('rs').value};const results=await Promise.all(selected.map(type=>api('report',{...params,type})));if(!isCurrent(token))return;
-const merged=[],metrics={},days=new Map();results.forEach((r,i)=>{const type=selected[i];(r.data||[]).forEach(x=>merged.push({...x,_report_type:type}));for(const [k,v] of Object.entries(r.metrics||{})){if(type==='overall')metrics[k]=v;else if(k===type)metrics[k]=(metrics[k]||0)+Number(v||0)}for(const d of r.analytics||[])days.set(d.label,(days.get(d.label)||0)+Number(d.total||0))});
+const merged=[],metrics={};results.forEach((r,i)=>{const type=selected[i];(r.data||[]).forEach(x=>merged.push({...x,_report_type:type}));for(const [k,v] of Object.entries(r.metrics||{})){if(type==='overall')metrics[k]=v;else if(k===type)metrics[k]=(metrics[k]||0)+Number(v||0)}});
 merged.sort((a,b)=>new Date(b.event_at||b.date||0)-new Date(a.event_at||a.date||0));window.__r=merged;
 $('rm').innerHTML=Object.entries(metrics).filter(([k])=>k==='total'||selected.includes(k)||selected.includes('overall')).map(([k,v])=>`<div><span>${esc(k.replaceAll('_',' '))}</span><b>${esc(v)}</b></div>`).join('');
 // Build a continuous daily axis for the selected date range. Never collapse several days into a range label.
