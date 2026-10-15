@@ -71,7 +71,7 @@ async function getOverallRows(start:string,to:string|null,caller:any){
   return rows;
 }
 function summaryMetrics(rows:any[]){const count=(t:string)=>rows.filter(x=>x.record_type===t).length;return {total:rows.length,visitor_entry:count('visitor_entry'),visitor_exit:count('visitor_exit'),key_borrowing:count('key_borrowing'),key_return:count('key_return'),package_registration:count('package_registration'),package_distribution:count('package_distribution')}}
-function dailyAnalytics(rows:any[]){const m=new Map<string,number>();for(const x of rows){const d=String(x.event_at).slice(0,10);m.set(d,(m.get(d)||0)+1)}return [...m.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([label,total])=>({label:label.slice(5),total}))}
+function dailyAnalytics(rows:any[]){const m=new Map<string,number>();for(const x of rows){const d=String(x.event_at).slice(0,10);if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(d))continue;m.set(d,(m.get(d)||0)+1)}return [...m.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([date,total])=>({date,label:date.slice(8)+'/'+date.slice(5,7),total}))}
 
 
 async function superAdmin(req:Request){
