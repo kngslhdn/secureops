@@ -191,3 +191,43 @@ button:focus-visible,a:focus-visible{
 @media screen and (min-width:768px){
   .a-kpis-six{grid-template-columns:repeat(4,minmax(0,1fr))!important}
 }
+
+
+/* SECUREOPS DESIGN SYSTEM — final cross-page normalization.
+   Keep this block last in the shared stylesheet so legacy page-local rules cannot
+   silently override typography, controls, surfaces, or responsive spacing. */
+:root{
+  --so-font:"Poppins",Arial,sans-serif;--so-font-size:13px;--so-title:#071a30;
+  --so-text:#18212b;--so-muted:#64748b;--so-gold:#c99a3d;--so-border:#e4e7eb;
+  --so-surface:#fff;--so-page:#f5f6f8;--so-radius:12px;--so-control-radius:9px;
+}
+html{font-family:var(--so-font)!important;font-size:14px}
+body{font-family:var(--so-font)!important;font-size:var(--so-font-size)!important;line-height:1.5!important;color:var(--so-text)!important;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,input,select,textarea{font-family:var(--so-font)!important}
+.hero h1,.a-head h1{font-family:var(--so-font)!important;font-size:28px!important;font-weight:700!important;line-height:1.2!important;letter-spacing:-.025em!important;color:var(--so-title)!important}
+.head h2,.panelhead h2,.modalhead h2,.a-ph h2,.a-key-resolve-head h3{font-family:var(--so-font)!important;font-size:15px!important;font-weight:700!important;line-height:1.35!important;letter-spacing:-.01em!important;color:var(--so-title)!important}
+.hero p,.a-head p,.a-subtitle{font-size:13px!important;font-weight:400!important;line-height:1.55!important;color:var(--so-muted)!important}
+.security-label,.a-kicker,.a-eyebrow,.side-title,.navtitle,.a-section-label{font-size:10px!important;font-weight:700!important;line-height:1.4!important;letter-spacing:.14em!important}
+.side-nav a,.a-nav,.nav a{font-size:12px!important;font-weight:500!important;line-height:1.45!important}
+.side-nav a.active,.a-nav.active,.nav a.active{font-weight:700!important}
+button,.btn,.a-btn,.actionbar a,.actionbar button,.logout{font-family:var(--so-font)!important;font-size:12px!important;font-weight:600!important;line-height:1.4!important}
+.btn,.a-btn,.actionbar a,.actionbar button{min-height:36px;border-radius:8px}
+input,select,textarea,.field input,.field select,.field textarea,.search input{font-family:var(--so-font)!important;font-size:12px!important;font-weight:400!important;line-height:1.45!important;color:var(--so-text)!important;border-radius:var(--so-control-radius)}
+label,.field label,.a-filters label{font-size:11px!important;font-weight:600!important;line-height:1.4!important;color:#334155}
+table th,.table th,.a-table th{font-size:10px!important;font-weight:700!important;line-height:1.4!important;letter-spacing:.035em}
+table td,.table td,.a-table td{font-size:12px!important;line-height:1.5!important}
+.badge,.pill,.status-badge,.a-status,.sev label{font-size:10px!important;font-weight:700!important;line-height:1.35!important}
+.card,.panel,.a-panel,.stat,.a-kpi,.a-card{border-color:var(--so-border)!important;border-radius:var(--so-radius)!important;box-shadow:0 2px 8px rgba(7,26,48,.035)}
+input:focus,select:focus,textarea:focus,input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var(--so-gold)!important;outline:2px solid rgba(201,154,61,.18)!important;outline-offset:1px}
+button:focus-visible,a:focus-visible{outline:2px solid var(--so-gold)!important;outline-offset:2px}
+button:disabled,.btn:disabled,.a-btn:disabled{cursor:not-allowed;opacity:.55}
+@media screen and (min-width:768px){body{zoom:.9}}
+@media screen and (max-width:767px){
+ .hero h1,.a-head h1{font-size:24px!important}
+ .head h2,.panelhead h2,.modalhead h2,.a-ph h2{font-size:14px!important}
+ body{font-size:12px!important}
+ main,.shell>main{padding:20px 16px!important}
+ .grid,.a-grid{grid-template-columns:minmax(0,1fr)}
+ .stats,.a-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
