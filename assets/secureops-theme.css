@@ -1,0 +1,153 @@
+/* SECUREOPS shared design system — keep visual language consistent across Admin and Emergency pages. */
+:root{
+  --navy:#071a30!important;
+  --navy2:#102d4b!important;
+  --gold:#c99a3d!important;
+  --gold2:#ead7a5!important;
+  --bg:#f5f6f8!important;
+  --card:#ffffff!important;
+  --line:#e4e7eb!important;
+  --line-soft:#edf0f2!important;
+  --text:#18212b!important;
+  --muted:#64748b!important;
+  --red:#b91c1c!important;
+  --amber:#92400e!important;
+  --green:#166534!important;
+  --k-navy:#071a30!important;
+  --k-navy-2:#102d4b!important;
+  --k-gold:#c99a3d!important;
+  --k-gold-soft:#f8f1e3!important;
+  --k-bg:#f5f6f8!important;
+  --k-card:#ffffff!important;
+  --k-line:#e4e7eb!important;
+  --k-line-soft:#edf0f2!important;
+  --k-muted:#64748b!important;
+  --k-text:#18212b!important;
+  --k-success:#166534!important;
+  --k-success-bg:#ecfdf5!important;
+  --k-warn:#92400e!important;
+  --k-warn-bg:#fff7df!important;
+}
+html,body,button,input,select,textarea{
+  font-family:"Poppins",Arial,sans-serif!important;
+}
+body{
+  color:#18212b;
+  background:#f5f6f8;
+  font-size:13px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+h1,h2,h3,h4,h5,h6,p,label,small,th,td,button,input,select,textarea{
+  font-family:"Poppins",Arial,sans-serif!important;
+}
+.hero h1,.a-head h1{
+  color:#071a30!important;
+  font-size:28px!important;
+  font-weight:600!important;
+  line-height:1.2!important;
+  letter-spacing:-.025em!important;
+  margin:4px 0 5px!important;
+}
+.head h2,.panelhead h2,.modalhead h2,.a-ph h2,.a-key-resolve-head h3{
+  color:#071a30!important;
+  font-size:15px!important;
+  font-weight:600!important;
+  line-height:1.35!important;
+  letter-spacing:-.01em!important;
+}
+.hero p,.a-head p,.a-subtitle{
+  color:#64748b!important;
+  font-size:13px!important;
+  font-weight:400!important;
+  line-height:1.55!important;
+}
+.security-label,.a-kicker,.a-eyebrow{
+  color:#9a6b12!important;
+  font-size:10px!important;
+  font-weight:700!important;
+  line-height:1.4!important;
+  letter-spacing:.18em!important;
+  text-transform:uppercase!important;
+}
+.side-nav a,.a-nav{
+  font-size:12px!important;
+  font-weight:500!important;
+  line-height:1.45!important;
+}
+.side-nav a.active,.a-nav.active{
+  font-weight:600!important;
+}
+button,.btn,.a-btn,.a-link,.actionbar a,.actionbar button{
+  font-family:"Poppins",Arial,sans-serif!important;
+  font-size:11px!important;
+  font-weight:600!important;
+  line-height:1.4!important;
+  border-radius:8px;
+}
+.btn,.a-btn,.actionbar a,.actionbar button{
+  min-height:36px;
+  padding:8px 13px;
+}
+input,select,textarea,.field input,.field select,.field textarea{
+  font-size:12px!important;
+  font-weight:400!important;
+  line-height:1.45!important;
+  color:#18212b!important;
+  border-color:#d8dee7;
+  border-radius:9px;
+}
+label,.field label,.a-filters label{
+  color:#334155;
+  font-size:11px!important;
+  font-weight:600!important;
+  line-height:1.4!important;
+}
+table th,.a-table th{
+  color:#526783!important;
+  font-size:10px!important;
+  font-weight:700!important;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+}
+table td,.a-table td{
+  color:#18212b;
+  font-size:12px!important;
+  line-height:1.5!important;
+}
+.card,.panel,.a-panel,.stat,.a-kpi,.a-card{
+  border-color:#e4e7eb;
+  border-radius:12px;
+}
+.card,.panel,.a-panel,.a-kpi,.a-card{
+  box-shadow:0 1px 3px rgba(7,26,48,.035);
+}
+input:focus,select:focus,textarea:focus,
+input:focus-visible,select:focus-visible,textarea:focus-visible{
+  border-color:#c99a3d!important;
+  outline:2px solid rgba(201,154,61,.16)!important;
+  outline-offset:1px;
+}
+button:focus-visible,a:focus-visible{
+  outline:2px solid #c99a3d;
+  outline-offset:2px;
+}
+.btn.primary,.a-btn.primary{
+  background:#071a30!important;
+  color:#fff!important;
+  border-color:#071a30!important;
+}
+.btn.danger,.a-btn.danger{
+  background:#b91c1c!important;
+  color:#fff!important;
+  border-color:#b91c1c!important;
+}
+@media screen and (min-width:768px){
+  body{zoom:.9}
+}
+@media screen and (max-width:767px){
+  .hero h1,.a-head h1{font-size:24px!important}
+  .head h2,.panelhead h2,.a-ph h2{font-size:14px!important}
+  body{font-size:12px}
+}
