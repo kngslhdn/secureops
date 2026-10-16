@@ -314,7 +314,6 @@ async function boot(){
   renderGroups();
   applyDefaults();
   await refresh();
-  syncSidebar();
   if(location.hash){
     const el=$(location.hash.slice(1));
     if(el)setTimeout(()=>el.scrollIntoView({block:'start'}),50);
