@@ -151,3 +151,43 @@ button:focus-visible,a:focus-visible{
   .head h2,.panelhead h2,.a-ph h2{font-size:14px!important}
   body{font-size:12px}
 }
+
+/* SECOND PASS: normalize microcopy, KPI labels and compact UI typography */
+.a-kpi span,.stat span,.stat label,.a-section-label,.side-title,.a-ph small,.a-kpi small,.a-table thead th{
+  font-size:10px!important;
+  line-height:1.45!important;
+}
+.a-kpi span,.a-section-label,.side-title,.a-table thead th{
+  font-weight:700!important;
+  letter-spacing:.06em!important;
+}
+.a-kpi strong,.stat b,.stat strong{
+  font-size:25px!important;
+  font-weight:600!important;
+  line-height:1.1!important;
+  color:#071a30!important;
+}
+.a-kpi small,.a-ph small,.stat span{
+  color:#7b8da6!important;
+  font-size:11px!important;
+  font-weight:400!important;
+}
+.a-ph,.head,.panelhead{
+  border-color:#e4e7eb!important;
+}
+.a-panel,.card,.panel,.a-kpi,.stat,.a-card{
+  background:#fff!important;
+  border-color:#e4e7eb!important;
+  border-radius:12px!important;
+}
+.a-head p,.hero p{
+  margin-top:0!important;
+  color:#64748b!important;
+}
+.badge,.pill,.status-badge,.a-status{
+  font-family:"Poppins",Arial,sans-serif!important;
+  font-weight:600!important;
+}
+@media screen and (min-width:768px){
+  .a-kpis-six{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
