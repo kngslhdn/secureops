@@ -45,7 +45,7 @@ h1,h2,h3,h4,h5,h6,p,label,small,th,td,button,input,select,textarea{
 .hero h1,.a-head h1{
   color:#071a30!important;
   font-size:28px!important;
-  font-weight:600!important;
+  font-weight:700!important;
   line-height:1.2!important;
   letter-spacing:-.025em!important;
   margin:4px 0 5px!important;
@@ -53,7 +53,7 @@ h1,h2,h3,h4,h5,h6,p,label,small,th,td,button,input,select,textarea{
 .head h2,.panelhead h2,.modalhead h2,.a-ph h2,.a-key-resolve-head h3{
   color:#071a30!important;
   font-size:15px!important;
-  font-weight:600!important;
+  font-weight:700!important;
   line-height:1.35!important;
   letter-spacing:-.01em!important;
 }
