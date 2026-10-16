@@ -705,7 +705,10 @@ Deno.serve(async (req) => {
         throw new Error("PRODUCTION EMERGENCY BLOCKED: SMTP and an ERT WhatsApp group must be configured first.");
       }
 
-      const { data: incident, error } = await db.from("emergency_incidents").insert({
+      // Direct writes from authenticated clients are intentionally revoked by the
+      // emergency hardening migration. Perform this authorized mutation with the
+      // service-role client after the role/property checks above.
+      const { data: incident, error } = await admin.from("emergency_incidents").insert({
         property_id: propertyId,
         incident_type_id: b.incident_type_id || null,
         severity: b.severity || "URGENT",
