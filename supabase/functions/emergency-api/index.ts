@@ -535,7 +535,7 @@ Deno.serve(async (req) => {
       if (current.error) throw current.error;
       if (!["ACTIVE","MONITORING"].includes(current.data.status)) throw new Error("Only ACTIVE or MONITORING incidents can be resolved.");
       const now = new Date().toISOString();
-      const upd = await db.from("emergency_incidents").update({
+      const upd = await admin.from("emergency_incidents").update({
         property_id: propertyId,
         status: "RESOLVED",
         resolved_at: now,
@@ -545,7 +545,7 @@ Deno.serve(async (req) => {
         updated_at: now,
       }).eq("id", b.incident_id).select().single();
       if (upd.error) throw upd.error;
-      const timeline = await db.from("emergency_incident_updates").insert({
+      const timeline = await admin.from("emergency_incident_updates").insert({
         incident_id: b.incident_id,
         property_id: propertyId,
         status: "RESOLVED",
@@ -584,7 +584,7 @@ Deno.serve(async (req) => {
         }));
 
       for (const g of resolutionDispatches) {
-        await db.from("emergency_notifications").insert({
+        await admin.from("emergency_notifications").insert({
           incident_id: b.incident_id,
           property_id: propertyId,
           group_id: g.group_id,
