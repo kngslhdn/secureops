@@ -88,7 +88,19 @@
     margin:0 17px 0 0 !important;
   }
 }
-</style></head>
+</style><style id="secureops-entry-typography">
+/* Entry/login page shares typography standards while retaining its distinct dark identity. */
+html,body,button,input,select,textarea{font-family:"Poppins",Arial,sans-serif}
+body{font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.title{font-size:28px;font-weight:700;line-height:1.2;letter-spacing:-.025em}
+.panel-header h2{font-size:15px;font-weight:700;line-height:1.35}
+.panel-header p{font-size:13px;line-height:1.5}
+button,.login-btn,.google-btn{font-family:"Poppins",Arial,sans-serif;font-weight:600;min-height:36px}
+input,select,textarea{font-size:12px;line-height:1.45}
+@media(max-width:767px){.title{font-size:24px;line-height:1.2}.panel-header h2{font-size:14px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+</style>
+</head>
 <body>
 <main class="shell">
 <header class="brand">
