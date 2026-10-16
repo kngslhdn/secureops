@@ -271,7 +271,7 @@ $('rf').value=today();$('rto').value=today();const overall=$('rtOverall'),checks
 overall.onchange=()=>{if(overall.checked)checks.forEach(x=>x.checked=false)};checks.forEach(x=>x.onchange=()=>{if(x.checked)overall.checked=false;if(!checks.some(y=>y.checked))overall.checked=true});
 $('rSelectAll').onclick=()=>{overall.checked=false;checks.forEach(x=>x.checked=true)};$('rClearTypes').onclick=()=>{checks.forEach(x=>x.checked=false);overall.checked=true};
 const run=async()=>{if(!isCurrent(token))return;const selected=overall.checked?['overall']:checks.filter(x=>x.checked).map(x=>x.value);if(!selected.length){alert('Select at least one report type.');return}
-const btn=$('rg'),top=$('rr');btn.disabled=true;top.disabled=true;
+const btn=$('rg');btn.disabled=true;
 try{const params={limit:5000,from:$('rf').value,to:$('rto').value+'T23:59:59',q:$('rq').value,status:$('rs').value};const results=await Promise.all(selected.map(type=>api('report',{...params,type})));if(!isCurrent(token))return;
 const merged=[],metrics={};results.forEach((r,i)=>{const type=selected[i];(r.data||[]).forEach(x=>merged.push({...x,_report_type:type}));for(const [k,v] of Object.entries(r.metrics||{})){if(type==='overall')metrics[k]=v;else if(k===type)metrics[k]=(metrics[k]||0)+Number(v||0)}});
 merged.sort((a,b)=>new Date(b.event_at||b.date||0)-new Date(a.event_at||a.date||0));window.__r=merged;
@@ -360,8 +360,8 @@ $('chart').innerHTML=`<div class="a-analytics-grid" style="display:grid!importan
 $('rh').innerHTML='<tr><th>Date / Time</th><th>Type</th><th>Key Number</th><th>Reference / Date</th><th>Person / Recipient</th><th>Company / Department</th><th>Status / Counts</th></tr>';
 $('rrows').innerHTML=merged.length?merged.map(x=>{const summary=Boolean(x.date),label=summary?String(x._report_type).replaceAll('_',' '):(x.record_type||x.submission_type||'');const ref=summary?x.date:(x.reference||x.submission_id||'—');const details=summary?Object.entries(x).filter(([k,v])=>!['_report_type','date'].includes(k)&&v!==null&&v!==undefined).map(([k,v])=>k.replaceAll('_',' ')+': '+v).join(' · '):'';return `<tr><td>${fmt(x.event_at||x.submitted_at||x.date)}</td><td>${badge(x.record_type?.includes('visitor')?(x.record_type==='visitor_entry'?'entry':'exit'):x.record_type?.includes('key')?'key':'package',label)}</td><td>${esc(x.key_number||'—')}</td><td>${esc(ref)}</td><td>${esc(x.person_name||x.visitor_name||x.recipient_name||'—')}</td><td>${esc(x.company_name||x.department||'—')}</td><td>${esc(summary?details:(x.status||'—'))}</td></tr>`}).join(''):empty(7);
 $('rmeta').textContent=merged.length+' rows · '+selected.map(x=>x.replaceAll('_',' ')).join(', ')+' · '+$('rf').value+' to '+$('rto').value;
-}catch(e){console.error('Report generation failed',e);$('rmeta').textContent='Report failed: '+(e?.message||'Unknown error')}finally{btn.disabled=false;top.disabled=false}};
-$('rg').onclick=run;$('rr').onclick=run;let timer=null;$('rq').addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(run,300)});
+}catch(e){console.error('Report generation failed',e);$('rmeta').textContent='Report failed: '+(e?.message||'Unknown error')}finally{btn.disabled=false}};
+$('rg').onclick=run;let timer=null;$('rq').addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(run,300)});
 $('rc').onclick=()=>{$('rf').value=today();$('rto').value=today();$('rq').value='';$('rs').value='';checks.forEach(x=>x.checked=false);overall.checked=true;run()};
 $('rp').onclick=()=>window.print();$('re').onclick=()=>{const rows=window.__r||[];if(!rows.length)return;const keys=[...new Set(rows.flatMap(x=>Object.keys(x)))],csv=[keys.join(','),...rows.map(r=>keys.map(k=>'"'+String(r[k]??'').replace(/"/g,'""')+'"').join(','))].join('\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='secureops-report.csv';a.click();URL.revokeObjectURL(a.href)};await run()
 }
