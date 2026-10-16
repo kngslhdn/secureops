@@ -189,6 +189,7 @@ b,strong{font-weight:700}
 <label><input type="radio" name="severity" value="NORMAL"><span>🟡 NORMAL</span></label>
 <label><input type="radio" name="severity" value="INFORMATION"><span>🔵 INFORMATION</span></label>
 </div></div>
+<div class="field full"><label>Incident Date &amp; Time (Actual Occurrence)</label><input id="occurredAt" type="datetime-local"><small class="muted">Enter when the incident actually happened. The final “Time” in the message remains the report/creation time.</small></div>
 <div class="field full"><label>Message</label><textarea id="message" required></textarea></div>
 </div>
 <div class="field" style="margin-top:14px"><label>Recipient Groups</label><div class="recips" id="groups"></div></div><div class="field" style="margin-top:10px"><label>Direct Recipients</label><div class="recips" id="recipients"></div></div>
@@ -416,7 +417,7 @@ $('incidentForm').onsubmit=async e=>{e.preventDefault();const ids=[...document.q
 const waWindows=groupIds.map(()=>window.open('about:blank','_blank'));
 waWindows.forEach(w=>{if(w)w.document.title='SECUREOPS Emergency — preparing WhatsApp…'});
 
-$('sendBtn').disabled=true;try{const sev=document.querySelector('input[name=severity]:checked').value;const r=await api('create_incident','POST',{incident_type_id:$('type').value||null,severity:sev,title:$('title').value.trim(),location:$('location').value.trim(),description:$('message').value.trim(),test_mode:!production,contact_ids:ids,group_ids:groupIds});
+$('sendBtn').disabled=true;try{const sev=document.querySelector('input[name=severity]:checked').value;const occurredAtValue=$('occurredAt').value;let incidentDescription=$('message').value.trim();if(occurredAtValue){const occurredDate=new Date(occurredAtValue);if(Number.isNaN(occurredDate.getTime())){throw new Error('Invalid incident occurrence date/time.');}const occurredLabel=occurredDate.toLocaleString('en-GB',{timeZone:'Asia/Jakarta',hour12:false});incidentDescription=incidentDescription.replace(/\\n?\\n?Reported details:/i,'\\n\\nIncident occurred: '+occurredLabel+'\\n\\nReported details:');if(!/Incident occurred:/i.test(incidentDescription)){incidentDescription+='\\n\\nIncident occurred: '+occurredLabel;}}const r=await api('create_incident','POST',{incident_type_id:$('type').value||null,severity:sev,title:$('title').value.trim(),location:$('location').value.trim(),description:incidentDescription,test_mode:!production,contact_ids:ids,group_ids:groupIds});
 
 // Open each configured WhatsApp group with the generated emergency message.
 const dispatches=Array.isArray(r.whatsapp?.dispatches)?r.whatsapp.dispatches:[];
