@@ -728,12 +728,12 @@ Deno.serve(async (req) => {
       }
       let recips: any[] = [];
       if (recipientRows.length) {
-        const r = await db.from("emergency_incident_recipients").insert(recipientRows).select("id,contact_id,group_id,emergency_contacts(*)");
+        const r = await admin.from("emergency_incident_recipients").insert(recipientRows).select("id,contact_id,group_id,emergency_contacts(*)");
         if (r.error) throw r.error;
         recips = r.data || [];
       }
 
-      await db.from("emergency_incident_updates").insert({
+      await admin.from("emergency_incident_updates").insert({
         incident_id: incident.id,
         property_id: propertyId,
         status: "ACTIVE",
@@ -750,7 +750,7 @@ Deno.serve(async (req) => {
 
       if (uniqueEmails.length) {
         for (const r of recips.filter((r:any) => r.emergency_contacts?.email)) {
-          await db.from("emergency_notifications").insert({
+          await admin.from("emergency_notifications").insert({
             incident_id: incident.id,
             property_id: propertyId,
             recipient_id: r.id,
@@ -764,7 +764,7 @@ Deno.serve(async (req) => {
 
       for (const g of groups) {
         if (g.whatsapp_group_url) {
-          await db.from("emergency_notifications").insert({
+          await admin.from("emergency_notifications").insert({
             incident_id: incident.id,
             property_id: propertyId,
             group_id: g.id,
@@ -777,7 +777,7 @@ Deno.serve(async (req) => {
 
       const smsContacts = contacts.filter((c: any) => c.phone_number);
       for (const r of recips.filter((r: any) => r.emergency_contacts?.phone_number)) {
-        await db.from("emergency_notifications").insert({
+        await admin.from("emergency_notifications").insert({
           incident_id: incident.id,
           property_id: propertyId,
           recipient_id: r.id,
