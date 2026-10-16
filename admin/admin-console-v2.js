@@ -277,7 +277,7 @@ if(!document.getElementById('a-report-multiselect-style')){const st=document.cre
 $('rf').value=today();$('rto').value=today();const overall=$('rtOverall'),checks=[...document.querySelectorAll('input[name="reportType"]')];
 overall.onchange=()=>{if(overall.checked)checks.forEach(x=>x.checked=false)};checks.forEach(x=>x.onchange=()=>{if(x.checked)overall.checked=false;if(!checks.some(y=>y.checked))overall.checked=true});
 $('rSelectAll').onclick=()=>{overall.checked=false;checks.forEach(x=>x.checked=true)};$('rClearTypes').onclick=()=>{checks.forEach(x=>x.checked=false);overall.checked=true};
-const run=async()=>{if(!isCurrent(token))return;const selected=overall.checked?['overall']:checks.filter(x=>x.checked).map(x=>x.value);if(!selected.length){alert('Select at least one report type.');return}
+const run=async()=>{if(!isCurrent(token))return;const selected=overall.checked?['overall']:checks.filter(x=>x.checked).map(x=>x.value);if(!selected.length){window.SecureOpsUI?.error?.('Report Type Required','Select at least one report type.');return}
 const btn=$('rg');btn.disabled=true;
 try{const params={limit:5000,from:$('rf').value,to:$('rto').value+'T23:59:59',q:$('rq').value,status:$('rs').value};const results=await Promise.all(selected.map(type=>api('report',{...params,type})));if(!isCurrent(token))return;
 const merged=[],metrics={};results.forEach((r,i)=>{const type=selected[i];(r.data||[]).forEach(x=>merged.push({...x,_report_type:type}));for(const [k,v] of Object.entries(r.metrics||{})){if(type==='overall')metrics[k]=v;else if(k===type)metrics[k]=(metrics[k]||0)+Number(v||0)}});
