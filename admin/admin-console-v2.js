@@ -254,7 +254,7 @@ async function keys(token){
    modal.querySelector('#keyResolveSubmit').onclick=async()=>{
      const type=modal.querySelector('input[name="keyResolveType"]:checked')?.value;
      const note=modal.querySelector('#keyResolveNote').value.trim();
-     if(type==='BAST_PROCESSED'&&!note){alert('Please enter the BAST number or reference.');return}
+     if(type==='BAST_PROCESSED'&&!note){window.SecureOpsUI?.error?.('Reference Required','Please enter the BAST number or reference.');return}
      const btn=modal.querySelector('#keyResolveSubmit');btn.disabled=true;btn.textContent='Processing…';
      try{
        await api('resolve_key_discrepancy',{borrowing_id:borrowingId,resolution_type:type,note});
@@ -262,7 +262,7 @@ async function keys(token){
        await load();
      }catch(e){
        btn.disabled=false;btn.textContent='Resolve Discrepancy';
-       alert(e?.message||'Unable to resolve discrepancy.');
+       window.SecureOpsUI?.error?.('Unable to Resolve Discrepancy',e?.message||'Unable to resolve discrepancy.');
      }
    };
  };
