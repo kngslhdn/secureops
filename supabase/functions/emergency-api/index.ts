@@ -721,6 +721,18 @@ Deno.serve(async (req) => {
       }).select().single();
       if (error) throw error;
 
+      // Resolve template placeholders only after the database has generated the final incident number.
+      // Keep the stored incident, timeline, email and WhatsApp copy consistent.
+      const finalDescription = String(b.description).replace(/\[Generated on create\]/g, incident.incident_id);
+      if (finalDescription !== incident.description) {
+        const descriptionUpdate = await admin.from("emergency_incidents")
+          .update({ description: finalDescription, updated_at: new Date().toISOString() })
+          .eq("id", incident.id)
+          .eq("property_id", propertyId);
+        if (descriptionUpdate.error) throw descriptionUpdate.error;
+        incident.description = finalDescription;
+      }
+
       const recipientRows: any[] = [];
       for (const contact of contacts) {
         const matchingGroup = memberships.find((m:any) => m.contact_id === contact.id);
@@ -738,7 +750,7 @@ Deno.serve(async (req) => {
         property_id: propertyId,
         status: "ACTIVE",
         title: "Incident Created",
-        message: b.description,
+        message: incident.description,
         created_by: user.id,
       });
 
