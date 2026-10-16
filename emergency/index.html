@@ -544,8 +544,8 @@ function exportIncidentReportCsv(){
   const rows=filteredIncidentReport();
   const columns=[['Incident ID','incident_id'],['Title','title'],['Type','incident_type_name'],['Severity','severity'],['Status','status'],['Location','location'],['Occurred At','occurred_at'],['Reported At','created_at'],['Resolved At','resolved_at'],['Resolution Reason','resolution_reason'],['Resolution Notes','resolution_notes'],['Description','description']];
   const val=(x,k)=>k==='incident_type_name'?(x.incident_type_name||x.type_name||x.incident_type_code||''):(k.endsWith('_at')&&x[k]?new Date(x[k]).toLocaleString('en-GB'):x[k]??'');
-  const csv=[columns.map(x=>x[0]),...rows.map(x=>columns.map(([label,key])=>String(val(x,key)).replace(/"/g,'""')))].map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\\r\\n');
-  const blob=new Blob(['\\ufeff',csv],{type:'text/csv;charset=utf-8;'});
+  const csv=[columns.map(x=>x[0]),...rows.map(x=>columns.map(([label,key])=>String(val(x,key)).replace(/"/g,'""')))].map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  const blob=new Blob(['\ufeff',csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob), a=document.createElement('a');
   a.href=url;a.download='HIKJ_Incident_Report_'+new Date().toISOString().slice(0,10)+'.csv';
   document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
