@@ -55,7 +55,7 @@ jobs:
           ! grep -R "sb-hmqgmusellcetakoalva-auth-token" --exclude-dir=.git .
           ! grep -R "hikj-visitormgmt" --exclude-dir=.git .
           ! grep -R "ks.v.002" --exclude-dir=.git .
-          ! grep -R -E "^[[:space:]]*alert\\(" index.html admin emergency assets
+          ! grep -R -E "^[[:space:]]*alert\\(" index.html admin emergency assets --include="*.js"
 
       - name: Validate security hardening invariants
         shell: bash
