@@ -167,6 +167,7 @@ b,strong{font-weight:700}
 <a data-section="operations" class="active" href="./">Emergency Operations</a>
 <a data-section="active" href="#active">Active Incidents</a>
 <a data-section="history" href="#history">Incident History</a>
+<a data-section="reporting" href="#reporting">Reporting</a>
 </nav>
 <div class="side-title">EMERGENCY SETTINGS</div><nav class="side-nav">
 <a class="settings-link" href="/secureops/emergency/settings/">Emergency Settings</a>
@@ -202,6 +203,24 @@ b,strong{font-weight:700}
 <div class="head"><h2>Incident History</h2><button class="btn" id="refreshHistory">Refresh</button></div>
 <div class="body"><div class="table"><table><thead><tr><th>Incident</th><th>Severity</th><th>Status</th><th>Location</th><th>Time</th></tr></thead>
 <tbody id="historyRows"></tbody></table></div></div></section>
+<section class="card anchor-section" id="reporting" style="margin-top:14px">
+<div class="head"><h2>Incident Reporting</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="exportIncidentReport">Export CSV</button><button class="btn" id="printIncidentReport">Print / Save PDF</button><button class="btn" id="refreshIncidentReport">Refresh</button></div></div>
+<div class="body">
+<div class="fields" style="grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:14px">
+<div class="field"><label>From date</label><input type="date" id="reportFrom"></div>
+<div class="field"><label>To date</label><input type="date" id="reportTo"></div>
+<div class="field"><label>Status</label><select id="reportStatus"><option value="">All statuses</option><option>ACTIVE</option><option>MONITORING</option><option>RESOLVED</option><option>CANCELLED</option></select></div>
+<div class="field"><label>Severity</label><select id="reportSeverity"><option value="">All severities</option><option>URGENT</option><option>HIGH</option><option>NORMAL</option><option>INFORMATION</option></select></div>
+<div class="field full"><label>Search incident</label><input id="reportSearch" placeholder="Search incident ID, title, type or location"></div>
+</div>
+<div class="stats" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:14px">
+<div class="stat"><b id="reportTotal">0</b><span>INCIDENTS IN REPORT</span></div>
+<div class="stat"><b id="reportUrgent">0</b><span>URGENT INCIDENTS</span></div>
+<div class="stat"><b id="reportResolved">0</b><span>RESOLVED INCIDENTS</span></div>
+</div>
+<div class="table"><table id="incidentReportTable"><thead><tr><th>Incident ID</th><th>Title</th><th>Type</th><th>Severity</th><th>Status</th><th>Location</th><th>Occurred At</th><th>Reported At</th></tr></thead><tbody id="incidentReportRows"></tbody></table></div>
+<p style="color:var(--muted);font-size:11px;margin:10px 0 0">Report uses incident records available to the signed-in Emergency Response account. Use Export CSV for Excel or Print / Save PDF for a printable report.</p>
+</div></section>
 </main></div></section>
 <div class="modal" id="modal"><div class="modalbox"><div class="head" style="padding:0 0 12px;border:0"><h2 id="mTitle">Incident</h2><button class="btn" id="mClose">Close</button></div><div id="mBody"></div></div></div>
 <div class="modal" id="waModal"><div class="modalbox"><div class="head" style="padding:0 0 12px;border:0"><h2>WhatsApp Dispatch</h2><button class="btn" id="waClose">Close</button></div><p id="waStatus" style="margin:0 0 10px;color:#166534"></p><textarea id="waMessage" style="width:100%;min-height:230px;border:1px solid #d6dde5;border-radius:10px;padding:12px;font:12px Arial;box-sizing:border-box" readonly></textarea><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px"><button class="btn" id="waCopy">Copy Message</button><button class="btn" id="waOpen">Open WhatsApp Group</button></div></div></div>
@@ -209,7 +228,7 @@ b,strong{font-weight:700}
 const U=window.SECUREOPS_CONFIG.SUPABASE_URL,K=window.SECUREOPS_CONFIG.SUPABASE_PUBLISHABLE_KEY;
 const sb=window.supabase.createClient(U,K,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'secureops-auth-token'}}),API=U+'/functions/v1/emergency-api';
 const $=id=>document.getElementById(id), esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-let session=null, types=[], templates=[], contacts=[], groups=[], systemSettings={}, currentWaDispatches=[];
+let session=null, types=[], templates=[], contacts=[], groups=[], systemSettings={}, currentWaDispatches=[], reportIncidents=[];
 async function api(action,method='GET',body=null,query=null){const qs=new URLSearchParams({action,...(query||{})});const r=await fetch(API+'?'+qs.toString(),{method,headers:{apikey:K,Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'Request failed');return j}
 function authFailure(e){
   const msg=String(e?.message||e||'').toLowerCase();
@@ -455,6 +474,8 @@ let refreshTimer=null;
 async function refresh(){
   const r=await api('dashboard');
   const all=r.incidents||[];
+  reportIncidents=all;
+  renderIncidentReport();
   const active=all.filter(x=>['ACTIVE','MONITORING'].includes(x.status));
 
   $('sActive').textContent=r.stats.active;
@@ -479,9 +500,46 @@ async function refresh(){
 }
 function syncSidebar(){
   const hash=location.hash;
-  const section=hash==='#active'?'active':hash==='#history'?'history':'operations';
+  const section=['active','history','reporting'].includes(hash.slice(1))?hash.slice(1):'operations';
   document.querySelectorAll('.side-nav a[data-section]').forEach(a=>a.classList.toggle('active',a.dataset.section===section));
 }
+function filteredIncidentReport(){
+  const from=$('reportFrom')?.value||'', to=$('reportTo')?.value||'';
+  const status=$('reportStatus')?.value||'', severity=$('reportSeverity')?.value||'';
+  const q=($('reportSearch')?.value||'').trim().toLowerCase();
+  return reportIncidents.filter(x=>{
+    const date=String(x.created_at||'').slice(0,10);
+    if(from&&date<from)return false;
+    if(to&&date>to)return false;
+    if(status&&String(x.status||'').toUpperCase()!==status)return false;
+    if(severity&&String(x.severity||'').toUpperCase()!==severity)return false;
+    if(q&&!([x.incident_id,x.title,x.location,x.description,x.incident_type_name,x.type_name].some(v=>String(v||'').toLowerCase().includes(q))))return false;
+    return true;
+  }).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
+}
+function renderIncidentReport(){
+  if(!$('incidentReportRows'))return;
+  const rows=filteredIncidentReport();
+  $('reportTotal').textContent=rows.length;
+  $('reportUrgent').textContent=rows.filter(x=>String(x.severity||'').toUpperCase()==='URGENT').length;
+  $('reportResolved').textContent=rows.filter(x=>String(x.status||'').toUpperCase()==='RESOLVED').length;
+  $('incidentReportRows').innerHTML=rows.map(x=>'<tr data-id="'+esc(x.id)+'" style="cursor:pointer"><td><b>'+esc(x.incident_id||'-')+'</b></td><td>'+esc(x.title||'-')+'</td><td>'+esc(x.incident_type_name||x.type_name||x.incident_type_code||'-')+'</td><td>'+esc(x.severity||'-')+'</td><td>'+esc(x.status||'-')+'</td><td>'+esc(x.location||'-')+'</td><td>'+esc(x.occurred_at?new Date(x.occurred_at).toLocaleString('en-GB'):'-')+'</td><td>'+esc(x.created_at?new Date(x.created_at).toLocaleString('en-GB'):'-')+'</td></tr>').join('')||'<tr><td colspan="8">No incidents match these filters.</td></tr>';
+  document.querySelectorAll('#incidentReportRows tr[data-id]').forEach(row=>row.onclick=()=>openIncident(row.dataset.id));
+}
+function exportIncidentReportCsv(){
+  const rows=filteredIncidentReport();
+  const columns=[['Incident ID','incident_id'],['Title','title'],['Type','incident_type_name'],['Severity','severity'],['Status','status'],['Location','location'],['Occurred At','occurred_at'],['Reported At','created_at'],['Resolved At','resolved_at'],['Resolution Reason','resolution_reason'],['Resolution Notes','resolution_notes'],['Description','description']];
+  const val=(x,k)=>k==='incident_type_name'?(x.incident_type_name||x.type_name||x.incident_type_code||''):(k.endsWith('_at')&&x[k]?new Date(x[k]).toLocaleString('en-GB'):x[k]??'');
+  const csv=[columns.map(x=>x[0]),...rows.map(x=>columns.map(([label,key])=>String(val(x,key)).replace(/"/g,'""')))].map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\\r\\n');
+  const blob=new Blob(['\\ufeff',csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url;a.download='HIKJ_Incident_Report_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+}
+['reportFrom','reportTo','reportStatus','reportSeverity','reportSearch'].forEach(id=>$(id)?.addEventListener('input',renderIncidentReport));
+$('exportIncidentReport')?.addEventListener('click',exportIncidentReportCsv);
+$('printIncidentReport')?.addEventListener('click',()=>{location.hash='#reporting';syncSidebar();window.print()});
+$('refreshIncidentReport')?.addEventListener('click',()=>refresh().catch(e=>alert('Unable to refresh report: '+String(e.message||e))));
 function scrollToSection(id,behavior='smooth'){
   const main=document.querySelector('.shell > main');
   const el=$(id);
