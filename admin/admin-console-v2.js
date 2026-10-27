@@ -3,11 +3,12 @@ const U=window.SECUREOPS_CONFIG.SUPABASE_URL,K=window.SECUREOPS_CONFIG.SUPABASE_
 let pageSeq=0;const isCurrent=token=>token===pageSeq;const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])),fmt=v=>v?new Date(v).toLocaleString('en-GB',{dateStyle:'short',timeStyle:'short'}):'—',today=()=>new Date().toISOString().slice(0,10),overdueText=m=>{m=Number(m||0);if(m<60)return m+'m overdue';const d=Math.floor(m/1440),h=Math.floor((m%1440)/60),mm=m%60;return (d?d+'d ':'')+(h?h+'h ':'')+(mm?mm+'m ':'')+'overdue'};
 const css=` :root{--k-navy:#071a30;--k-navy-2:#102d4b;--k-gold:#c99a3d;--k-gold-soft:#f8f1e3;--k-bg:#f5f6f8;--k-card:#fff;--k-line:#e4e7eb;--k-line-soft:#edf0f2;--k-muted:#64748b;--k-text:#18212b;--k-success:#166534;--k-success-bg:#ecfdf5;--k-warn:#92400e;--k-warn-bg:#fff7df;--k-blue:#075985}
 .a-layout{display:grid;grid-template-columns:232px minmax(0,1fr);height:calc(100vh - 118px);background:var(--k-bg);overflow:hidden}
-.a-side{background:#fff;border-right:1px solid var(--k-line);padding:22px 12px;position:sticky;top:0;height:100%;min-height:0;overflow:auto}
+.a-side{background:#fff;border-right:1px solid var(--k-line);padding:22px 12px;position:sticky;top:0;height:100%;min-height:0;overflow:auto;display:flex;flex-direction:column}
 .a-label{font-size:9px;letter-spacing:1.6px;color:#94a3b8;font-weight:700;padding:0 14px 9px}
 .a-nav{display:flex;align-items:center;width:100%;border:1px solid transparent;background:transparent;text-align:left;color:#475569;padding:11px 13px;margin:2px 0;border-radius:8px;font-weight:600;font-size:11px;cursor:pointer;transition:background .16s ease,color .16s ease,border-color .16s ease}
 .a-nav:hover{background:#faf8f3;color:var(--k-navy);border-color:#f0e8d8}
 .a-nav.active{background:var(--k-gold-soft);color:var(--k-navy);border-color:#ead9b9;box-shadow:inset 3px 0 0 var(--k-gold);font-weight:700}
+.a-form-link{display:flex;align-items:center;gap:10px;margin-top:auto;padding:11px 13px;border:1px solid #ead9b9;border-radius:8px;background:#fffaf0;color:var(--k-navy);font-size:11px;font-weight:700;text-decoration:none;box-shadow:0 1px 3px rgba(7,26,48,.05)}.a-form-link span{font-size:17px;line-height:1}.a-form-link:hover{background:#f8f1e3;border-color:var(--k-gold)}.a-form-link:focus-visible{outline:2px solid var(--k-gold);outline-offset:2px}
 .a-main{padding:28px 30px 34px;min-width:0;max-width:1700px;width:100%;height:100%;overflow:auto}
 .a-head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:14px}
 .a-kicker{font-size:9px;letter-spacing:1.7px;color:#9a7a3b;font-weight:700}
@@ -147,7 +148,7 @@ const css=` :root{--k-navy:#071a30;--k-navy-2:#102d4b;--k-gold:#c99a3d;--k-gold-
   .a-layout{grid-template-columns:232px minmax(0,1fr)}
 }
 @media(max-width:760px){.a-kpis-six{grid-template-columns:1fr 1fr}.a-attention-row{grid-template-columns:28px 1fr auto}.a-attention-row .a-chevron{display:none}}@media(max-width:480px){.a-kpis-six{grid-template-columns:1fr}}`;
-function nav(){return `<aside class="a-side"><div class="a-label">OPERATIONS</div><button class="a-nav active" data-page="dashboard">Dashboard</button><button class="a-nav" data-page="visitors">Visitor</button><button class="a-nav" data-page="keys">Keys</button><button class="a-nav" data-page="packages">Package</button><button class="a-nav" data-page="reports">Reporting</button><div class="a-label" style="margin-top:18px">ADMINISTRATION</div><button class="a-nav" data-page="settings">Admin Settings</button></aside>`}
+function nav(){return `<aside class="a-side"><div class="a-label">OPERATIONS</div><button class="a-nav active" data-page="dashboard">Dashboard</button><button class="a-nav" data-page="visitors">Visitor</button><button class="a-nav" data-page="keys">Keys</button><button class="a-nav" data-page="packages">Package</button><button class="a-nav" data-page="reports">Reporting</button><div class="a-label" style="margin-top:18px">ADMINISTRATION</div><button class="a-nav" data-page="settings">Admin Settings</button><a class="a-form-link" href="../index.html" aria-label="Return to public registration form"><span aria-hidden="true">↩</span> Form</a></aside>`}
 async function api(action,params={},attempt=0){
  if(!s?.access_token)throw Error('Session expired. Please sign in again');
  const q=new URLSearchParams({action,...params});
