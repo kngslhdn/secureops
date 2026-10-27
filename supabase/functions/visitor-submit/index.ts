@@ -5,7 +5,8 @@ const APP_TITLE='SECUREOPS | Security Operations';
 const ALLOWED_ORIGINS=new Set(['https://kngslhdn.github.io','https://visitor.myhikj.com','http://visitor.myhikj.com','http://localhost:3000','http://127.0.0.1:5500']);
 function corsHeaders(req:Request){
  const origin=req.headers.get('origin')||'';
- return {'Access-Control-Allow-Origin':ALLOWED_ORIGINS.has(origin)?origin:'https://kngslhdn.github.io','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type, idempotency-key','Access-Control-Allow-Methods':'GET, POST, OPTIONS','Access-Control-Expose-Headers':'X-SECUREOPS-Version, X-SECUREOPS-Title','Access-Control-Max-Age':'86400','Vary':'Origin','X-SECUREOPS-Version':APP_VERSION,'X-SECUREOPS-Title':APP_TITLE};
+ const allowed=ALLOWED_ORIGINS.has(origin);
+ return {'Access-Control-Allow-Origin':allowed?origin:'null','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type, idempotency-key','Access-Control-Allow-Methods':'GET, POST, OPTIONS','Access-Control-Expose-Headers':'X-SECUREOPS-Version, X-SECUREOPS-Title','Access-Control-Max-Age':'86400','Vary':'Origin','X-SECUREOPS-Version':APP_VERSION,'X-SECUREOPS-Title':APP_TITLE};
 }
 const supabase=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 const HIKJ_PROPERTY_ID='9ca8c398-c376-4d7a-8b74-91a8ffb771e7';
@@ -100,7 +101,10 @@ Deno.serve(async req=>{
    if(error)return json({error:'Unable to load property branding'},500,req);
    return json({ok:true,branding:data||null},200,req);
  }
- if(req.method!=='POST')return json({error:'Method not allowed'},405,req);const limit=await rateLimit(req);if(!limit.allowed)return new Response(JSON.stringify({error:'Too many requests. Please wait and try again.'}),{status:429,headers:{...corsHeaders(req),'Content-Type':'application/json','Retry-After':String(limit.retryAfter)}});
+ if(req.method!=='POST')return json({error:'Method not allowed'},405,req);
+ let limit:{allowed:boolean;retryAfter:number};
+ try{limit=await rateLimit(req)}catch(error){console.error('visitor-submit rate-limit error',error);return json({ok:false,error:'Temporary service issue while checking request rate. Please retry shortly.',code:'RATE_LIMIT_UNAVAILABLE'},503,req)}
+ if(!limit.allowed)return new Response(JSON.stringify({ok:false,error:'Too many requests. Please wait and try again.',code:'RATE_LIMITED'}),{status:429,headers:{...corsHeaders(req),'Content-Type':'application/json','Retry-After':String(limit.retryAfter)}});
  try{
   const contentLength=Number(req.headers.get('content-length')||0);if(contentLength>8*1024*1024)return json({error:'Request payload is too large.'},413,req);
   const body=await req.json();const rawType=clean(body.type||body.form_type),type=types[rawType]||rawType;if(!['visitor_entry','visitor_exit','key_borrowing','key_return','package_registration','key_asset_lookup'].includes(type))return json({error:'Invalid submission type'},400,req);const settings=await publicSettings();const ops=settings.operations||{};const enabledByType:Record<string,string>={visitor_entry:'visitor_entry_enabled',visitor_exit:'visitor_exit_enabled',key_borrowing:'key_borrowing_enabled',key_return:'key_return_enabled',package_registration:'package_registration_enabled'};if(enabledByType[type]&&ops[enabledByType[type]]===false)return json({error:'This service is currently disabled by Security Administration.'},403,req);
@@ -116,14 +120,32 @@ Deno.serve(async req=>{
   const idem=clean(req.headers.get('idempotency-key')||body.idempotency_key);if(idem){const {data}=await propertySelect('submissions','submission_id').eq('idempotency_key',idem).maybeSingle();if(data)return json({ok:true,duplicate:true,submission_id:data.submission_id},200,req);}
   let visitorId:string|null=null;let matchedExitEntry:any=null;let createdSubmissionId:string|null=null;
   if(type==='visitor_entry'){
-   const visitorName=required(val(body,'name','visitor_name','nama'),'Name',120);
-   const visitorPhone=validPhone(val(body,'phone','mobile_phone','telepon'));
-   const visitorCompany=required(val(body,'company_name','company','perusahaan'),'Company / Vendor Name',160);
-   const category=enumValue(val(body,'category','kategori'),['Contractor','Supplier','Visitor','Part-time'],'Category');
-   const location=required(val(body,'work_location','lokasi'),'Work Location',160);
-   const purpose=required(val(body,'purpose','tujuan'),'Purpose',500);
-   const pass=required(val(body,'pass_vest_number','pass'),'Pass / Vest Number',80);
-   const officer=required(val(body,'security_officer_name','security'),'Security Officer Name',120);
+   // Validate every visitor-entry field before any visitor/submission records are created.
+   const visitorName=clean(val(body,'name','visitor_name','nama'));
+   const rawPhone=val(body,'phone','mobile_phone','telepon');
+   const visitorCompany=clean(val(body,'company_name','company','perusahaan'));
+   const rawCategory=clean(val(body,'category','kategori'));
+   const location=clean(val(body,'work_location','lokasi'));
+   const purpose=clean(val(body,'purpose','tujuan'));
+   const pass=clean(val(body,'pass_vest_number','pass'));
+   const officer=clean(val(body,'security_officer_name','security'));
+   const fieldErrors:Array<{field:string;message:string}>=[];
+   const requiredField=(value:string,field:string,label:string,max:number)=>{
+    if(!value)fieldErrors.push({field,message:`${label} is required.`});
+    else if(value.length>max)fieldErrors.push({field,message:`${label} must be ${max} characters or fewer.`});
+   };
+   requiredField(visitorName,'nama','Name',120);
+   let visitorPhone='';
+   try{visitorPhone=validPhone(rawPhone)}catch{fieldErrors.push({field:'phone',message:'Enter a valid phone number containing 8–15 digits.'})}
+   requiredField(visitorCompany,'perusahaan','Company / Vendor Name',160);
+   const categoryMatch=['Contractor','Supplier','Visitor','Part-time'].find(x=>x.toLowerCase()===rawCategory.toLowerCase());
+   if(!categoryMatch)fieldErrors.push({field:'kategori',message:'Select a valid Category.'});
+   requiredField(location,'lokasi','Work Location',160);
+   requiredField(purpose,'tujuan','Purpose',500);
+   requiredField(pass,'pass','Pass / Vest Number',80);
+   requiredField(officer,'security','Security Officer Name',120);
+   if(fieldErrors.length)return json({ok:false,error:'Please correct the highlighted fields.',field_errors:fieldErrors},422,req);
+   const category=categoryMatch!;
    visitorId=await visitorIdentity(visitorName,visitorPhone,visitorCompany,category);
    body.__validated={visitorName,visitorPhone,visitorCompany,category,location,purpose,pass,officer};
   }else if(type==='visitor_exit'){
@@ -218,13 +240,13 @@ Deno.serve(async req=>{
   const raw=String(e?.message||'');
   let message='Submission failed. Please try again.';
   if(/valid phone number|phone number is required/i.test(raw)) message='A valid phone number is required (8–15 digits).';
-  if(/Bucket not found|NoSuchBucket/i.test(raw)) message='Package photo storage is unavailable. Please try again later.';
+  else if(/Bucket not found|NoSuchBucket/i.test(raw)) message='Package photo storage is unavailable. Please try again later.';
   else if(/EntityTooLarge|too large|max.*size|exceed.*5 MB/i.test(raw)) message='Package photo is too large. Please use a smaller photo.';
   else if(/InvalidMimeType/i.test(raw)) message='Package photo format is not supported. Please use JPEG, PNG, or WebP.';
   else if(/duplicate|23505|already exists|unique constraint/i.test(raw)) message='This submission already exists or was already processed. Please wait and try again.';
   else if(/foreign key|23503/i.test(raw)) message='A related record could not be found. Please refresh and try again.';
   else if(/payload/i.test(raw)) message='The submitted file or request is too large.';
   if(createdSubmissionId)await supabase.from('submissions').update({status:'cancelled'}).eq('id',createdSubmissionId);
-  return json({error:message},400,req);
+  return json({ok:false,error:message,code:'SUBMISSION_FAILED'},400,req);
  }
 });
