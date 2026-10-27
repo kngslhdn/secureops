@@ -160,6 +160,35 @@ b,strong{font-weight:700}
 <script>document.addEventListener('DOMContentLoaded',function(){document.querySelectorAll('[data-app-version]').forEach(function(el){el.textContent=window.SECUREOPS_APP_VERSION||'';});});</script>
 <script>if(window.SECUREOPS_APP_VERSION)document.title=window.SECUREOPS_APP_TITLE+' | SECUREOPS | '+window.SECUREOPS_APP_VERSION;</script>
 <link rel="stylesheet" href="../assets/secureops-theme.css?v=4">
+<style id="secureops-mobile-layout-fix">
+@media(max-width:900px){
+.top{height:70px;min-height:70px;padding:0 12px;gap:10px;display:flex;align-items:center;justify-content:space-between;overflow:hidden}
+.top>div:first-child{flex:1 1 auto;min-width:0;max-width:calc(100% - 105px);gap:9px!important}
+.mobileMenu{display:flex!important;align-items:center;justify-content:center;flex:0 0 40px;width:40px;height:40px;padding:0;font-size:20px;line-height:1;border-radius:10px}
+.brand{flex:1 1 auto;width:auto;min-width:0;max-width:100%;font-size:11px;line-height:1.2;overflow:hidden;text-overflow:ellipsis}
+.brand small{font-size:7px;letter-spacing:.45px;line-height:1.3;white-space:normal;max-width:100%;overflow:hidden}
+.property-brand,.top-logo,.top-logo-text{display:none!important}
+.top-user,.user{flex:0 0 96px;width:96px;min-width:0;max-width:96px;margin-left:auto;text-align:right;overflow:hidden}
+.top-user b,.user-info b{display:block;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-user span,.user-info span{display:block;font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.actionbar{height:48px;min-height:48px;top:70px;padding:0 12px;box-sizing:border-box}
+.actionbar-inner{height:100%;padding:6px 0;gap:7px;justify-content:flex-end;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+.actionbar-inner::-webkit-scrollbar{display:none}
+.actionbar a,.actionbar button{flex:0 0 auto;min-height:36px;padding:7px 10px;font-size:10px}
+.shell,.layout{display:block!important;grid-template-columns:minmax(0,1fr)!important;width:100%;max-width:100%;height:auto!important;min-height:0;overflow:visible!important}
+.shell>main,.layout>main{width:100%;min-width:0;max-width:100%;height:auto!important;min-height:0;overflow:visible!important;padding:18px 14px 28px!important}
+.shell .side,.layout>aside{display:flex!important;flex-direction:column;position:fixed!important;top:118px!important;bottom:0!important;left:0!important;right:auto!important;width:min(86vw,340px)!important;max-width:340px;height:auto!important;min-height:0!important;max-height:none!important;padding:18px 12px calc(20px + env(safe-area-inset-bottom))!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain;background:#fff;z-index:1002!important;border-right:1px solid var(--line,#e4e7eb);box-shadow:12px 0 32px rgba(7,26,48,.18);transform:translateX(-105%);transition:transform .22s ease}
+.shell.open .side,.layout.open>aside{left:0!important;transform:translateX(0)}
+.shell .side-title,.layout>aside .navtitle{display:block!important;flex:0 0 auto;margin:10px 12px 8px}
+.shell .side-nav,.layout>aside .nav{display:flex;flex-direction:column;gap:4px;white-space:normal;width:100%;flex:0 0 auto}
+.shell .side-nav a,.layout>aside .nav a{display:flex;align-items:center;width:100%;min-height:44px;box-sizing:border-box;padding:11px 13px;white-space:normal;line-height:1.35;border-radius:9px}
+.shell .side .settings-link{margin-top:4px}
+.mobileNavBackdrop{display:block;position:fixed;inset:118px 0 0;border:0;padding:0;margin:0;width:100%;height:calc(100dvh - 118px);background:rgba(7,26,48,.46);z-index:1001;touch-action:manipulation}
+.mobileNavBackdrop[hidden]{display:none!important}
+}
+@media(max-width:420px){.top{padding:0 9px;gap:7px}.top>div:first-child{max-width:calc(100% - 90px);gap:7px!important}.mobileMenu{flex-basis:36px;width:36px;height:38px}.brand{font-size:10px}.brand small{font-size:6.5px;letter-spacing:.25px}.top-user,.user{flex-basis:82px;width:82px;max-width:82px}.actionbar{padding:0 9px}.shell>main,.layout>main{padding:15px 11px 24px!important}}
+@media(prefers-reduced-motion:reduce){.shell .side,.layout>aside{transition:none!important}}
+</style>
 </head>
 <body>
 <section id="sessionGate" class="login" aria-hidden="true"><div class="login-card">
@@ -170,7 +199,7 @@ b,strong{font-weight:700}
 <section id="app">
 <header class="top"><div style="display:flex;gap:10px;align-items:center"><button class="mobileMenu" id="mobileMenu" type="button">☰</button><div class="brand">EMERGENCY RESPONSE<small>EMERGENCY NOTIFICATION SYSTEM<br><span class="app-version" data-app-version>ks.v.001</span></small></div></div><div id="propertyBrandLogo" class="property-brand" aria-label="Hotel Indonesia Kempinski Jakarta"><img class="top-logo" src="https://bosfcjwacdrwtwgpmaex.supabase.co/storage/v1/object/public/property-assets/HIKJ/32d10d47-b483-494f-bb39-e477858addf2.png" alt="Hotel Indonesia Kempinski Jakarta"></div><div class="user"><div id="userBox" class="user-info"></div></div></header>
 <div class="actionbar"><div class="actionbar-inner"><a href="../admin/">Secureops Admin</a><button id="logout">Sign Out</button></div></div>
-<div class="shell"><aside class="side">
+<div class="shell"><button type="button" class="mobileNavBackdrop" id="mobileNavBackdrop" aria-label="Close navigation" hidden></button><aside class="side">
 <div class="side-title">MAIN</div><nav class="side-nav">
 <a data-section="operations" class="active" href="./">Emergency Operations</a>
 <a data-section="active" href="#active">Active Incidents</a>
@@ -272,7 +301,10 @@ $('logout').onclick=async()=>{
     alert('Sign out failed. Please retry. '+String(error?.message||''));
   }
 };
-$('mobileMenu')?.addEventListener('click',()=>document.querySelector('.side')?.classList.toggle('open'));
+const mobileShell=document.querySelector('.shell'),mobileSide=document.querySelector('.shell .side'),mobileBackdrop=$('mobileNavBackdrop'),mobileButton=$('mobileMenu');
+const closeMobileNav=()=>{mobileShell?.classList.remove('open');if(mobileBackdrop)mobileBackdrop.hidden=true;mobileButton?.setAttribute('aria-expanded','false');document.body.style.overflow=''};
+const toggleMobileNav=()=>{if(!mobileShell||!mobileBackdrop)return;const open=!mobileShell.classList.contains('open');mobileShell.classList.toggle('open',open);mobileBackdrop.hidden=!open;mobileButton?.setAttribute('aria-expanded',String(open));document.body.style.overflow=open?'hidden':''};
+mobileButton?.setAttribute('aria-controls','mobileNavBackdrop');mobileButton?.setAttribute('aria-expanded','false');mobileButton?.addEventListener('click',toggleMobileNav);mobileBackdrop?.addEventListener('click',closeMobileNav);mobileSide?.querySelectorAll('a').forEach(a=>a.addEventListener('click',closeMobileNav));document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMobileNav()});window.addEventListener('resize',()=>{if(window.innerWidth>900)closeMobileNav()});
 sb.auth.onAuthStateChange((event,s)=>{
   if(event==='SIGNED_OUT'){location.href='../admin/'}
   else if(s&&event!=='INITIAL_SESSION'){setTimeout(()=>enter(s),0)}
