@@ -6,7 +6,9 @@ const ALLOWED_ORIGINS=new Set(['https://kngslhdn.github.io','https://visitor.myh
 function corsHeaders(req:Request){
  const origin=req.headers.get('origin')||'';
  const allowed=ALLOWED_ORIGINS.has(origin);
- return {'Access-Control-Allow-Origin':allowed?origin:'null','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type, idempotency-key','Access-Control-Allow-Methods':'GET, POST, OPTIONS','Access-Control-Expose-Headers':'X-SECUREOPS-Version, X-SECUREOPS-Title','Access-Control-Max-Age':'86400','Vary':'Origin','X-SECUREOPS-Version':APP_VERSION,'X-SECUREOPS-Title':APP_TITLE};
+ const headers:Record<string,string>={'Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type, idempotency-key','Access-Control-Allow-Methods':'GET, POST, OPTIONS','Access-Control-Expose-Headers':'X-SECUREOPS-Version, X-SECUREOPS-Title','Access-Control-Max-Age':'86400','Vary':'Origin','X-SECUREOPS-Version':APP_VERSION,'X-SECUREOPS-Title':APP_TITLE};
+ if(allowed)headers['Access-Control-Allow-Origin']=origin;
+ return headers;
 }
 const supabase=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 const HIKJ_PROPERTY_ID='9ca8c398-c376-4d7a-8b74-91a8ffb771e7';
