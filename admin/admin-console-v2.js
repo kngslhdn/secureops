@@ -414,7 +414,7 @@ function build(){
  const app=$('app');if(!app)return;if(app.querySelector('.a-layout'))return;
  if(!$('a-style')){const st=document.createElement('style');st.id='a-style';st.textContent=css;document.head.appendChild(st)}
  app.classList.remove('hidden');
- app.insertAdjacentHTML('beforeend',`<div class="a-layout"><button type="button" class="a-mobile-overlay" id="aMobileOverlay" aria-label="Close navigation menu" hidden></button>${nav()}<main class="a-main"><button type="button" class="a-mobile-menu" id="aMobileMenu" aria-controls="aSideNav" aria-expanded="false"><span class="a-menu-icon" aria-hidden="true">☰</span><span>Menu</span></button><div id="aPage"></div></main></div>`);
+ app.insertAdjacentHTML('beforeend',`<div class="a-layout"><button type="button" class="a-mobile-overlay" id="aMobileOverlay" aria-label="Close navigation menu" hidden></button>${nav()}<main class="a-main"><div id="aPage"></div></main></div>`);
  const side=document.querySelector('.a-side');if(side)side.id='aSideNav';
  const mobileMenu=$('aMobileMenu'),mobileOverlay=$('aMobileOverlay');
  const closeMobileMenu=()=>{side?.classList.remove('mobile-open');if(mobileOverlay)mobileOverlay.hidden=true;if(mobileMenu)mobileMenu.setAttribute('aria-expanded','false');document.body.style.overflow=''};
