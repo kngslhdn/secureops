@@ -161,7 +161,7 @@ const css=` :root{--k-navy:#071a30;--k-navy-2:#102d4b;--k-gold:#c99a3d;--k-gold-
  .a-mobile-overlay{display:block;position:fixed;inset:118px 0 0;width:100%;height:calc(100dvh - 118px);box-sizing:border-box;padding:0;margin:0;border:0;background:rgba(7,26,48,.46);z-index:1001;touch-action:manipulation}
  .a-mobile-overlay[hidden]{display:none!important}
 }
-@media(max-width:420px){@media(max-width:760px){.a-side{width:min(86vw,340px)!important}.a-side .a-nav{font-size:12px;min-height:44px}.a-mobile-overlay{inset:118px 0 0;height:calc(100dvh - 118px)}}}
+@media(max-width:420px){.a-side{width:min(86vw,340px)!important}.a-side .a-nav{font-size:12px;min-height:44px}.a-mobile-overlay{inset:118px 0 0;height:calc(100dvh - 118px)}}
 @media(prefers-reduced-motion:reduce){.a-side{transition:none!important}}
 
 .a-mobile-menu{display:none;align-items:center;gap:9px;margin:0 0 12px;padding:10px 13px;min-height:44px;border:1px solid var(--k-line);border-radius:10px;background:#fff;color:var(--k-navy);font-size:13px;font-weight:700;box-shadow:0 1px 3px rgba(7,26,48,.05);cursor:pointer}
