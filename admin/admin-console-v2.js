@@ -147,7 +147,24 @@ const css=` :root{--k-navy:#071a30;--k-navy-2:#102d4b;--k-gold:#c99a3d;--k-gold-
   .a-kpis-six{grid-template-columns:repeat(4,minmax(0,1fr))!important}
   .a-layout{grid-template-columns:232px minmax(0,1fr)}
 }
-@media(max-width:760px){.a-kpis-six{grid-template-columns:1fr 1fr}.a-attention-row{grid-template-columns:28px 1fr auto}.a-attention-row .a-chevron{display:none}}@media(max-width:480px){.a-kpis-six{grid-template-columns:1fr}}`;
+@media(max-width:760px){.a-kpis-six{grid-template-columns:1fr 1fr}.a-attention-row{grid-template-columns:28px 1fr auto}.a-attention-row .a-chevron{display:none}}@media(max-width:480px){.a-kpis-six{grid-template-columns:1fr}}
+.a-mobile-menu{display:none;align-items:center;gap:9px;margin:0 0 12px;padding:10px 13px;min-height:44px;border:1px solid var(--k-line);border-radius:10px;background:#fff;color:var(--k-navy);font-size:13px;font-weight:700;box-shadow:0 1px 3px rgba(7,26,48,.05);cursor:pointer}
+.a-mobile-menu .a-menu-icon{font-size:19px;line-height:1}
+.a-mobile-overlay{display:none}
+@media(max-width:760px){
+ .a-layout{display:block;grid-template-columns:1fr;height:auto;min-height:calc(100dvh - 118px);overflow:visible}
+ .a-mobile-menu{display:flex}
+ .a-side{display:none;position:fixed;inset:0 auto 0 0;width:min(82vw,290px);height:100dvh;max-height:100dvh;box-sizing:border-box;padding:22px 12px;overflow-y:auto;overscroll-behavior:contain;border-right:1px solid var(--k-line);border-bottom:0;z-index:1002;background:#fff;box-shadow:12px 0 34px rgba(7,26,48,.18)}
+ .a-side.mobile-open{display:flex}
+ .a-side .a-label{display:block}
+ .a-side .a-nav{width:100%;flex:0 0 auto;white-space:normal;min-height:44px;padding:11px 13px}
+ .a-side .a-nav.active{box-shadow:inset 3px 0 0 var(--k-gold)}
+ .a-side .a-form-link{margin-top:auto;min-height:44px;box-sizing:border-box}
+ .a-mobile-overlay{display:block;position:fixed;inset:0;z-index:1001;background:rgba(7,26,48,.48);border:0;padding:0;width:100%;height:100%;touch-action:manipulation}
+ .a-mobile-overlay[hidden]{display:none}
+ .a-main{height:auto;min-height:0;overflow:visible;padding:14px 12px 24px}
+}
+`;
 function nav(){return `<aside class="a-side"><div class="a-label">OPERATIONS</div><button class="a-nav active" data-page="dashboard">Dashboard</button><button class="a-nav" data-page="visitors">Visitor</button><button class="a-nav" data-page="keys">Keys</button><button class="a-nav" data-page="packages">Package</button><button class="a-nav" data-page="reports">Reporting</button><div class="a-label" style="margin-top:18px">ADMINISTRATION</div><button class="a-nav" data-page="settings">Admin Settings</button><a class="a-form-link" href="../index.html" aria-label="Return to public registration form"><span aria-hidden="true">↩</span> Form</a></aside>`}
 async function api(action,params={},attempt=0){
  if(!s?.access_token)throw Error('Session expired. Please sign in again');
@@ -381,8 +398,16 @@ function build(){
  const app=$('app');if(!app)return;if(app.querySelector('.a-layout'))return;
  if(!$('a-style')){const st=document.createElement('style');st.id='a-style';st.textContent=css;document.head.appendChild(st)}
  app.classList.remove('hidden');
- app.insertAdjacentHTML('beforeend',`<div class="a-layout">${nav()}<main class="a-main"><div id="aPage"></div></main></div>`);
- document.querySelectorAll('.a-nav').forEach(b=>b.onclick=()=>page(b.dataset.page));
+ app.insertAdjacentHTML('beforeend',`<div class="a-layout"><button type="button" class="a-mobile-overlay" id="aMobileOverlay" aria-label="Close navigation menu" hidden></button>${nav()}<main class="a-main"><button type="button" class="a-mobile-menu" id="aMobileMenu" aria-controls="aSideNav" aria-expanded="false"><span class="a-menu-icon" aria-hidden="true">☰</span><span>Menu</span></button><div id="aPage"></div></main></div>`);
+ const side=document.querySelector('.a-side');if(side)side.id='aSideNav';
+ const mobileMenu=$('aMobileMenu'),mobileOverlay=$('aMobileOverlay');
+ const closeMobileMenu=()=>{side?.classList.remove('mobile-open');if(mobileOverlay)mobileOverlay.hidden=true;if(mobileMenu)mobileMenu.setAttribute('aria-expanded','false');document.body.style.overflow=''};
+ const openMobileMenu=()=>{if(!side||!mobileOverlay||!mobileMenu)return;side.classList.add('mobile-open');mobileOverlay.hidden=false;mobileMenu.setAttribute('aria-expanded','true');document.body.style.overflow='hidden'};
+ mobileMenu?.addEventListener('click',()=>side?.classList.contains('mobile-open')?closeMobileMenu():openMobileMenu());
+ mobileOverlay?.addEventListener('click',closeMobileMenu);
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMobileMenu()});
+ document.querySelectorAll('.a-nav').forEach(b=>b.onclick=()=>{page(b.dataset.page);closeMobileMenu()});
+ window.addEventListener('resize',()=>{if(window.innerWidth>760)closeMobileMenu()});
  // Allow the Supabase session/auth state and admin API authorization to settle
  // before the first dashboard fan-out. Subsequent navigation remains immediate.
  setTimeout(()=>{if(s&&isCurrentSession())page('dashboard')},250);
