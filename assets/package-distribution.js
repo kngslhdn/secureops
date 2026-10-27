@@ -90,7 +90,7 @@
     await loadSupabase();
     const key = getPublishableKey();
     if (!key) throw new Error(PDT('Supabase publishable key is not available','Supabase publishable key tidak tersedia'));
-    client = window.supabase.createClient(SUPABASE_URL, key);
+    client = window.supabase.createClient(SUPABASE_URL, key, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'secureops-auth-token' } });
     const { data } = await client.auth.getSession();
     authSession = data?.session || null;
     client.auth.onAuthStateChange((_event, session) => { authSession = session; });
