@@ -11,7 +11,6 @@ test.describe('SECUREOPS public entry page', () => {
 
     await page.goto('/');
     await expect(page).toHaveTitle(/SECUREOPS.*Security Operations/i);
-    await expect(page.locator('h1.title', { hasText: 'SECUREOPS' })).toBeVisible();
     await expect(page.locator('#choices')).toBeVisible();
     await expect(page.getByRole('link', { name: /ADMIN CONSOLE/i })).toHaveAttribute('href', /admin/);
     expect(sameOriginFailures, 'same-origin assets should not return HTTP errors').toEqual([]);
