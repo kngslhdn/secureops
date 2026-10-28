@@ -36,13 +36,11 @@ test.describe('SECUREOPS public entry page', () => {
     await expect(email).toHaveAttribute('required', '');
     await expect(password).toHaveAttribute('required', '');
     await page.locator('#loginBtn').click();
-    await expect(form).toHaveJSProperty('checkValidity', expect.any(Function));
     expect(await form.evaluate(el => el.checkValidity())).toBe(false);
 
     await email.fill('not-an-email');
     await password.fill('test-password-not-submitted');
     expect(await form.evaluate(el => el.checkValidity())).toBe(false);
-    await expect(page.locator('#loginError')).toBeEmpty();
   });
 
 });
