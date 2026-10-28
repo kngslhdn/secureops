@@ -1,0 +1,14 @@
+{
+  "name": "secureops-qa",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Isolated browser smoke tests for SECUREOPS",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1"
+  }
+}
