@@ -212,7 +212,7 @@
       <label>${PDT('Note','Catatan')}</label><textarea id="pdNote" placeholder="${PDT('Department, pigeon hole, or other note','Departemen, pigeon hole, atau catatan lainnya')}" rows="2"></textarea>
       <small class="pd-hint">${PDT('Add the department, pigeon hole location, or other information to help identify the recipient','Tambahkan departemen, lokasi pigeon hole, atau informasi lain untuk membantu mengidentifikasi penerima')}</small>
       <label>${PDT('Security Hand Over','Serah Terima Security')}</label><input id="pdSecurity" value="${esc(securityOfficerName)}" readonly aria-readonly="true" autocomplete="off">
-      <small class="pd-hint">${PDT('Automatically filled from the signed-in Security account','Otomatis diisi dari akun Security yang sedang login')}</small>
+      <small class="pd-hint">${PDT('Automatically filled from the signed-in account','Otomatis diisi dari akun yang sedang login')}</small>
       <label>${PDT('Distribution Date &amp; Time','Tanggal &amp; Waktu Distribusi')}</label><input value="${fmt(new Date())}" readonly>
       <button class="submit" id="pdSubmit">${PDT('SUBMIT DISTRIBUTION','KIRIM DISTRIBUSI')}</button></div>`;
     target.querySelector('#pdSubmit').onclick = submitDistribution;
