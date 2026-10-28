@@ -6,6 +6,7 @@
   let client = null;
   let selected = null;
   let authSession = null;
+  let securityOfficerName = '';
   let searchTimer = null;
   const PD_LANG=/^id(?:-|$)/i.test(navigator.languages?.[0]||navigator.language||'en')?'id':'en';
   const PDT=(en,id)=>PD_LANG==='id'?id:en;
@@ -142,6 +143,10 @@
     auth.innerHTML = '';
     if (notice) notice.textContent = '';
     main.classList.remove('hidden');
+    const user = authSession.user || {};
+    const metadata = user.user_metadata || {};
+    const candidateNames = [metadata.full_name, metadata.name, metadata.display_name, metadata.employee_name, metadata.username, user.email ? user.email.split('@')[0] : ''];
+    securityOfficerName = String(candidateNames.find(v => typeof v === 'string' && v.trim()) || '').trim();
     main.innerHTML = `<div class="pd-user">${PDT('Authorized:','Terotorisasi:')} <b>${esc(authSession.user?.email)}</b><button id="pdSignOut" class="pd-link">${PDT('Sign Out','Keluar')}</button></div>
       <div class="pd-search"><input id="pdSearch" placeholder="${PDT('Search package ID, recipient, courier, company','Cari ID paket, penerima, kurir, perusahaan')}" autocomplete="off"><button class="submit" id="pdSearchBtn">${PDT('SEARCH','CARI')}</button></div>
       <div id="pdResults" class="pd-results"><div class="pd-empty">${PDT(PDT('Enter a keyword or press SEARCH to find registered packages','Masukkan kata kunci atau tekan CARI untuk mencari paket terdaftar'),'Masukkan kata kunci atau tekan CARI untuk mencari paket terdaftar')}</div></div><div id="pdSelected"></div>`;
@@ -206,7 +211,8 @@
       <small class="pd-hint">${PDT('Defaulted to the registered recipient. Edit if the package is received by a representative or delegate','Secara default menggunakan penerima terdaftar. Ubah jika paket diterima oleh perwakilan atau delegasi')}</small>
       <label>${PDT('Note','Catatan')}</label><textarea id="pdNote" placeholder="${PDT('Department, pigeon hole, or other note','Departemen, pigeon hole, atau catatan lainnya')}" rows="2"></textarea>
       <small class="pd-hint">${PDT('Add the department, pigeon hole location, or other information to help identify the recipient','Tambahkan departemen, lokasi pigeon hole, atau informasi lain untuk membantu mengidentifikasi penerima')}</small>
-      <label>${PDT('Security Hand Over *','Serah Terima Security *')}</label><input id="pdSecurity" placeholder="${PDT('Enter Security Hand Over','Masukkan Nama Petugas Security')}" required>
+      <label>${PDT('Security Hand Over','Serah Terima Security')}</label><input id="pdSecurity" value="${esc(securityOfficerName)}" readonly aria-readonly="true" autocomplete="off">
+      <small class="pd-hint">${PDT('Automatically filled from the signed-in Security account','Otomatis diisi dari akun Security yang sedang login')}</small>
       <label>${PDT('Distribution Date &amp; Time','Tanggal &amp; Waktu Distribusi')}</label><input value="${fmt(new Date())}" readonly>
       <button class="submit" id="pdSubmit">${PDT('SUBMIT DISTRIBUTION','KIRIM DISTRIBUSI')}</button></div>`;
     target.querySelector('#pdSubmit').onclick = submitDistribution;
@@ -217,12 +223,14 @@
   }
 
   async function submitDistribution() {
-    const security = document.querySelector('#pdSecurity')?.value.trim();
+    // Always derive the hand-over identity from the current authenticated session,
+    // never from a user-editable form value.
+    const security = securityOfficerName.trim();
     const recipient = document.querySelector('#pdRecipient')?.value.trim();
     const note = document.querySelector('#pdNote')?.value.trim() || '';
     const notice = document.querySelector('#pdNotice');
     if (!recipient) { notice.textContent = PDT('Please enter Recipient / Representative Name','Silakan masukkan Nama Penerima / Perwakilan'); return; }
-    if (!security) { notice.textContent = PDT('Please enter Security Hand Over','Silakan masukkan Nama Petugas Security'); return; }
+    if (!security) { notice.textContent = PDT('Your signed-in account has no Security Officer name. Please contact the SecureOps administrator to configure your profile.','Nama petugas belum tersedia pada akun login Anda. Hubungi administrator SecureOps untuk melengkapi profil.'); return; }
     const btn = document.querySelector('#pdSubmit');
     btn.disabled = true; notice.textContent = PDT('Processing distribution…','Memproses distribusi…');
     try {
