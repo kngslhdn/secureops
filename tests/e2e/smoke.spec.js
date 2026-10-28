@@ -27,6 +27,24 @@ test.describe('SECUREOPS public entry page', () => {
     expect(dimensions.document, 'page should fit the mobile viewport without horizontal scrolling')
       .toBeLessThanOrEqual(dimensions.viewport + 1);
   });
+  test('blocks empty and malformed credentials with native form validation', async ({ page }) => {
+    await page.goto('/admin/');
+    const email = page.locator('#email');
+    const password = page.locator('#password');
+    const form = page.locator('#loginForm');
+
+    await expect(email).toHaveAttribute('required', '');
+    await expect(password).toHaveAttribute('required', '');
+    await page.locator('#loginBtn').click();
+    await expect(form).toHaveJSProperty('checkValidity', expect.any(Function));
+    expect(await form.evaluate(el => el.checkValidity())).toBe(false);
+
+    await email.fill('not-an-email');
+    await password.fill('test-password-not-submitted');
+    expect(await form.evaluate(el => el.checkValidity())).toBe(false);
+    await expect(page.locator('#loginError')).toBeEmpty();
+  });
+
 });
 
 test.describe('SECUREOPS admin entry', () => {
