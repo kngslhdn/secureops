@@ -231,3 +231,9 @@ button:disabled,.btn:disabled,.a-btn:disabled{cursor:not-allowed;opacity:.55}
  .stats,.a-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+
+/* Admin dashboard: compensate for the desktop body zoom so the workspace reaches the viewport bottom. */
+@media screen and (min-width:768px){
+  .a-layout{height:calc(111.111vh - 118px)!important;min-height:0!important}
+}
