@@ -108,6 +108,20 @@ Deno.serve(async req=>{
         row.package_number,row.recipient_name,row.registered_recipient_name,
         row.company_name,row.courier_name,row.security_hand_over
       ].some(value=>String(value??'').toLowerCase().includes(term)));
+      const distributionIds=rows.map((row:any)=>row.id).filter(Boolean);
+      if(distributionIds.length){
+        const {data:evidenceRows,error:evidenceError}=await sb.from('package_distributions')
+          .select('id,evidence_photo_storage_path').in('id',distributionIds);
+        if(evidenceError)throw evidenceError;
+        const evidenceMap=new Map((evidenceRows||[]).map((item:any)=>[item.id,item.evidence_photo_storage_path]));
+        for(const row of rows as any[]){
+          const storagePath=evidenceMap.get(row.id);
+          if(storagePath){
+            const signed=await sb.storage.from('package-photos').createSignedUrl(storagePath,600);
+            if(!signed.error)row.evidence_photo_url=signed.data.signedUrl;
+          }
+        }
+      }
       return json(req,{data:rows.slice(0,n)});
     }
     if(action==='visitors'){
