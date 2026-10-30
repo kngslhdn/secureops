@@ -120,84 +120,27 @@ Deno.serve(async (req) => {
 
       if (body.action === "upload_evidence") {
         const packageRegistrationId = String(body.package_registration_id || "").trim();
-        const photoDataUrl = String(body.photo_data_url || "");
-        if (!isUuid(packageRegistrationId)) return json(req, { error: "Package not found." }, 404);
-        const { data: pkg, error: pkgError } = await db.from("package_registrations")
-          .select("id,property_id").eq("id", packageRegistrationId).maybeSingle();
-        if (pkgError || !pkg) return json(req, { error: "Package not found." }, 404);
-        if (String(profile?.role || "").toUpperCase() !== "SUPERADMIN" && pkg.property_id !== profile.property_id) {
-          return json(req, { error: "Forbidden" }, 403);
-        }
-        const match = photoDataUrl.match(/^data:(image[/](?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
-        if (!match) return json(req, { error: "Evidence photo must be JPEG, PNG, or WebP." }, 400);
-        const bytes = Uint8Array.from(atob(match[2]), ch => ch.charCodeAt(0));
-        if (!bytes.length || bytes.length > 5 * 1024 * 1024) {
-          return json(req, { error: "Evidence photo must not exceed 5 MB." }, 413);
-        }
-        const mimeType = match[1];
-        const extension = mimeType === "image/jpeg" ? "jpg" : mimeType.split("/")[1];
-        const storagePath = `HIKJ/distribution/${new Date().toISOString().slice(0,10)}/${crypto.randomUUID()}.${extension}`;
-        const { error: uploadError } = await sb.storage.from("package-photos").upload(storagePath, bytes, {
-          contentType: mimeType, upsert: false
-        });
-        if (uploadError) {
-          console.error("distribution evidence upload failed", uploadError);
-          return json(req, { error: "Unable to upload distribution evidence photo. Please try again." }, 500);
-        }
-        return json(req, { success: true, storage_path: storagePath });
-      }
-
-      const packageRegistrationId = String(body.package_registration_id || "").trim();
       const securityHandOver = String(body.security_hand_over || "").trim();
       const recipientName = String(body.recipient_name || "").trim();
       const noteValue = body.note == null ? "" : String(body.note).trim();
-      const note = noteValue || null;
-      if (!packageRegistrationId) return json({ error: "Package not found." }, 404);
-      if (!securityHandOver) return json({ error: "Please enter Security Hand Over." }, 400);
-      if (!recipientName) return json({ error: "Please enter Recipient / Representative Name." }, 400);
+      const evidencePath = String(body.evidence_storage_path || "").trim();
+      if (!isUuid(packageRegistrationId)) return json(req, { error: "Package not found." }, 404);
+      if (!securityHandOver) return json(req, { error: "Please enter Security Hand Over." }, 400);
+      if (!recipientName) return json(req, { error: "Please enter Recipient / Representative Name." }, 400);
+      if (!evidencePath.startsWith("HIKJ/distribution/")) return json(req, { error: "Distribution evidence photo is required." }, 400);
 
-      const { data: pkg, error: pkgError } = await db.from("package_registrations").select("id,submission_id,recipient_name,property_id").eq("id", packageRegistrationId).maybeSingle();
-      if (pkgError || !pkg) return json({ error: "Package not found." }, 404);
-      const { data: existing } = await db.from("package_distributions").select("id").eq("package_registration_id", packageRegistrationId).maybeSingle();
-      if (existing) return json({ error: "Package has already been distributed." }, 409);
-
-      const { data: pkgSubmission, error: pkgSubmissionError } = await db.from("submissions").select("submission_id").eq("id", pkg.submission_id).maybeSingle();
-      if (pkgSubmissionError || !pkgSubmission) return json({ error: "Package submission record not found." }, 500);
-      const distributedAt = new Date().toISOString();
-      const { error: insertError } = await sb.from("package_distributions").insert({
-        package_registration_id: pkg.id,
-        property_id: pkg.property_id,
-        package_number: pkgSubmission.submission_id,
-        registered_recipient_name: pkg.recipient_name,
-        recipient_name: recipientName,
-        security_hand_over: securityHandOver,
-        note,
-        distributed_at: distributedAt,
-        status: "DISTRIBUTED",
+      const { data, error } = await db.rpc("distribute_package", {
+        p_package_registration_id: packageRegistrationId,
+        p_recipient_name: recipientName,
+        p_security_hand_over: securityHandOver,
+        p_note: noteValue || null,
+        p_evidence_storage_path: evidencePath,
       });
-      if (insertError) {
-        if (insertError.code === "23505") return json({ error: "Package has already been distributed." }, 409);
-        console.error("package-distribution insert failed", insertError);
-        return json({ error: "Unable to complete package distribution. Please try again." }, 500);
+      if (error) {
+        const status = error.code === "23505" ? 409 : error.code === "42501" ? 403 : 400;
+        return json(req, { error: error.message || "Unable to complete package distribution." }, status);
       }
-
-      // The insert is the source of truth. Do not make the success response depend on
-      // a RETURNING/select round-trip; the previous implementation could create the
-      // record successfully and still surface a 500 to the browser afterward.
-      let distribution: Record<string, unknown> = {
-        package_number: pkgSubmission.submission_id,
-        recipient_name: recipientName,
-        security_hand_over: securityHandOver,
-        note,
-        distributed_at: distributedAt,
-        status: "DISTRIBUTED",
-      };
-      const { data: created } = await sb.from("package_distributions")
-        .select("id,distribution_number,package_number,recipient_name,security_hand_over,note,distributed_at,status")
-        .eq("package_registration_id", pkg.id).maybeSingle();
-      if (created) distribution = created;
-
-      return json({ success: true, message: "Package successfully distributed.", distribution });
+      return json(req, data || { success: true });
     }
     return json({ error: "Method not allowed." }, 405);
   } catch (error) {
