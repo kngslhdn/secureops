@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
 
       if (body.action === "delete_evidence") {
         const storagePath = String(body.storage_path || "").trim();
-        if (!isUuid(packageRegistrationId) || !storagePath.startsWith("HIKJ/distribution/")) {
+        if (!isUuid(packageRegistrationId) || !storagePath.startsWith(`HIKJ/distribution/${packageRegistrationId}/`)) {
           return json(req, { error: "Invalid evidence reference." }, 400);
         }
         const { data: pkg, error: pkgError } = await db.from("package_registrations")
@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
         }
         const mimeType = match[1];
         const extension = mimeType === "image/jpeg" ? "jpg" : mimeType.split("/")[1];
-        const storagePath = `HIKJ/distribution/${new Date().toISOString().slice(0,10)}/${crypto.randomUUID()}.${extension}`;
+        const storagePath = `HIKJ/distribution/${packageRegistrationId}/${new Date().toISOString().slice(0,10)}/${crypto.randomUUID()}.${extension}`;
         const { error: uploadError } = await sb.storage.from("package-photos").upload(storagePath, bytes, {
           contentType: mimeType, upsert: false
         });
