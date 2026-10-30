@@ -39,7 +39,7 @@ const json=(body:unknown,status=200,req?:Request)=>new Response(JSON.stringify(b
 const clean=(v:unknown)=>String(v??'').trim().replace(/[<>]/g,'');
 const phone=(v:unknown)=>clean(v).replace(/[^0-9+]/g,'').replace(/^0+/,'');
 const normText=(v:unknown)=>clean(v).toLowerCase().replace(/\s+/g,' ');
-const types:Record<string,string>={entry:'visitor_entry',masuk:'visitor_entry',exit:'visitor_exit',keluar:'visitor_exit',borrowing:'key_borrowing',pinjamKunci:'key_borrowing',return:'key_return',kembaliKunci:'key_return',package:'package_registration',paket:'package_registration',key_asset_lookup:'key_asset_lookup'};
+const types:Record<string,string>={entry:'visitor_entry',masuk:'visitor_entry',exit:'visitor_exit',keluar:'visitor_exit',borrowing:'key_borrowing',pinjamKunci:'key_borrowing',return:'key_return',kembaliKunci:'key_return',package:'package_registration',paket:'package_registration',key_asset_lookup:'key_asset_lookup',visitor_exit_lookup:'visitor_exit_lookup'};
 const val=(b:any,...keys:string[])=>keys.map(k=>b[k]).find(v=>v!==undefined&&v!==null&&String(v).trim()!=='')??'';
 const required=(v:unknown,label:string,max=200)=>{const s=clean(v);if(!s)throw new Error(label+' is required.');if(s.length>max)throw new Error(label+' is too long.');return s};
 const validPhone=(v:unknown)=>{const p=phone(v);const digits=p.replace(/\D/g,'');if(!p||!/^[0-9+]{8,16}$/.test(p)||digits.length<8||digits.length>15)throw new Error('A valid phone number is required.');return p};
@@ -103,7 +103,14 @@ Deno.serve(async req=>{
  if(req.method!=='POST')return json({error:'Method not allowed'},405,req);const limit=await rateLimit(req);if(!limit.allowed)return new Response(JSON.stringify({error:'Too many requests. Please wait and try again.'}),{status:429,headers:{...corsHeaders(req),'Content-Type':'application/json','Retry-After':String(limit.retryAfter)}});
  try{
   const contentLength=Number(req.headers.get('content-length')||0);if(contentLength>8*1024*1024)return json({error:'Request payload is too large.'},413,req);
-  const body=await req.json();const rawType=clean(body.type||body.form_type),type=types[rawType]||rawType;if(!['visitor_entry','visitor_exit','key_borrowing','key_return','package_registration','key_asset_lookup'].includes(type))return json({error:'Invalid submission type'},400,req);const settings=await publicSettings();const ops=settings.operations||{};const enabledByType:Record<string,string>={visitor_entry:'visitor_entry_enabled',visitor_exit:'visitor_exit_enabled',key_borrowing:'key_borrowing_enabled',key_return:'key_return_enabled',package_registration:'package_registration_enabled'};if(enabledByType[type]&&ops[enabledByType[type]]===false)return json({error:'This service is currently disabled by Security Administration.'},403,req);
+  const body=await req.json();const rawType=clean(body.type||body.form_type),type=types[rawType]||rawType;if(!['visitor_entry','visitor_exit','key_borrowing','key_return','package_registration','key_asset_lookup','visitor_exit_lookup'].includes(type))return json({error:'Invalid submission type'},400,req);const settings=await publicSettings();const ops=settings.operations||{};const enabledByType:Record<string,string>={visitor_entry:'visitor_entry_enabled',visitor_exit:'visitor_exit_enabled',key_borrowing:'key_borrowing_enabled',key_return:'key_return_enabled',package_registration:'package_registration_enabled'};if(enabledByType[type]&&ops[enabledByType[type]]===false)return json({error:'This service is currently disabled by Security Administration.'},403,req);
+  if(type==='visitor_exit_lookup'){
+   const pass=clean(val(body,'pass_vest_number','pass'));
+   if(!pass)return json({ok:false,error:'Please enter Pass / Vest Number.'},400,req);
+   const entry=await findExitEntry(pass);
+   if(!entry)return json({ok:false,error:'Visitor not found: Pass / Vest Number does not match any visitor currently inside the hotel.'},404,req);
+   return json({ok:true,visitor:{name:clean(entry.visitor_name||entry.visitor_name_snapshot||'')}},200,req);
+  }
   if(type==='key_asset_lookup'){
    const key=clean(body.key_number||body.keyNumber);
    if(!key)return json({error:'Please enter Key Number.'},400,req);
