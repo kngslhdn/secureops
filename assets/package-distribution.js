@@ -211,11 +211,77 @@
       <small class="pd-hint">${PDT('Defaulted to the registered recipient. Edit if the package is received by a representative or delegate','Secara default menggunakan penerima terdaftar. Ubah jika paket diterima oleh perwakilan atau delegasi')}</small>
       <label>${PDT('Note','Catatan')}</label><textarea id="pdNote" placeholder="${PDT('Department, pigeon hole, or other note','Departemen, pigeon hole, atau catatan lainnya')}" rows="2"></textarea>
       <small class="pd-hint">${PDT('Add the department, pigeon hole location, or other information to help identify the recipient','Tambahkan departemen, lokasi pigeon hole, atau informasi lain untuk membantu mengidentifikasi penerima')}</small>
+      <label for="pdEvidenceFile">${PDT('Distribution Evidence Photo','Foto Bukti Distribusi')}</label>
+      <div class="pd-photo-tools">
+        <input id="pdEvidenceFile" type="file" accept="image/jpeg,image/png,image/webp" required>
+        <button type="button" class="pd-camera-btn" id="pdCameraBtn">📷 ${PDT('OPEN CAMERA','BUKA KAMERA')}</button>
+        <input id="pdCameraInput" type="file" accept="image/*" capture="environment" hidden>
+        <div id="pdEvidencePreview" class="pd-photo-preview" aria-live="polite"></div>
+      </div>
+      <small class="pd-hint">${PDT('Take a photo showing the package hand-over to the recipient, or choose an existing photo. This evidence is required to submit the distribution.','Ambil foto yang menunjukkan serah terima paket kepada penerima, atau pilih foto yang sudah ada. Foto bukti wajib dilampirkan untuk mengirim distribusi.')}</small>
       <label>${PDT('Security Hand Over','Serah Terima Security')}</label><input id="pdSecurity" value="${esc(securityOfficerName)}" readonly aria-readonly="true" autocomplete="off">
       <small class="pd-hint">${PDT('Automatically filled from the signed-in account','Otomatis diisi dari akun yang sedang login')}</small>
       <label>${PDT('Distribution Date &amp; Time','Tanggal &amp; Waktu Distribusi')}</label><input value="${fmt(new Date())}" readonly>
       <button class="submit" id="pdSubmit">${PDT('SUBMIT DISTRIBUTION','KIRIM DISTRIBUSI')}</button></div>`;
+    wireDistributionEvidence();
     target.querySelector('#pdSubmit').onclick = submitDistribution;
+  }
+
+  let distributionEvidenceFile = null;
+  function wireDistributionEvidence() {
+    const fileInput=document.querySelector('#pdEvidenceFile');
+    const cameraInput=document.querySelector('#pdCameraInput');
+    const cameraButton=document.querySelector('#pdCameraBtn');
+    const preview=document.querySelector('#pdEvidencePreview');
+    if(!fileInput||!cameraInput||!cameraButton||!preview)return;
+    const showPreview=file=>{
+      preview.replaceChildren();
+      if(!file){preview.classList.remove('visible');return}
+      const img=document.createElement('img');
+      const objectUrl=URL.createObjectURL(file);
+      img.src=objectUrl;img.alt=PDT('Distribution evidence preview','Pratinjau bukti distribusi');
+      img.onload=()=>URL.revokeObjectURL(objectUrl);
+      const meta=document.createElement('span');meta.textContent=file.name||PDT('Camera photo','Foto kamera');
+      const remove=document.createElement('button');remove.type='button';remove.textContent=PDT('REMOVE','HAPUS');
+      remove.addEventListener('click',()=>{distributionEvidenceFile=null;fileInput.value='';cameraInput.value='';showPreview(null)});
+      preview.append(img,meta,remove);preview.classList.add('visible');
+    };
+    const acceptPhoto=file=>{
+      if(!file)return;
+      if(!file.type.startsWith('image/')){showPDPopup('error',PDT('Invalid Photo','Foto Tidak Valid'),PDT('Please select an image file.','Silakan pilih file gambar.'));return}
+      distributionEvidenceFile=file;
+      showPreview(file);
+    };
+    cameraButton.addEventListener('click',()=>cameraInput.click());
+    cameraInput.addEventListener('change',()=>{const f=cameraInput.files?.[0];if(f){fileInput.value='';acceptPhoto(f)}});
+    fileInput.addEventListener('change',()=>{const f=fileInput.files?.[0];if(f){cameraInput.value='';acceptPhoto(f)}else{distributionEvidenceFile=null;showPreview(null)}});
+  }
+
+  async function prepareEvidenceDataUrl(file) {
+    if(!file)throw new Error(PDT('Distribution evidence photo is required.','Foto bukti distribusi wajib dilampirkan.'));
+    let blob=file;
+    if(!['image/jpeg','image/png','image/webp'].includes(file.type)){
+      try{
+        const bitmap=await createImageBitmap(file);
+        const scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));
+        const canvas=document.createElement('canvas');
+        canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+        canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+        const ctx=canvas.getContext('2d');
+        if(!ctx)throw new Error('Unable to process photo');
+        ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close?.();
+        blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Unable to process photo')),'image/jpeg',.82));
+      }catch{throw new Error(PDT('This camera photo format cannot be processed. Please use JPEG, PNG, or WebP.','Format foto kamera ini tidak dapat diproses. Gunakan JPEG, PNG, atau WebP.'))}
+    }
+    if(blob.size>5*1024*1024)throw new Error(PDT('Photo exceeds the 5 MB limit. Please choose a smaller photo.','Ukuran foto melebihi batas 5 MB. Silakan pilih foto yang lebih kecil.'));
+    return await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error('Unable to read photo'));reader.readAsDataURL(blob)});
+  }
+
+  async function uploadDistributionEvidence(file) {
+    const photoDataUrl=await prepareEvidenceDataUrl(file);
+    const result=await callApi('',{method:'POST',body:JSON.stringify({action:'upload_evidence',package_registration_id:selected.id,photo_data_url:photoDataUrl})});
+    if(!result?.success||!result?.storage_path)throw new Error(result?.error||PDT('Evidence photo upload failed.','Gagal mengunggah foto bukti.'));
+    return result.storage_path;
   }
 
   function showPDPopup(type,title,message,details='',actionText='OK') {
@@ -228,12 +294,17 @@
     const security = securityOfficerName.trim();
     const recipient = document.querySelector('#pdRecipient')?.value.trim();
     const note = document.querySelector('#pdNote')?.value.trim() || '';
+    const evidenceFile = distributionEvidenceFile;
     const notice = document.querySelector('#pdNotice');
     if (!recipient) { notice.textContent = PDT('Please enter Recipient / Representative Name','Silakan masukkan Nama Penerima / Perwakilan'); return; }
     if (!security) { notice.textContent = PDT('Your signed-in account has no Security Officer name. Please contact the SecureOps administrator to configure your profile.','Nama petugas belum tersedia pada akun login Anda. Hubungi administrator SecureOps untuk melengkapi profil.'); return; }
+    if (!evidenceFile) { notice.textContent = PDT('Please attach a distribution evidence photo before submitting.','Silakan lampirkan foto bukti distribusi sebelum mengirim.'); return; }
     const btn = document.querySelector('#pdSubmit');
-    btn.disabled = true; notice.textContent = PDT('Processing distribution…','Memproses distribusi…');
+    btn.disabled = true; notice.textContent = PDT('Uploading distribution evidence…','Mengunggah foto bukti distribusi…');
+    let evidencePath = null;
     try {
+      evidencePath = await uploadDistributionEvidence(evidenceFile);
+      notice.textContent = PDT('Saving distribution record…','Menyimpan data distribusi…');
       // Distribution writes go through a SECURITY DEFINER Postgres RPC.
       // This avoids browser CORS/runtime failures on the Edge Function while
       // keeping authorization and property isolation inside the database.
@@ -241,7 +312,8 @@
         p_package_registration_id: selected.id,
         p_recipient_name: recipient,
         p_security_hand_over: security,
-        p_note: note || null
+        p_note: note || null,
+        p_evidence_storage_path: evidencePath
       });
       if (error) throw error;
       if (!data?.success) throw new Error(data?.message || PDT('Unable to complete package distribution. Please try again','Distribusi paket gagal. Silakan coba lagi'));
@@ -291,7 +363,7 @@
   }
 
   const style = document.createElement('style');
-  style.textContent = `.pd-wrap{padding:0 23px 23px}.pd-wrap input,.pd-wrap textarea{box-sizing:border-box;margin:7px 0 12px}.pd-wrap textarea{width:100%;resize:vertical;min-height:58px;border:0;border-bottom:1px solid var(--line);background:transparent;color:#fff;font:inherit;outline:none;padding:7px 5px}.pd-wrap textarea:focus{border-bottom-color:var(--gold2)}.pd-auth{padding:10px 0}.pd-auth h3{margin:0 0 5px;font-size:.94rem}.pd-auth p{opacity:.75;font-size:.8rem}.pd-auth input{display:block}.pd-user{font-size:.72rem;opacity:.8;margin-bottom:14px}.pd-link{float:right;background:none;border:0;color:var(--gold2);cursor:pointer}.pd-search{display:grid;grid-template-columns:1fr 130px;gap:9px;align-items:end}.pd-results{margin-top:15px;display:grid;gap:8px;max-height:430px;overflow:auto}.pd-result{display:grid;grid-template-columns:1.3fr 1fr auto;gap:12px;text-align:left;color:#fff;background:rgba(4,25,45,.65);border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer}.pd-result:hover{border-color:var(--gold2);background:rgba(20,55,87,.75)}.pd-result div{display:grid;gap:4px}.pd-result span{font-size:.72rem;opacity:.72}.pd-result em{align-self:center;color:var(--gold2);font-size:.58rem;font-style:normal;font-weight:700;white-space:nowrap}.pd-empty{text-align:center;padding:22px;opacity:.7;font-size:.78rem}.pd-error{color:var(--danger)}.pd-selected{margin-top:16px;padding:15px;border:1px solid var(--line);border-radius:14px;background:rgba(3,20,36,.5)}.pd-selected-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:12px}.pd-selected-head span{font-size:.58rem;color:var(--gold2);font-weight:700}.pd-detail{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:15px}.pd-detail div{display:grid;gap:3px}.pd-detail small{font-size:.62rem;opacity:.55}.pd-detail b{font-size:.76rem}.pd-selected label{display:block;margin:12px 0 4px;font-size:.76rem}.pd-hint{display:block;font-size:.64rem;opacity:.62;line-height:1.45;margin:-5px 0 8px}.pd-success{padding:10px}.pd-success h3{margin-top:0;color:#c7f9d8}@media(max-width:700px){.pd-result{grid-template-columns:1fr}.pd-search{grid-template-columns:1fr}.pd-detail{grid-template-columns:1fr 1fr}}@media(max-width:520px){.pd-wrap{padding:0 18px 18px}.pd-detail{grid-template-columns:1fr}}`;
+  style.textContent = `.pd-wrap{padding:0 23px 23px}.pd-wrap input,.pd-wrap textarea{box-sizing:border-box;margin:7px 0 12px}.pd-wrap textarea{width:100%;resize:vertical;min-height:58px;border:0;border-bottom:1px solid var(--line);background:transparent;color:#fff;font:inherit;outline:none;padding:7px 5px}.pd-wrap textarea:focus{border-bottom-color:var(--gold2)}.pd-auth{padding:10px 0}.pd-auth h3{margin:0 0 5px;font-size:.94rem}.pd-auth p{opacity:.75;font-size:.8rem}.pd-auth input{display:block}.pd-user{font-size:.72rem;opacity:.8;margin-bottom:14px}.pd-link{float:right;background:none;border:0;color:var(--gold2);cursor:pointer}.pd-search{display:grid;grid-template-columns:1fr 130px;gap:9px;align-items:end}.pd-results{margin-top:15px;display:grid;gap:8px;max-height:430px;overflow:auto}.pd-result{display:grid;grid-template-columns:1.3fr 1fr auto;gap:12px;text-align:left;color:#fff;background:rgba(4,25,45,.65);border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer}.pd-result:hover{border-color:var(--gold2);background:rgba(20,55,87,.75)}.pd-result div{display:grid;gap:4px}.pd-result span{font-size:.72rem;opacity:.72}.pd-result em{align-self:center;color:var(--gold2);font-size:.58rem;font-style:normal;font-weight:700;white-space:nowrap}.pd-empty{text-align:center;padding:22px;opacity:.7;font-size:.78rem}.pd-error{color:var(--danger)}.pd-selected{margin-top:16px;padding:15px;border:1px solid var(--line);border-radius:14px;background:rgba(3,20,36,.5)}.pd-selected-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:12px}.pd-selected-head span{font-size:.58rem;color:var(--gold2);font-weight:700}.pd-detail{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:15px}.pd-detail div{display:grid;gap:3px}.pd-detail small{font-size:.62rem;opacity:.55}.pd-detail b{font-size:.76rem}.pd-selected label{display:block;margin:12px 0 4px;font-size:.76rem}.pd-hint{display:block;font-size:.64rem;opacity:.62;line-height:1.45;margin:-5px 0 8px}.pd-photo-tools{display:grid;gap:9px;margin:7px 0 12px}.pd-photo-tools input[type=file]{width:100%;min-width:0;margin:0;padding:10px;border:1px dashed var(--line);border-radius:10px;background:rgba(3,20,36,.35);color:#fff;font:inherit;font-size:.75rem}.pd-camera-btn{width:100%;min-height:44px;border:1px solid rgba(240,198,107,.55);border-radius:10px;background:rgba(217,164,65,.12);color:var(--gold2);font:600 .82rem Poppins,Arial,sans-serif;cursor:pointer}.pd-camera-btn:hover,.pd-camera-btn:focus-visible{background:rgba(217,164,65,.22);outline:none}.pd-photo-preview{display:none;align-items:center;gap:10px;padding:9px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.035);font-size:.72rem}.pd-photo-preview.visible{display:flex}.pd-photo-preview img{width:72px;height:72px;object-fit:cover;border-radius:8px}.pd-photo-preview span{min-width:0;overflow-wrap:anywhere;flex:1}.pd-photo-preview button{border:0;background:none;color:var(--danger);font:600 .7rem Poppins,Arial,sans-serif;cursor:pointer}.pd-success{padding:10px}.pd-success h3{margin-top:0;color:#c7f9d8}@media(max-width:700px){.pd-result{grid-template-columns:1fr}.pd-search{grid-template-columns:1fr}.pd-detail{grid-template-columns:1fr 1fr}}@media(max-width:520px){.pd-wrap{padding:0 18px 18px}.pd-detail{grid-template-columns:1fr}}`;
   document.head.appendChild(style);
 
   async function boot() { card(); tuneCards(); try { await initClient(); } catch (e) { console.warn('Package Distribution auth unavailable:', e); } }
