@@ -204,6 +204,7 @@
   }
 
   function openDistributionForm() {
+    distributionEvidenceFile = null;
     const target = document.querySelector('#pdSelected');
     target.innerHTML = `<div class="pd-selected"><div class="pd-selected-head"><b>${PDT('Package Hand-Over','Serah Terima Paket')}</b><span>${PDT('DISTRIBUTION','DISTRIBUSI')}</span></div>
       <div class="pd-detail"><div><small>${PDT('Package ID','ID Paket')}</small><b>${esc(selected.submission_id || selected.package_number)}</b></div><div><small>${PDT('Registered Recipient','Penerima Terdaftar')}</small><b>${esc(selected.recipient_name || '—')}</b></div></div>
@@ -259,21 +260,23 @@
 
   async function prepareEvidenceDataUrl(file) {
     if(!file)throw new Error(PDT('Distribution evidence photo is required.','Foto bukti distribusi wajib dilampirkan.'));
-    let blob=file;
-    if(!['image/jpeg','image/png','image/webp'].includes(file.type)){
-      try{
-        const bitmap=await createImageBitmap(file);
-        const scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));
-        const canvas=document.createElement('canvas');
-        canvas.width=Math.max(1,Math.round(bitmap.width*scale));
-        canvas.height=Math.max(1,Math.round(bitmap.height*scale));
-        const ctx=canvas.getContext('2d');
-        if(!ctx)throw new Error('Unable to process photo');
-        ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close?.();
-        blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Unable to process photo')),'image/jpeg',.82));
-      }catch{throw new Error(PDT('This camera photo format cannot be processed. Please use JPEG, PNG, or WebP.','Format foto kamera ini tidak dapat diproses. Gunakan JPEG, PNG, atau WebP.'))}
+    let bitmap;
+    try { bitmap=await createImageBitmap(file); }
+    catch { throw new Error(PDT('This photo format cannot be processed. Please use JPEG, PNG, or WebP.','Format foto ini tidak dapat diproses. Gunakan JPEG, PNG, atau WebP.')); }
+    const scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+    canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+    const ctx=canvas.getContext('2d');
+    if(!ctx){bitmap.close?.();throw new Error('Unable to process photo');}
+    ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close?.();
+    let quality=.82;
+    let blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Unable to process photo')),'image/jpeg',quality));
+    while(blob.size>3.5*1024*1024&&quality>.5){
+      quality-=.08;
+      blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Unable to process photo')),'image/jpeg',quality));
     }
-    if(blob.size>5*1024*1024)throw new Error(PDT('Photo exceeds the 5 MB limit. Please choose a smaller photo.','Ukuran foto melebihi batas 5 MB. Silakan pilih foto yang lebih kecil.'));
+    if(blob.size>3.5*1024*1024)throw new Error(PDT('Photo is too large after compression. Please choose another photo.','Foto terlalu besar setelah kompresi. Silakan pilih foto lain.'));
     return await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error('Unable to read photo'));reader.readAsDataURL(blob)});
   }
 
@@ -349,6 +352,9 @@
       document.querySelector('#pdSelected').innerHTML = `<div class="pd-success"><h3>${PDT('Package successfully distributed','Paket berhasil didistribusikan')}</h3><p><b>${PDT('Distribution ID:','ID Distribusi:')}</b> ${esc(d.distribution_number||'—')}</p><p><b>${PDT('Package ID:','ID Paket:')}</b> ${esc(d.package_number||'—')}</p><button class="submit" id="pdBack">${PDT('SEARCH ANOTHER PACKAGE','CARI PAKET LAIN')}</button></div>`;
       document.querySelector('#pdBack').onclick = () => { selected = null; renderAuth(); };
     } catch (e) {
+      if(evidencePath){
+        try{await callApi('',{method:'POST',body:JSON.stringify({action:'delete_evidence',package_registration_id:selected.id,storage_path:evidencePath})})}catch(cleanupError){console.warn('Distribution evidence cleanup failed:',cleanupError)}
+      }
       const message=e.message || PDT('Unable to complete package distribution. Please try again','Distribusi paket gagal. Silakan coba lagi');
       notice.textContent='';
       showPDPopup(
