@@ -101,6 +101,23 @@ Deno.serve(async (req) => {
     if (req.method === "POST") {
       const body = await req.json();
 
+      if (body.action === "delete_evidence") {
+        const packageRegistrationId = String(body.package_registration_id || "").trim();
+        const storagePath = String(body.storage_path || "").trim();
+        if (!isUuid(packageRegistrationId) || !storagePath.startsWith("HIKJ/distribution/")) {
+          return json(req, { error: "Invalid evidence reference." }, 400);
+        }
+        const { data: pkg, error: pkgError } = await db.from("package_registrations")
+          .select("id,property_id").eq("id", packageRegistrationId).maybeSingle();
+        if (pkgError || !pkg) return json(req, { error: "Package not found." }, 404);
+        if (String(profile?.role || "").toUpperCase() !== "SUPERADMIN" && pkg.property_id !== profile.property_id) {
+          return json(req, { error: "Forbidden" }, 403);
+        }
+        const { error: removeError } = await sb.storage.from("package-photos").remove([storagePath]);
+        if (removeError) throw removeError;
+        return json(req, { success: true });
+      }
+
       if (body.action === "upload_evidence") {
         const packageRegistrationId = String(body.package_registration_id || "").trim();
         const photoDataUrl = String(body.photo_data_url || "");
