@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
         if (String(profile?.role || "").toUpperCase() !== "SUPERADMIN" && pkg.property_id !== profile.property_id) {
           return json(req, { error: "Forbidden" }, 403);
         }
-        const match = photoDataUrl.match(/^data:(image\\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
+        const match = photoDataUrl.match(/^data:(image[/](?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
         if (!match) return json(req, { error: "Evidence photo must be JPEG, PNG, or WebP." }, 400);
         const bytes = Uint8Array.from(atob(match[2]), ch => ch.charCodeAt(0));
         if (!bytes.length || bytes.length > 5 * 1024 * 1024) {
