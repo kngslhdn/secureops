@@ -123,7 +123,7 @@ const locations=['Receiving','Purchasing','Grand Ball Room','Bali Room','Ramayan
 const icons={entry:'<i class="fi fi-tr-entrance" aria-hidden="true"></i>',exit:'<i class="fi fi-tr-leave" aria-hidden="true"></i>',key:'<i class="fi fi-ts-user-key" aria-hidden="true"></i>',return:'<i class="fi fi-tr-holding-hand-key" aria-hidden="true"></i>',package:'<i class="fi fi-tr-box" aria-hidden="true"></i>',distribution:'<i class="fi fi-tr-box-circle-check" aria-hidden="true"></i>'};
 const forms={
 masuk:{title:'Visitor Entry Registration',description:'Please complete the information before entering Hotel Indonesia Kempinski Jakarta',type:'visitor_entry',icon:'entry',fields:[['nama','Name'],['phone','Mobile Phone Number','tel'],['perusahaan','Company / Vendor Name'],['kategori','Category','select',['Contractor','Supplier','Visitor','Part-time']],['lokasi','Work Location','select',locations],['tujuan','Purpose','textarea'],['security','Security Officer Name'],['pass','Pass / Vest Number'],['datetime','Entry Date & Time','datetime']]},
-keluar:{title:'Visitor Exit Registration',description:'Enter the Pass / Vest Number and Security Officer Name. Exit date and time are recorded automatically',type:'visitor_exit',icon:'exit',fields:[['pass','Pass / Vest Number'],['security','Security Officer Name']]},
+keluar:{title:'Visitor Exit Registration',description:'Enter the Pass / Vest Number and Security Officer Name. Exit date and time are recorded automatically',type:'visitor_exit',icon:'exit',fields:[['pass','Pass / Vest Number'],['visitorNameDisplay','Visitor Name','visitor-name'],['security','Security Officer Name']]},
 pinjamKunci:{title:'Key Borrowing',description:'Complete this form before borrowing keys',type:'key_borrowing',icon:'key',fields:[['borrowerName','Borrower Name'],['department','Department'],['keyNumber','Key Number'],['description','Key Description','textarea'],['qty','Quantity of Keys','number'],['security','Issued By Security Officer'],['datetime','Date & Time Borrowed','datetime'],['expectedReturn','Expected Return','expected-datetime']]},
 kembaliKunci:{title:'Key Return',description:'Enter the key details. The system verifies the key against the outstanding borrowing and prevents returning more than the outstanding quantity',type:'key_return',icon:'return',fields:[['returnName','Returned By'],['department','Department'],['keyNumber','Key Number'],['qty','Quantity of Keys','number'],['security','Received By Security Officer'],['datetime','Date & Time Returned','datetime']]},
 paket:{title:'Package Registration',description:'Record the package delivery and item photo',type:'package_registration',icon:'package',upload:true,fields:[['namaPengantar','Courier Name'],['telepon','Phone Number','tel'],['perusahaan','Expedition Company'],['jenisBarang','Item Type','select',['LETTER','PACKAGE']],['jumlah','Number of Items','number'],['tujuan','Recipient Type','select',['STAFF','GUEST']],['namaTujuan','Recipient Name'],['security','Security Officer Name'],['foto','Item Photo','file']]}};
@@ -164,6 +164,8 @@ Object.keys(forms).forEach(k=>{
 let lastSubmission=null;
 let keyAssetLookupTimer=null;
 let keyAssetLookupSeq=0;
+let visitorLookupTimer=null;
+let visitorLookupSeq=0;
 const dateText=()=>{const n=new Date();return n.toLocaleDateString('en-GB')+' '+n.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})};
 function generateUUID(){
   if(typeof crypto?.randomUUID==='function')return crypto.randomUUID();
@@ -178,7 +180,7 @@ function generateUUID(){
 }
 const escapeHtml=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#039;');
 function futureDateTimeValue(){const d=new Date(Date.now()+2*60*60*1000),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes())}
-function inputMarkup([name,label,type='text',options=[]]){if(type==='textarea')return `<div class="field"><label for="${name}">${label}</label><textarea id="${name}" name="${name}" required></textarea></div>`;if(type==='select')return `<div class="field"><label for="${name}">${label}</label><select id="${name}" name="${name}" required><option value="">${L.select}</option>${options.map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(DEVICE_LANG==='id'?(OPT_I18N[x]||x):x)}</option>`).join('')}</select></div>`;if(type==='datetime')return `<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" readonly value="${dateText()}"></div>`;if(type==='future-datetime')return `<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" type="datetime-local" min="${futureDateTimeValue()}" value="${futureDateTimeValue()}" required></div>`;if(type==='expected-datetime')return `<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" readonly value="${new Date(Date.now()+24*60*60*1000).toLocaleDateString('en-GB')+' '+new Date(Date.now()+24*60*60*1000).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}"></div>`;if(type==='file')return `<div class="field"><label for="${name}">${label}</label><div class="photo-input-group"><input id="${name}" name="${name}" type="file" accept="image/jpeg,image/png,image/webp" required><button class="photo-camera-btn" type="button" id="fotoCameraBtn"><span aria-hidden="true">📷</span> ${DEVICE_LANG==='id'?'Buka Kamera':'Open Camera'}</button><input id="fotoCameraInput" type="file" accept="image/*" capture="environment" hidden><div id="fotoPreview" class="photo-preview" aria-live="polite"></div></div></div>`;if(type==='tel')return `<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" type="tel" inputmode="tel" minlength="8" maxlength="16" pattern="[0-9+()\\s-]{8,20}" required></div>`;return `<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" type="${type}" min="1" required></div>`}
+function inputMarkup([name,label,type='text',options=[]]){if(type==='visitor-name')return `<div class="field"><label for="${name}">${label}</label><input id="${name}" type="text" value="" placeholder="${DEVICE_LANG==='id'?'Nama visitor akan muncul otomatis':'Visitor name will appear automatically'}" readonly disabled aria-live="polite"></div>`;if(type==='textarea')return `<div class="field"><label for="${name}">${label}</label><textarea id="${name}" name="${name}" required></textarea></div>`;if(type==='select')return `<div class="field"><label for="${name}">${label}</label><select id="${name}" name="${name}" required><option value="">${L.select}</option>${options.map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(DEVICE_LANG==='id'?(OPT_I18N[x]||x):x)}</option>`).join('')}</select></div>`;if(type==='datetime')return `<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" readonly value="${dateText()}"></div>`;if(type==='future-datetime')return `<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" type="datetime-local" min="${futureDateTimeValue()}" value="${futureDateTimeValue()}" required></div>`;if(type==='expected-datetime')return `<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" readonly value="${new Date(Date.now()+24*60*60*1000).toLocaleDateString('en-GB')+' '+new Date(Date.now()+24*60*60*1000).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}"></div>`;if(type==='file')return `<div class="field"><label for="${name}">${label}</label><div class="photo-input-group"><input id="${name}" name="${name}" type="file" accept="image/jpeg,image/png,image/webp" required><button class="photo-camera-btn" type="button" id="fotoCameraBtn"><span aria-hidden="true">📷</span> ${DEVICE_LANG==='id'?'Buka Kamera':'Open Camera'}</button><input id="fotoCameraInput" type="file" accept="image/*" capture="environment" hidden><div id="fotoPreview" class="photo-preview" aria-live="polite"></div></div></div>`;if(type==='tel')return `<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" type="tel" inputmode="tel" minlength="8" maxlength="16" pattern="[0-9+()\\s-]{8,20}" required></div>`;return `<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" type="${type}" min="1" required></div>`}
 Object.entries(forms).forEach(([key,form])=>choiceRoot.insertAdjacentHTML('beforeend',`<button type="button" class="choice" data-form="${key}" aria-pressed="false"><span class="choice-icon">${icons[form.icon]}</span><strong>${form.title}</strong><span class="arrow">→</span></button>`));
 choiceRoot.addEventListener('click',e=>{const b=e.target.closest('[data-form]');if(b)showForm(b.dataset.form)});
 function formatMessage(title,data){const lines=['SECUREOPS VISITOR MANAGEMENT','',`NEW ${title.toUpperCase()}`,''];for(const [key,value] of data.entries()){if(key==='foto')continue;const field=document.querySelector(`[name="${CSS.escape(key)}"]`);lines.push(`${field?.closest('.field')?.querySelector('label')?.textContent||key}: ${value}`)}if(lastSubmission?.submissionId)lines.push('',`Submission ID: ${lastSubmission.submissionId}`);return lines.join('\n')}
@@ -264,6 +266,48 @@ async function lookupKeyAsset(keyNumber,form,notice){
   if(notice){notice.textContent=err?.message||'Unable to verify Key Number';notice.classList.add('error')}
  }
 }
+async function lookupVisitorByPass(pass,form){
+ const input=form.querySelector('#visitorNameDisplay');
+ const notice=document.querySelector('#notice');
+ const value=String(pass||'').trim();
+ if(!input)return;
+ const requestId=++visitorLookupSeq;
+ input.value='';
+ if(!value){input.placeholder=DEVICE_LANG==='id'?'Masukkan Pass / Vest Number untuk melihat nama':'Enter Pass / Vest Number to identify visitor';return;}
+ input.placeholder=DEVICE_LANG==='id'?'Memeriksa nomor Pass / Vest…':'Checking Pass / Vest Number…';
+ try{
+  const response=await fetch(SUPABASE_FUNCTION_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'visitor_exit_lookup',pass_vest_number:value})});
+  let result=null;try{result=await response.json()}catch{}
+  if(requestId!==visitorLookupSeq||form.querySelector('#pass')?.value.trim()!==value)return;
+  if(!response.ok||!result?.ok)throw Error(result?.error||(DEVICE_LANG==='id'?'Visitor tidak ditemukan':'Visitor not found'));
+  input.value=result.visitor?.name||'';
+  input.placeholder=input.value?(DEVICE_LANG==='id'?'Nama visitor terverifikasi':'Visitor name verified'):(DEVICE_LANG==='id'?'Nama visitor tidak tersedia':'Visitor name unavailable');
+ }catch(error){
+  if(requestId!==visitorLookupSeq)return;
+  input.value='';
+  input.placeholder=error?.message||(DEVICE_LANG==='id'?'Visitor tidak ditemukan':'Visitor not found');
+ }
+}
+function wireVisitorExitLookup(form){
+ const passInput=form.querySelector('#pass');
+ const nameInput=form.querySelector('#visitorNameDisplay');
+ if(!passInput||!nameInput)return;
+ nameInput.placeholder=DEVICE_LANG==='id'?'Nama visitor akan muncul otomatis':'Visitor name will appear automatically';
+ passInput.addEventListener('input',()=>{
+  clearTimeout(visitorLookupTimer);
+  ++visitorLookupSeq;
+  nameInput.value='';
+  nameInput.placeholder=DEVICE_LANG==='id'?'Menunggu nomor Pass / Vest…':'Waiting for Pass / Vest Number…';
+  const value=passInput.value.trim();
+  if(!value){nameInput.placeholder=DEVICE_LANG==='id'?'Nama visitor akan muncul otomatis':'Visitor name will appear automatically';return;}
+  visitorLookupTimer=setTimeout(()=>lookupVisitorByPass(value,form),350);
+ });
+ passInput.addEventListener('blur',()=>{
+  clearTimeout(visitorLookupTimer);
+  const value=passInput.value.trim();
+  if(value)lookupVisitorByPass(value,form);
+ });
+}
 function wireKeyBorrowingLookup(form){
  const keyInput=document.querySelector('#keyNumber');
  const description=document.querySelector('#description');
@@ -290,7 +334,7 @@ function wireKeyBorrowingLookup(form){
   if(value)lookupKeyAsset(value,form,notice);
  });
 }
-function showForm(key){const form=forms[key];document.querySelectorAll('.choice').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.form===key)));panel.innerHTML=`<div class="panel-header"><h2>${form.title}</h2><p>${form.description}</p></div><form id="activeForm" novalidate>${form.fields.map(inputMarkup).join('')}<button class="submit" type="submit">${L.submit}</button></form><div class="notice" id="notice"></div>`;panel.classList.add('visible');panel.scrollIntoView({behavior:'smooth',block:'start'});const activeForm=panel.querySelector('form');activeForm.addEventListener('submit',e=>submitForm(e,key));if(key==='paket')wirePackagePhotoCapture(activeForm);if(key==='pinjamKunci')wireKeyBorrowingLookup(activeForm)}
+function showForm(key){const form=forms[key];document.querySelectorAll('.choice').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.form===key)));panel.innerHTML=`<div class="panel-header"><h2>${form.title}</h2><p>${form.description}</p></div><form id="activeForm" novalidate>${form.fields.map(inputMarkup).join('')}<button class="submit" type="submit">${L.submit}</button></form><div class="notice" id="notice"></div>`;panel.classList.add('visible');panel.scrollIntoView({behavior:'smooth',block:'start'});const activeForm=panel.querySelector('form');activeForm.addEventListener('submit',e=>submitForm(e,key));if(key==='paket')wirePackagePhotoCapture(activeForm);if(key==='pinjamKunci')wireKeyBorrowingLookup(activeForm);if(key==='keluar')wireVisitorExitLookup(activeForm)}
 async function submitForm(e,key){e.preventDefault();const form=forms[key],el=e.currentTarget,notice=panel.querySelector('#notice');
 const phoneField=el.querySelector('input[type="tel"]');if(phoneField){const raw=String(phoneField.value||'').trim();const digits=raw.replace(/\\D/g,'');if(!raw||digits.length<8||digits.length>15){phoneField.setCustomValidity('Phone Number is not valid. Please enter 8–15 digits.');phoneField.reportValidity();phoneField.setCustomValidity('');notice.textContent='Phone Number is not valid. Please enter 8–15 digits.';notice.classList.add('error');SecureOpsUI.error(DEVICE_LANG==='id'?'Nomor Telepon Tidak Valid':'Phone Number Not Valid',DEVICE_LANG==='id'?'Masukkan nomor telepon yang valid (8–15 digit).':'Please enter a valid phone number (8–15 digits).');return;}}
 if(!el.reportValidity())return;if(key==='pinjamKunci'&&el.dataset.keyAssetValid!=='true'){notice.textContent=DEVICE_LANG==='id'?'Masukkan Nomor Kunci aktif yang valid dan tunggu Deskripsi Kunci serta Jumlah dimuat':'Please enter a valid active Key Number and wait for Key Description and Quantity to load';notice.classList.add('error');return;}const btn=el.querySelector('.submit');btn.disabled=true;notice.textContent=DEVICE_LANG==='id'?'Mengirim…':'Submitting…';notice.classList.remove('error');const data=new FormData(el);
